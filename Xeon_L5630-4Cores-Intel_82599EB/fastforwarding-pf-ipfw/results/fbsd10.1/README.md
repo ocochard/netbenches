@@ -5,6 +5,9 @@ Impact of enabling ipfw or pf on forwarding performance
   - 2000 flows of smallest UDP packets
   - 2 firewall rules, 2 static routes
   - Traffic load at 14.48Mpps (10Gigabit line-rate)
+
+![Impact of enabling ipfw or pf on forwarding performance on FreeBSD 10.1](graph.png)
+
  
 ```
 x pps.fastforwarding
