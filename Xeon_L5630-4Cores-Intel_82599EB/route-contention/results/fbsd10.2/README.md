@@ -5,6 +5,8 @@ Impact of number of static route on forwarding performance
   - 2000 flows of smallest UDP packets
   - Traffic load at 14.48Mpps (10Gigabit line-rate)
 
+![Number of static routes on forwarding performance](graph.png)
+
 ```
 x pps.one-route
 + pps.four-routes
