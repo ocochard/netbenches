@@ -7,6 +7,7 @@ This repository includes bench scripts, bench configuration files, raw results a
     - FreeBSD 10.2
 	   - [Impact of enabling ipfw or pf on forwarding performance on FreeBSD 10.2] (Xeon_L5630-4Cores-Intel_82599EB/fastforwarding-pf-ipfw/results/fbsd10.2/README.md)
        - [Impact of number of static routes on forwarding performance on FreeBSD 10.2] (Xeon_L5630-4Cores-Intel_82599EB/route-contention/results/fbsd10.2/README.md)
+       - [Impact of queue number on forwarding performance ] (Xeon_L5630-4Cores-Intel_82599EB/ix.num_queues/results/fbsd10.2/README.md)
     - FreeBSD 10.1
     - [Impact of enabling ipfw or pf on forwarding performance on FreeBSD 10.1] (Xeon_L5630-4Cores-Intel_82599EB/fastforwarding-pf-ipfw/results/fbsd10.1/README.md)
  - HP
