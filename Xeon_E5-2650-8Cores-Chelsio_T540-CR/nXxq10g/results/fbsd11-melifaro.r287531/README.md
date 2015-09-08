@@ -1,5 +1,5 @@
 Impact of Chelsio rx/tx queue number on forwarding performance
-  - HP ProLiant DL360p Gen8 with height cores (Intel Xeon E5-2650 @ 2.60GHz)
+  - HP ProLiant DL360p Gen8 with eight cores (Intel Xeon E5-2650 @ 2.60GHz)
   - Quad port Chelsio 10-Gigabit T540-CR and OPT SFP (SFP-10G-LR).
   - FreeBSD 11-melifaro.r287531
   - 2000 flows of smallest UDP packets
