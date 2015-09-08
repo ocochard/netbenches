@@ -14,7 +14,7 @@ Impact of Chelsio rx/tx queue number on forwarding performance
 x pps.one
 + pps.two
 * pps.four
-% pps.height
+% pps.eight
 +--------------------------------------------------------------------------+
 |             %                                                            |
 |             %                                                            |
