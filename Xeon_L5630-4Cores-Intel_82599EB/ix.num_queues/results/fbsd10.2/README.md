@@ -5,7 +5,7 @@ Impact of Intel 82599EB queue number on forwarding performance
   - 2000 flows of smallest UDP packets
   - Traffic load at 14.48Mpps (10Gigabit line-rate)
 
-![Impact of Intel 82599EB queue number on forwarding performance on FreeBSD 10.2](graph.png)
+![Impact of Intel 82599EB queue number on forwarding performance on FreeBSD 10.2](graph.svg)
 
 
 ```

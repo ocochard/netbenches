@@ -107,8 +107,10 @@ bench_cfg () {
 	reboot_dut
 	echo "Image: ${UPGRADE_IMAGE}" > $2.info
 	echo "CFG: ${CFG}" >> $2.info
+	rcmd ${DUT_ADMIN} "uname -a" >> $2.info
 	echo "Start time: `date`" >> $2.info
 	bench $2
+	echo "End time: `date`" >> $2.info
 }
 
 upload_cfg () {

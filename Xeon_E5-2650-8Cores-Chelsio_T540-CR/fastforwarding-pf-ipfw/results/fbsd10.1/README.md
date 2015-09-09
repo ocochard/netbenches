@@ -6,6 +6,7 @@ Impact of enabling ipfw or pf on forwarding performance
   - 2 firewall rules, 2 static routes
   - ntxq10g and nrxq10g = number of core (default) = 8
   - Traffic load at 10Mpps
+  - [lab details] (http://bsdrp.net/documentation/examples/forwarding_performance_lab_of_a_hp_proliant_dl360p_gen8_with_10-gigabit_with_10-gigabit_chelsio_t540-cr)
 
 ![Impact of enabling ipfw or pf on forwarding performance on FreeBSD 10.2](graph.png)
 

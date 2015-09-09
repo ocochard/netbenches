@@ -28,20 +28,23 @@ data_2_gnuplot () {
 	# Now we will generate .dat file with name like: forwarding.dat
 	# and contents like:
 	# revision  pps
-	# revision  pps
 	# this file can be used for gnuplot
 	if [ -n "${CFG_LIST}" ]; then
 		# For each CFG detected previously
 		for CFG_TYPE in ${CFG_LIST}; do
-			echo "# revision	pps" > ${LAB_RESULTS}/${CFG_TYPE}.data
+			echo "# (revision)	median	minimum		maximum" > ${LAB_RESULTS}/${CFG_TYPE}.data
 			# For each file regarding the CFG (one file by revision)
 			# But don't forget to exclude the allready existing CFG_TYPE.plot file from the result
 			for DATA in `ls -1 ${LAB_RESULTS} | grep "[[:punct:]]${CFG_TYPE}$"`; do
 				local REV=`basename ${DATA}`
 				REV=`echo ${REV} | cut -d '.' -f 1`
-				# Get the median value regarding all test iteration
-				local PPS=`ministat -n ${LAB_RESULTS}/${DATA} | tail -n -1 | tr -s ' ' | cut -d ' ' -f 5` 
-				echo "${REV}	${PPS}" >> ${LAB_RESULTS}/${CFG_TYPE}.data
+				if [ ${REV} = "none" ]; then
+				# Get the median, minimum and maximum value regarding all test iteration
+					ministat -n ${LAB_RESULTS}/${DATA} | tail -n -1 | awk '{print $5 " " $3 " " $4}' >> ${LAB_RESULTS}/${CFG_TYPE}.data
+				#echo "${REV}	${PPS}" >> ${LAB_RESULTS}/${CFG_TYPE}.data
+				else
+					ministat -n ${LAB_RESULTS}/${DATA} | tail -n -1 | awk -vrev=${REV} '{print rev " " $5 " " $3 " " $4}' >> ${LAB_RESULTS}/${CFG_TYPE}.data
+				fi
 			done
 		done	
 	else
@@ -98,7 +101,7 @@ for INFO in ${INFO_LIST}; do
 		data_2_ministat ${DATA} ${MINISTAT_FILE}
 	done # for DATA
 done # for REPORT
-echo "Gnuplot generation..."
+echo "Gnuplot input data file generation..."
 data_2_gnuplot
 
 echo "Done"
