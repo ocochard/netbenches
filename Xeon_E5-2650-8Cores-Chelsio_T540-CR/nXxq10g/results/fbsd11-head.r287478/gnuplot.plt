@@ -50,7 +50,7 @@ set ytics format '%.1s%c'
 set xtics 1
 
 set title "Impact of RX/TX queue number on fastforwarding performance (HP ProLiant DL360p Gen8 with 8 cores Intel Xeon E5-2650 2.60GHz)"
-set xlabel "Quad port Chelsio 10-Gigabit T540-CR queue number"
+set xlabel "Chelsio 10-Gigabit T540-CR queue number"
 set ylabel "Packets per second (minimum size, 2000 flows)\n minimum,median,maximum values of 5 benchs"
 
 # Put the label inside the graph
