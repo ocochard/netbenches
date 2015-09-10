@@ -15,8 +15,11 @@ Some results:
    - [Impact of Intel 82599EB queue number on forwarding performance with 4 cores Xeon L5630] (Xeon_L5630-4Cores-Intel_82599EB/ix.num_queues/results/fbsd11-routing.r287531/README.md)	
    - [Impact of Intel i350 queue number on forwarding performance with 4 cores Atom C2558E] (Atom_C2558_4Cores-Intel_i350/igb.num_queues/results/fbsd11-routing.r287531/README.md)
  - Impact of enabling ipfw or pf:
-    - [Impact of enabling ipfw or pf on forwarding performance with 8 cores Xeon E5-2650] (Xeon_E5-2650-8Cores-Chelsio_T540-CR/fastforwarding-pf-ipfw/results/fbsd10.2/README.md)
+    - [Impact of enabling ipfw or pf on forwarding performance with 8 cores Xeon E5-2650] (Xeon_E5-2650-8Cores-Chelsio_T540-CR/fastforwarding-pf-ipfw.4nxq10g/results/fbsd10.2/README.md)
     - [Impact of enabling ipfw or pf on forwarding performance with 4 cores Xeon L5630] (Xeon_L5630-4Cores-Intel_82599EB/fastforwarding-pf-ipfw/results/fbsd10.2/README.md)
  - Impact of number of static routes:
     - [Impact of number of static routes on forwarding performance with 4 cores Xeon L5630] (Xeon_L5630-4Cores-Intel_82599EB/route-contention/results/fbsd10.2/README.md)
  - [Impact of reducinq rx/tx queues to 4 and pf/ipfw on forwarding performance on FreeBSD 10.2] (Xeon_E5-2650-8Cores-Chelsio_T540-CR/fastforwarding-pf-ipfw.4nxq10g/results/fbsd10.2/README.md)
+ - Chelsio T540-CR tunning:
+    - [Impact of disabling cxgbe.toecaps_allowed on forwarding performance  with 8 cores Xeon E5-2650] (Xeon_E5-2650-8Cores-Chelsio_T540-CR/cxgbe.toecaps_allowed/results/fbsd11-routing.r287531/README.md)
+   

@@ -50,6 +50,16 @@ data_2_gnuplot () {
 	else
 		echo "TODO: plot.dat when different configuration sets are not used"	
 	fi
+	# Merge all .data file into one gnuplot.data
+	[ -f ${LAB_RESULTS}/gnuplot.data ] && mv ${LAB_RESULTS}/gnuplot.data ${LAB_RESULTS}/gnuplot.bak
+ 	for DATA in `ls -1 ${LAB_RESULTS}/*.data`; do
+        local FILENAME=`basename ${DATA}`
+        local KEY=${FILENAME%.data}
+		[ ! -f ${LAB_RESULTS}/gnuplot.data ] && echo "#key median minimum maximum" > ${LAB_RESULTS}/gnuplot.data
+        echo -n "${KEY} " >> ${LAB_RESULTS}/gnuplot.data
+		grep -v '#' ${DATA} >> ${LAB_RESULTS}/gnuplot.data
+    done
+
 	return 0
 }
 
