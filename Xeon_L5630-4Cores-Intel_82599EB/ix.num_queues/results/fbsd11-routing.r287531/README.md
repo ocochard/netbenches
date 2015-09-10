@@ -5,31 +5,39 @@ Impact of Intel 82599EB queue number on forwarding performance
   - 2000 flows of smallest UDP packets
   - Traffic load at 14.48Mpps (10Gigabit line-rate)
 
-![Impact of Intel 82599EB queue number on forwarding performance on FreeBSD 11-melifaro.r287478](graph.png)
+![Impact of Intel 82599EB queue number on forwarding performance on FreeBSD 11-routing.r287478](graph.png)
 
 
 ```
-x pps.one
-+ pps.two
-* pps.four
-+------------------------------------------------------------------------+
-|x                       +                      *                        |
-|x                      ++                      *                        |
-|x                      ++                      *                  *    *|
-|A                                                                       |
-|                       |A                                               |
-|                                            |__M________A___________|   |
-+------------------------------------------------------------------------+
+x pps.1
++ pps.2
+* pps.3
+% pps.4
++--------------------------------------------------------------------------+
+|                                                       *                % |
+|xx                                  ++                 *                %%|
+|xx                                  ++     *           **               %%|
+|AM                                                                        |
+|                                    AM                                    |
+|                                               |_____A_M__|               |
+|                                                                        A||
++--------------------------------------------------------------------------+
     N           Min           Max        Median           Avg        Stddev
-x   5        759291        773763        765173        766550      6599.305
-+   5       1470491       1500417       1493012     1488466.2     11822.901
+x   5        759319        774855        773124      768447.2     7349.3996
++   4       1481953       1500378       1499909     1493592.5     8632.4591
 Difference at 95.0% confidence
-	721916 +/- 13963.5
-	94.1773% +/- 1.8216%
-	(Student's t, pooled s = 9574.23)
-*   5       2211060       2960408       2229282       2488692     370125.23
+        725145 +/- 12572.6
+        94.365% +/- 1.6361%
+        (Student's t, pooled s = 7924.76)
+*   5       1630229       1882969       1872658     1825125.2     109183.68
 Difference at 95.0% confidence
-	1.72214e+06 +/- 381761
-	224.661% +/- 49.8025%
-	(Student's t, pooled s = 261760)
+        1.05668e+06 +/- 112853
+        137.508% +/- 14.6859%
+        (Student's t, pooled s = 77379.2)
+%   5       2216223       2235495       2222283     2224568.4     7995.6165
+Difference at 95.0% confidence
+        1.45612e+06 +/- 11199.8
+        189.489% +/- 1.45746%
+        (Student's t, pooled s = 7679.31)
+
 ```
