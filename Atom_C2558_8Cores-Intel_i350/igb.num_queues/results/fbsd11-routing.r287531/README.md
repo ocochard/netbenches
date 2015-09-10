@@ -7,7 +7,6 @@ Impact of Intel i350 queue number on forwarding performance
 
 ![Impact of Intel i350 queue number on forwarding performance on FreeBSD 11-routing.r287531](graph.png)
 
-ministat:
 
 ```
 x pps.1
