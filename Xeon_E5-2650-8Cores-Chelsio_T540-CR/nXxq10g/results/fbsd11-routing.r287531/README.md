@@ -7,7 +7,7 @@ Impact of Chelsio rx/tx queue number on forwarding performance
   - ntxq10g and nrxq10g = 1, 2, 3, 4, 5, 6, 7 and 8 (=number of core=default on this setup)
   - Traffic load at 10 Mpps
 
-![Impact of Chelsio rx/tx queue number on forwarding performance on FreeBSD 11-routing.r287531](graph.svg)
+![Impact of Chelsio rx/tx queue number on forwarding performance on FreeBSD 11-routing.r287531](graph.png)
 
 
 ```
