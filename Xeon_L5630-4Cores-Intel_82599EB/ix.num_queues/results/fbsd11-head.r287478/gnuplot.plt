@@ -6,10 +6,10 @@
 set yrange [0:*]
 
 # output
-#set terminal png size 1920,1200
-#set output 'graph.png'
-set terminal svg size 1024,786 font "Gill Sans,12" rounded dashed
-set output 'graph.svg'
+set terminal png size 1024,768
+set output 'graph.png'
+#set terminal svg size 1024,768 font "Gill Sans,12" rounded dashed
+#set output 'graph.svg'
 
 # Line style for axes
 set style line 80 lt 0
@@ -49,8 +49,8 @@ set ytics format '%.1s%c'
 # Only integer value for xtics
 set xtics 1
 
-set title "Impact of RX/TX queue number on FreeBSD fastforwarding performance (IBM System x3550 M3 with quad cores Intel Xeon L5630 2.13GHz, hyper-threading disabled)"
-set xlabel "Dual port Intel 82599EB 10-Gigabit queue number"
+set title "Impact of queue number on fastforwarding performance (IBM System x3550 M3 with quad cores Intel Xeon L5630 2.13GHz, HT disabled)"
+set xlabel "Intel 82599EB 10-Gigabit queue number"
 set ylabel "Packets per second (minimum size, 2000 flows)\n minimum,median,maximum values of 5 benchs"
 
 # Put the label inside the graph
