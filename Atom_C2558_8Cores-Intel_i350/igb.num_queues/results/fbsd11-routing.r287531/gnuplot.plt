@@ -57,6 +57,8 @@ set ylabel "Packets per second (minimum size, 2000 flows)\n minimum,median,maxim
 set key on inside top left
 
 # Ploting!
-plot "gnuplot.data" with errorbars title 'FreeBSD 11-head.r287478' ls 1, \
-	"gnuplot.data" with lines notitle ls 1
+plot "gnuplot.data" with errorbars title 'FreeBSD 11-routing.r287531' ls 1, \
+	"gnuplot.data" with lines notitle ls 1, \
+	"../fbsd11-head.r287478/gnuplot.data" with errorbars title 'FreeBSD 11-head.r287478' ls 2, \
+    "../fbsd11-head.r287478/gnuplot.data" with lines notitle ls 2
 

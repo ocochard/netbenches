@@ -26,5 +26,7 @@ This repository includes bench scripts, bench configuration files, raw results a
     - FreeBSD 10.1
     - [Impact of enabling ipfw or pf on forwarding performance on FreeBSD 10.1] (Xeon_L5630-4Cores-Intel_82599EB/fastforwarding-pf-ipfw/results/fbsd10.1/README.md)
  - Netgate RCC-VE 4860 (4 cores Intel Atom C2558E with quad port Intel i350)
+    - FreeBSD head project/routing
+		- [Impact of queue number on forwarding performance on FreeBSD project/routing r287531] (Atom_C2558_8Cores-Intel_i350/igb.num_queues/results/fbsd11-routing.r287531/README.md)
 	- FreeBSD head r287478
     	- [Impact of queue number on forwarding performance on FreeBSD head r287478] (Atom_C2558_8Cores-Intel_i350/igb.num_queues/results/fbsd11-head.r287478/README.md)
