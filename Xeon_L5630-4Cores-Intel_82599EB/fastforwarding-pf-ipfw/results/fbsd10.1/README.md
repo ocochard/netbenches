@@ -1,5 +1,5 @@
-Impact of enabling ipfw or pf on forwarding performance
-  - IBM System x3550 M3 with quad cores (Intel Xeon L5630 2.13GHz, hyper-threading disabled)
+Impact of enabling ipfw or pf on fastforwarding performance
+  - IBM System x3550 M3 with 4 cores (Intel Xeon L5630 2.13GHz, hyper-threading disabled)
   - Dual port Intel 82599EB 10-Gigabit and OPT SFP (SFP-10G-LR)
   - FreeBSD 10.1
   - 2000 flows of smallest UDP packets
