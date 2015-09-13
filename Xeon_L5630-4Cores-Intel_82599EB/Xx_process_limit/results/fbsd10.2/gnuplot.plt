@@ -43,6 +43,10 @@ set style line 2 lt rgb "#00A000" lw 2 pt 9
 set style line 3 lt rgb "#5060D0" lw 2 pt 5
 set style line 4 lt rgb "#F25900" lw 2 pt 13
 
+# Fill box and width
+set style fill solid
+set boxwidth 0.8
+
 # Replace long value by M (million), K (kilo), etc…
 set ytics format '%.1s%c'
 
