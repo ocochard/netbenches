@@ -53,7 +53,7 @@ set ytics format '%.0s%c'
 # Only integer value for xtics
 set xtics 1
 set title "Impact of cxgbe.toecaps_allowed on fastforwarding performance of project/routing (r287531)" noenhanced
-set xlabel "HP ProLiant DL360p Gen8 with 8 cores Intel Xeon E5-2650 2.60GHz(HT off), Chelsio T540-CR queue number"
+set xlabel "HP ProLiant DL360p Gen8 with 8 cores Intel Xeon E5-2650 2.60GHz(HT off), Chelsio T540-CR"
 set ylabel "Packets per second (minimum size, 2000 flows)\n minimum,median,maximum values of 5 benchs"
 
 # Put the label inside the graph

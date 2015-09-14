@@ -57,11 +57,7 @@ set ylabel "Packets per second (minimum size, 2000 flows)\n minimum,median,maxim
 set key on inside top left
 
 # Ploting!
-plot "gnuplot.data" with errorbars title 'FreeBSD 11-routing (r287531) random.harvest.mask=351' ls 1, \
+plot "gnuplot.data" with errorbars title 'FreeBSD 11-head (r287478) random.harvest.mask=351' ls 1, \
 	"gnuplot.data" with lines notitle ls 1, \
-	"../../../nXxq10g/results/fbsd11-routing.r287531/gnuplot.data" with errorbars title 'FreeBSD 11-routing (r287531) random.harvest.mask=511 (default)' ls 2, \
-	"../../../nXxq10g/results/fbsd11-routing.r287531/gnuplot.data" with lines notitle ls 2
-	"../fbsd11-head.r287478/gnuplot.data" with errorbars title 'FreeBSD 11-head (r287478) random.harvest.mask=351' ls 3, \
-	"../fbsd11-head.r287478/gnuplot.data" with lines notitle ls 3, \
-	"../../../nXxq10g/results/fbsd11-head.r287478/gnuplot.data" with errorbars title 'FreeBSD 11-head (r287478) random.harvest.mask=511 (default)' ls 4, \
-	"../../../nXxq10g/results/fbsd11-head.r287478/gnuplot.data" with lines notitle ls 4
+	"../../../nXxq10g/results/fbsd11-head.r287478/gnuplot.data" with errorbars title 'FreeBSD 11-head (r287478) random.harvest.mask=511 (default)' ls 2, \
+	"../../../nXxq10g/results/fbsd11-head.r287478/gnuplot.data" with lines notitle ls 2
