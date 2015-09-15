@@ -55,10 +55,12 @@ set ytics format '%.1s%c'
 set y2tics format '%.1s%cb/s' 
 
 # disable xtics
-unset xtics
+#unset xtics
+# Only integer value for xtics
+set xtics 1
 
 set title "Impact of enabling fastforwarding/ipfw/pf on forwarding performance (PC Engines APU, 2 cores AMD G-T40E and RTL8111E)"
-set xlabel "Note: fastforwarding is enabled for all ipfw and pf benchs. 2 firewall rules only"
+set xlabel "Note: fastforwarding is enabled for all ipfw and pf benchs. 2 firewall rules only. harvest.mask=351"
 set ylabel "Packets per second (minimum size, 2000 flows)\n minimum,median,maximum values of 5 benchs"
 set y2label "Theorical equity using IMIX distribution (Ethernet throughput)"
 
@@ -67,9 +69,9 @@ set key on inside top right
 
 # Ploting!
 plot "gnuplot.data" using 0:2:xtic(1) with boxes title "FreeBSD 11-routing r287531" ls 1, \
-	 "gnuplot.data" using 0:2:3:4 with yerrorbars lc rgb 'black' pt 1 lw 2 notitle, \
-	 "../fbsd10.2/gnuplot.data" using 0:2:xtic(1) with boxes title "FreeBSD 10.2" ls 3, \
-	 "../fbsd10.2/gnuplot.data" using 0:2:3:4 with yerrorbars lc rgb 'black' pt 1 lw 2 notitle, \
-	 "../fbsd11-head.r287478/gnuplot.data" using 0:2:xtic(1) with boxes title "FreeBSD 11-head r287478" ls 2, \
-	 "../fbsd11-head.r287478/gnuplot.data" using 0:2:3:4 with yerrorbars lc rgb 'black' pt 1 lw 2 notitle, \
+         "gnuplot.data" using 0:2:3:4 with yerrorbars lc rgb 'black' pt 1 lw 2 notitle, \
+         "../fbsd10.2/gnuplot.data" using 0:2:xtic(1) with boxes title "FreeBSD 10.2" ls 3, \
+         "../fbsd10.2/gnuplot.data" using 0:2:3:4 with yerrorbars lc rgb 'black' pt 1 lw 2 notitle, \
+         "../fbsd11-head.r287478/gnuplot.data" using 0:2:xtic(1) with boxes title "FreeBSD 11-head r287478" ls 2, \
+         "../fbsd11-head.r287478/gnuplot.data" using 0:2:3:4 with yerrorbars lc rgb 'black' pt 1 lw 2 notitle, \
 

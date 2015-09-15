@@ -58,7 +58,7 @@ set y2tics format '%.1s%cb/s'
 unset xtics
 
 set title "Impact of enabling ipfw/pf on fastforwarding performance (PC Engines APU, 2 cores AMD G-T40E and RTL8111E)"
-set xlabel "Note: fastforwarding is enabled for all ipfw and pf benchs. 2 firewall rules only"
+set xlabel "Note: fastforwarding is enabled for all ipfw and pf benchs. 2 firewall rules only. harvest.mask=351"
 set ylabel "Packets per second (minimum size, 2000 flows)\n minimum,median,maximum values of 5 benchs"
 set y2label "Theorical equity using IMIX distribution (Ethernet throughput)"
 

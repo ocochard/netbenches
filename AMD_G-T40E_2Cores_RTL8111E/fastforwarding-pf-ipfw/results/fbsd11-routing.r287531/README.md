@@ -3,6 +3,7 @@ Impact of enabling ipfw/pf on fastforwarding performance
   - 3 Realtek RTL8111E Gigabit Ethernet ports
   - FreeBSD 11 routing.r287531
   - 2000 flows of smallest UDP packets
+  - random.harvest.mask=351
   - Traffic load at 1.448Mpps (Gigabit line-rate)
 
 ![Impact of enabling ipfw/pf on fastforwarding performance on FreeBSD 11 routing.r287531](graph.png)
@@ -13,25 +14,24 @@ x pps.fastforwarding
 + pps.ipfw-statefull
 * pps.pf-statefull
 +--------------------------------------------------------------------------+
-|*                                                                         |
-|*                                                                         |
-|*              +                                                          |
-|*              +                                                        xx|
-|*             +++                                                      xxx|
-|                                                                        A||
-|              |A|                                                         |
-|A                                                                         |
+|*                +                                                       x|
+|**               +                                                       x|
+|**              ++                                                       x|
+|                                                                         A|
+|                |A                                                        |
+|A|                                                                        |
 +--------------------------------------------------------------------------+
     N           Min           Max        Median           Avg        Stddev
-x   5        156895        158381        157747      157775.2     572.24313
-+   5        104222        105949        104527        104826     673.14709
+x   5        161205        161460        161225        161280     105.29482
++   5        106957        107978        107756      107633.8     407.48031
 Difference at 95.0% confidence
-	-52949.2 +/- 911.141
-	-33.5599% +/- 0.577493%
-	(Student's t, pooled s = 624.736)
-*   5         90844         91248         91177       91087.2     171.40216
+        -53646.2 +/- 434.027
+        -33.2628% +/- 0.269114%
+        (Student's t, pooled s = 297.596)
+*   5         91817         92411         92078         92149     247.02935
 Difference at 95.0% confidence
-	-66688 +/- 616.044
-	-42.2677% +/- 0.390457%
-	(Student's t, pooled s = 422.398)
+        -69131 +/- 276.932
+        -42.864% +/- 0.171709%
+        (Student's t, pooled s = 189.882)
+
 ```
