@@ -48,7 +48,7 @@ reboot_dut () {
 	# Need to wait an online return before continuing too
 	echo -n "Rebooting DUT and waiting device return online..."
 	# WARNING: If configuration was not saved, it will ask user for configuration saving
-	rcmd ${DUT_ADMIN} reboot > /dev/null 2>&1
+	rcmd ${DUT_ADMIN} 'shutdown -r +2s' > /dev/null 2>&1
 	sleep 20
 	#wait-for-dut online and in forwarding mode
 	local TIMEOUT=${REBOOT_TIMEOUT}
