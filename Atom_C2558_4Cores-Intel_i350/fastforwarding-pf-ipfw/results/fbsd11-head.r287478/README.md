@@ -1,7 +1,7 @@
 Impact of enabling fastforwarding/ipfw/pf on forwarding performance
   - Netgate RCC-VE 4860 (4 cores Intel Atom C2558E)
   - Quad port Intel i350
-  - FreeBSD 11-routing.r287531
+  - FreeBSD 11-head r287478
   - 2000 flows of smallest UDP packets
   - Traffic load at 1.448Mpps (Gigabit line-rate)
 
