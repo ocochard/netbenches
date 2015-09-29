@@ -9,6 +9,7 @@ Comparing benefit of patch D3737 on forwarding performance
 ![Comparing benefit of patch D3737 on forwarding performance](graph.png)
 
 
+D3737 is a little slower than fastforwarding on this device:
 ```
 x pps.forwarding (with D3737 patch)
 + ../fbsd11-head.r287478/pps.fastforwarding (without D3737 patch)
@@ -24,5 +25,4 @@ Difference at 95.0% confidence
         1164.4 +/- 908.92
         0.811504% +/- 0.633453%
         (Student's t, pooled s = 623.213)
-root@orange:~/netbenchs/AMD_G-T40E_2Cores_RTL8111E/fastforwarding-pf-ipfw/results/fbsd11-head.r287478-D37
 ```

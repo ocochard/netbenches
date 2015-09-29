@@ -8,6 +8,7 @@ Comparing benefit of patch D3737 on forwarding performance
 ![Comparing benefit of patch D3737 on FreeBSD 11-head r287478 forwarding performance](graph.png)
 
 
+D3737 is a little slower than fastforwarding on this device:
 ```
 x pps.forwarding
 + ../fbsd11-head.r287478/pps.fastforwarding
