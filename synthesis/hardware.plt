@@ -6,8 +6,15 @@
 set yrange [0:*]
 
 # output
-set terminal png size 1024,768
+#set terminal png size 1024,768
+#set terminal png size 1920,1080 font "Gill Sans,22"
+#set terminal png size 3840,2160 font "Gill Sans,44"
+set terminal pngcairo size 1024,768 enhanced font "Gill Sans,12"
 set output 'hardware.png'
+#set terminal svg size 1024,768 font "Gill Sans,16" rounded dashed
+#set output 'graph.svg'
+#set terminal pdf size 10,6 color font "Gill Sans,16" rounded dashed enhanced
+#set output 'graph.pdf'
 
 # Line style for axes
 set style line 80 lt 0
@@ -43,6 +50,8 @@ set style line 4 lt rgb "#F25900" lw 2 pt 13
 
 # Fill box and width
 set style fill solid
+#transparent pattern 4 bo
+#solid 0.5 noborder
 set boxwidth 0.8
 # Draw a corresponding IMIX Eth throughput estimation on the right side
 set y2tics
@@ -52,13 +61,14 @@ set link y2 via y * 2834.666667 inverse y/2834.666667
 set ytics format '%.1s%c'
 set y2tics format '%.1s%cb/s' 
 
-# disable xtics
-unset xtics
+
+# Only integer value for xtics
+set xtics 1
 
 set title "Impact of enabling ipfw/pf on fastforwarding performance with FreeBSD 10.2"
 set xlabel "Note: fastforwarding is enabled for all ipfw and pf benchs. 2 firewall rules only"
 set ylabel "Packets per second (minimum size, 2000 flows)\n minimum,median,maximum values of 5 benchs"
-set y2label "Theorical equity using IMIX distribution (Ethernet throughput)"
+set y2label "Theorical equity using simple IMIX distribution (Ethernet throughput)"
 
 # Put the label inside the graph
 set key on inside top right
