@@ -77,7 +77,15 @@ bench () {
 		rcmd ${SENDER_ADMIN} "${SENDER_START_CMD}" >> $1.${ITER}.sender 2>&1 &
 		JOB_SENDER=$!
 		echo -n "Waiting for end of bench ${TEST_ITER}/${TOTAL_TEST}..."
-		wait ${JOB_SENDER}
+		# There is a bug with pkt-gen: It can sometime never end after finishing sending all packets,
+		# because stuck at "sender_body [1214] pending tx tail 511 head 2047 on ring 2"
+		# Then this simple wait command didn't works:
+		#wait ${JOB_SENDER}
+		# in place, will look every 2 second for "flush tail" in the sender log
+		while true; do
+			sleep 2
+			grep -q 'flush tail' $1.${ITER}.sender && break
+		done
 		rcmd ${RECEIVER_ADMIN} "${RECEIVER_STOP_CMD}" || echo "DEBUG: Can't kill pkt-gen"
 		
 		#scp ${RECEIVER_ADMIN}:/tmp/bench.log.receiver $1.${ITER}.receiver
