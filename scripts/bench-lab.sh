@@ -352,6 +352,9 @@ for UPGRADE_IMAGE in ${IMAGES_LIST}; do
 	if [ ! "${UPGRADE_IMAGE}" = "none" ]; then
 		echo "Testing image serie: ${UPGRADE_IMAGE}"
 		upgrade_image ${UPGRADE_IMAGE} || die "Can't upgrade to image ${UPGRADE_IMAGE}"
+		# It's not possible to do an upgrade_image and pushing new CFG in one time
+		# because if new CFG include /boot change, it will save change on the old partition
+		reboot_dut
 		SVN_NUMBER=.`basename ${UPGRADE_IMAGE} | cut -d '-' -f 2`
 	else
 		SVN_NUMBER=''
