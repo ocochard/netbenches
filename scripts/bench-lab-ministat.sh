@@ -13,14 +13,16 @@ data_2_ministat () {
 	local LINES=`wc -l $1`
 	LINES=`echo ${LINES} | cut -d ' ' -f1`
 	# Remove the first 15 lines (garbage or not good result) and the 10 last lines (bad result too)
-	head -n `expr ${LINES} - 10` $1 | tail -n `expr ${LINES} - 10 - 15` > /tmp/clean.1.data
+	CLEAN_ONE=`mktemp /tmp/clean.1.data.XXXXXX` || die "can't create /tmp/clean.1.data.xxxx"
+	head -n `expr ${LINES} - 10` $1 | tail -n `expr ${LINES} - 10 - 15` > ${CLEAN_ONE}
 	# Filter the output (still filtering "0 pps" lines in case of) and kept only the numbers:
 	# example of good line:
 	# 290.703575 main_thread [1441] 729113 pps (730571 pkts in 1002000 usec)
-	grep -E 'main_thread[[:space:]]\[[[:digit:]]+\][[:space:]][1-9].*pps' /tmp/clean.1.data | cut -d ' ' -f 4 > /tmp/clean.2.data
+	CLEAN_TWO=`mktemp /tmp/clean.2.data.XXXXXX` || die "can't create /tmp/clean.2.data.xxxx"
+	grep -E 'main_thread[[:space:]]\[[[:digit:]]+\][[:space:]][1-9].*pps' ${CLEAN_ONE} | cut -d ' ' -f 4 > ${CLEAN_TWO}
 	#Now we calculate the median value of this run with ministat
-	echo `ministat -n /tmp/clean.2.data | tail -n -1 | tr -s ' ' | cut -d ' ' -f 5` >> ${LAB_RESULTS}/$2
-	rm /tmp/clean.1.data /tmp/clean.2.data || die "ERROR: can't delete clean.X.data"
+	echo `ministat -n ${CLEAN_TWO} | tail -n -1 | tr -s ' ' | cut -d ' ' -f 5` >> ${LAB_RESULTS}/$2
+	rm ${CLEAN_ONE} ${CLEAN_TWO} || die "ERROR: can't delete clean.X.data.xxx"
 	return 0
 }
 

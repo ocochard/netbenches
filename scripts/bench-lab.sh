@@ -342,9 +342,10 @@ icmp_test_all || die "ICMP connectivity test failed"
 ssh-add -l > /dev/null 2 || echo "WARNING: No key loaded in ssh-agent?"
 ssh_push_key || ( echo "SSH connectivity test failed";exit 1 )
 
-[ -f /tmp/bench-mail ] && rm /tmp/bench-mail
-echo "Bench started at:" >> /tmp/bench-mail
-echo `date` >> /tmp/bench-mail
+MAILFILE=`mktemp /tmp/bench-mail.XXXXXX` || die "can't create tmp/bench-mail.xxx"
+
+echo "Bench started at:" >> ${MAILFILE}
+echo `date` >> ${MAILFILE}
 
 echo "Starting the benchs"
 for UPGRADE_IMAGE in ${IMAGES_LIST}; do
@@ -382,7 +383,7 @@ done
 
 echo "All bench tests were done, results in ${BENCH_DIR}"
 
-echo "Bench end at:" >> /tmp/bench-mail
-echo `date` >> /tmp/bench-mail
-mail -s "Benchs ${BENCH_DIR} Done" ${MAIL} < /tmp/bench-mail
-
+echo "Bench end at:" >> ${MAILFILE}
+echo `date` >> ${MAILFILE}
+mail -s "Benchs ${BENCH_DIR} Done" ${MAIL} < ${MAILFILE}
+[ -f ${MAILFILE} ] && rm ${MAILFILE}
