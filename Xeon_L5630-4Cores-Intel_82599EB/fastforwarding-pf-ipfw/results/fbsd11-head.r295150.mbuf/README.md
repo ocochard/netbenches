@@ -1,7 +1,7 @@
 Impact of glebius'mbuf not inlined" patch and ipfw/pf on forwarding performance
   - IBM System x3550 M3 with quad cores (Intel Xeon L5630 2.13GHz, hyper-threading disabled)
   - Dual port Intel 82599EB 10-Gigabit and OPT SFP (SFP-10G-LR)
-  - FreeBSD projects/routing r287531
+  - FreeBSD 11 head r295150
   - 2000 flows of smallest UDP packets
   - 2 firewall rules, 2 static routes
   - Traffic load at 14.48Mpps (10Gigabit line-rate)
