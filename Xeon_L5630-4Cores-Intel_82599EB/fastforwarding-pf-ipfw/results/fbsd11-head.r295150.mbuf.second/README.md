@@ -1,4 +1,4 @@
-Impact of glebius'mbuf not inlined" patch [https://reviews.freebsd.org/D5180] (D5180) and ipfw/pf on forwarding performance
+Impact of glebius'mbuf not inlined" patch [D5180] (https://reviews.freebsd.org/D5180) and ipfw/pf on forwarding performance
   - IBM System x3550 M3 with quad cores (Intel Xeon L5630 2.13GHz, hyper-threading disabled)
   - Dual port Intel 82599EB 10-Gigabit and OPT SFP (SFP-10G-LR)
   - FreeBSD 11 head r295150
@@ -8,7 +8,7 @@ Impact of glebius'mbuf not inlined" patch [https://reviews.freebsd.org/D5180] (D
   - harvest.mask=351
 
 This is the second run of a previous bench: Checking bench methodology for consistent results.
-[../fbsd11-head.r295150.mbuf/README.md] (First run benches results)
+[First run benches results] (../fbsd11-head.r295150.mbuf/README.md)
 
 Synthesis of difference at 95.0% confidence:
   - forwarding: No difference (same as first run)

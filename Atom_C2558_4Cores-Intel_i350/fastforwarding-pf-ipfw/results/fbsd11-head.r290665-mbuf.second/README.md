@@ -1,4 +1,4 @@
-Impact of glebius'mbuf not inlined" patch [https://reviews.freebsd.org/D5180] (D5180) and ipfw/pf on forwarding performance
+Impact of glebius'mbuf not inlined" patch [D5180] (https://reviews.freebsd.org/D5180)and ipfw/pf on forwarding performance
   - Netgate RCC-VE 4860 (4 cores Intel Atom C2558E)
   - Quad port Gigabit Intel i350
   - FreeBSD 11-295150
@@ -6,7 +6,7 @@ Impact of glebius'mbuf not inlined" patch [https://reviews.freebsd.org/D5180] (D
   - Traffic load at 1.448Mpps (Gigabit line-rate)
 
 This is the second run of a previous bench: Checking bench methodology for consistent results.
-[../fbsd11-head.r295150.mbuf/README.md] (First run benches results)
+[First run benches results] (../fbsd11-head.r295150.mbuf/README.md)
 
 Synthesis of difference at 95.0% confidence:
   - forwarding: No difference proven (same as first run)
