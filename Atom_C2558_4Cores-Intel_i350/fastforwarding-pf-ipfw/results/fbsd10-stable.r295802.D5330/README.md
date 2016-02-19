@@ -5,8 +5,6 @@ Comparing impact of patch D5330 on forwarding performance (and pf/ipfw impact)
   - 2000 flows of smallest UDP packets
   - Traffic load at 1.448Mpps (Gigabit line-rate)
 
-![Comparing benefit of patch D5330 on FreeBSD 10-stable r287478 forwarding performance](graph.png)
-
 This patch, on this setup, reduce forwarding performance by -9% (+/- 1%):
 ```
 x 295802.forwarding
