@@ -23,6 +23,9 @@ x  10     2108683.5       2553645     2460830.8     2420369.1     160855.67
 No difference proven at 95.0% confidence
 
 ```
+Forwarding pmc (CPU_CLK_UNHALTED_CORE) gprof files:
+  - [10-stable r295802 pmc gprof] (pmcstat-gprof-295802.txt)
+  - [10-stable r295802 with D5330 pmc gprof] (pmcstat-gprof-295802D5330.txt)
 
 Little regression (-3.3% +/- 1.5%) with D5330 with ipfw enabled:
 ```
