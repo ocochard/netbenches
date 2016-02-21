@@ -24,6 +24,10 @@ Difference at 95.0% confidence
         (Student's t, pooled s = 7673.03)
 ```
 
+Forwarding pmc (CPU_CLK_UNHALTED_CORE) gprof files:
+  - [10-stable r295802 pmc gprof] (pmcstat-gprof-295802.txt)
+  - [10-stable r295802 with D5330pmc gprof] (pmcstat-gprof-295802D5330.txt)
+
 Same for ipfw:
 ```
 x 295802.ipfw-statefull
