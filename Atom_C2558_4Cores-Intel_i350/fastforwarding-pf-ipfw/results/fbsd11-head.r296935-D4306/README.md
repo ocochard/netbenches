@@ -1,4 +1,4 @@
-Comparing benefit of patch D4304 on forwarding performance
+Comparing benefit of patch [D4306] (https://reviews.freebsd.org/D4306) on forwarding performance
   - Netgate RCC-VE 4860 (4 cores Intel Atom C2558E)
   - Quad port Intel i350
   - FreeBSD 11 head r296935
@@ -7,10 +7,10 @@ Comparing benefit of patch D4304 on forwarding performance
   - Traffic load at 1.448Mpps (Gigabit line-rate)
 
 
-Same performance (at 95% confidence) with D4304 and forwarding mode:
+Same performance (at 95% confidence) with D4306 and forwarding mode:
 ```
 x 296935.forwarding (pps)
-+ 296935 with D4304.forwarding (pps)
++ 296935 with D4306.forwarding (pps)
 +--------------------------------------------------------------------------+
 |                    +                                                     |
 |x                  ++ +       x      x  xx *+xx*  x    +   +             +|
@@ -27,7 +27,7 @@ No difference proven at 95.0% confidence
 About -1% with pf enabled:
 ```
 x 296935.pf-statefull (pps)
-+ 296935 with D4304.pf-statefull (pps)
++ 296935 with D4306.pf-statefull (pps)
 +--------------------------------------------------------------------------+
 |               x                                 +                        |
 |x              x x xx x   x +       + +  +  x    +  +       +  +         +|
@@ -48,7 +48,7 @@ About -1% with ipfw enabled:
 
 ```
 x 296935.ipfw-statefull (pps)
-+ 296935 with D4304.ipfw-statefull (pps)
++ 296935 with D4306.ipfw-statefull (pps)
 +--------------------------------------------------------------------------+
 |                       x x                +                               |
 |x       +x      x    * x x      x         + ++      +   +   +   x        +|

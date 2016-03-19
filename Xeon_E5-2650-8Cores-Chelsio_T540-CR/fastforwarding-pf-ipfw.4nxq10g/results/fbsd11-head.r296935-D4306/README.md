@@ -1,4 +1,4 @@
-Comparing benefit of patch D4304 on forwarding performance
+Comparing benefit of patch [D4306] (https://reviews.freebsd.org/D4306) on forwarding performance
   - HP ProLiant DL360p Gen8 with height cores (Intel Xeon E5-2650 @ 2.60GHz)
   - Quad port Chelsio 10-Gigabit T540-CR and OPT SFP (SFP-10G-LR)
   - FreeBSD 11-head r296935
@@ -7,10 +7,10 @@ Comparing benefit of patch D4304 on forwarding performance
   - ntxq10g and nrxq10g = 4 (and not the default value of ncpu=8)
   - Traffic load at 10Mpps
 
-Same performance (at 95% confidence) with D4304 and forwarding mode:
+Same performance (at 95% confidence) with D4306 and forwarding mode:
 ```
 x r296935.forwarding (pps)
-+ r296935 with D4304.forwarding (pps)
++ r296935 with D4306.forwarding (pps)
 +--------------------------------------------------------------------------+
 |x   +x  ++  +  +x +                x+     +  x+*               xx        x|
 |              |________________________A_____M__________________|         |
@@ -25,7 +25,7 @@ x  10     2678498.5       3143659     2963824.5     2928823.5     160645.28
 About -1.4% performance with pf enabled:
 ```
 x r296935.pf-statefull (pps)
-+ r296935 with D4304.pf-statefull (pps)
++ r296935 with D4306.pf-statefull (pps)
 +--------------------------------------------------------------------------+
 |+                                                                         |
 |+   ++      +  x  x    + x+ x+    x  x          +  xx +    x             x|
@@ -44,7 +44,7 @@ Difference at 95.0% confidence
 About -2% performance with ipfw enabled:
 ```
 x r296935.ipfw-statefull (pps)
-+ r296935 with D4304.ipfw-statefull (pps)
++ r296935 with D4306.ipfw-statefull (pps)
 +--------------------------------------------------------------------------+
 |+     + +          + *        +    x  + *    *      x        x xx+ x     x|
 |                                    |_______________A____M___________|    |
