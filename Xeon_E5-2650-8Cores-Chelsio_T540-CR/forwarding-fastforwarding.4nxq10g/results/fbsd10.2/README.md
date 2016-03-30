@@ -6,7 +6,7 @@ Comparing impact of enabling fastforwarding
   - ntxq10g and nrxq10g = 4 (and not the default value of ncpu=8)
   - Traffic load at 10Mpps
 
-Same performance (at 95% confidence) with D5330 and fastforwarding mode:
+About 130% performance improvement between forwarding and fastforwarding mode:
 
 ```
 x pps.forwarding
