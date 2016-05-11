@@ -26,10 +26,24 @@ SSH_CMD="/usr/bin/ssh -x -a -q -2 -o \"PreferredAuthentications publickey\" -o \
 
 ###### End of user modifiable variable section #####
 
-# Default Counters
-CONFIG_ITER=1
-IMAGE_ITER=1
-TEST_ITER=1
+# Counting for running bench
+BENCH_RUNNING_COUNTER=1
+# Bench configuration file
+CONFIG_FILE=''
+# Directory containing configuration sets
+CONFIG_SET_DIR=''
+# Directory containing nanobsd upgrade image 
+IMAGES_DIR=''
+# Directory containing pkg-gen configuration file
+PKTGEN_DIR=''
+# Directory containing Bench results
+RESULTS_DIR="/tmp/benchs"
+# Number of iteration for the same tests (for filling ministat)
+BENCH_ITER=5
+# Counting total number of tests bench
+BENCH_ITER_TOTAL=0
+# Report's email receiver
+MAIL="root@localhost"
 
 # An usefull function (from: http://code.google.com/p/sh-die/)
 die() { echo -n "EXIT: " >&2; echo "$@" >&2; exit 1; }
@@ -61,64 +75,136 @@ reboot_dut () {
 	return 0
 }
 
-bench () {
-	# Benching script
+bench_image () {
+	# Start to bench a list of images
 	# $1: Directory/prefix-name of output log file
-	echo "Start bench serie $1"
-	for ITER in `seq 1 ${TEST_ITER_MAX}`; do
-		#start receiving tool on RECEIVER
-		echo "CMD: ${RECEIVER_START_CMD}" > $1.${ITER}.receiver
-		rcmd ${RECEIVER_ADMIN} "${RECEIVER_START_CMD}" >> $1.${ITER}.receiver 2>&1 &
-		#JOB_RECEIVER=$!
-		
-		#Alternate method with log file stored on RECEIVER (if tool is verbose)	
-		#rcmd ${RECEIVER_ADMIN} "nohup netreceive 9090 \>\& /tmp/bench.log.receiver \&"
-		echo "CMD: ${SENDER_START_CMD}" > $1.${ITER}.sender
-		rcmd ${SENDER_ADMIN} "${SENDER_START_CMD}" >> $1.${ITER}.sender 2>&1 &
-		JOB_SENDER=$!
-		echo -n "Waiting for end of bench ${TEST_ITER}/${TOTAL_TEST}..."
-		# There is a bug with pkt-gen: It can sometime never end after finishing sending all packets,
-		# because stuck at "sender_body [1214] pending tx tail 511 head 2047 on ring 2"
-		# Then this simple wait command didn't works:
-		#wait ${JOB_SENDER}
-		# in place, will look every 2 second for "flush tail" in the sender log
-		while true; do
-			sleep 2
-			grep -q 'flush tail' $1.${ITER}.sender && break
-		done
-		rcmd ${RECEIVER_ADMIN} "${RECEIVER_STOP_CMD}" || echo "DEBUG: Can't kill pkt-gen"
-		
-		#scp ${RECEIVER_ADMIN}:/tmp/bench.log.receiver $1.${ITER}.receiver
-		#kill ${JOB_RECEIVER}
-	
-		echo "done"
 
-		# if we did the last test, we can exit (avoid to wait for an useless reboot)
-		[ ${TEST_ITER} -eq ${TOTAL_TEST} ] && return 0
-		TEST_ITER=$(( ${TEST_ITER} + 1 ))
-		
-		# if we did the last test of the serie, we can exit and avoid an useless reboot
-		# because after this last, it will be rebooted outside this function
-		[ ${ITER} -eq ${TEST_ITER_MAX} ] && return 0	
-		
-		reboot_dut
-	done
-	return 0
+	if [ -n "${IMAGES_DIR}" ]; then
+		for IMAGE in `ls -1 ${IMAGES_DIR}/BSDRP-* | grep upgrade`; do
+			(${COUNTING}) || echo "Start firmware image set: ${IMAGE}"
+			# When using multiple image, they are using svn revision number in their filename like:
+			# BSDRP-293643-upgrade-amd64-serial.img.xz
+			# BSDRP-294235-upgrade-amd64-serial.img.xz
+			# Use this revision as prefix for the next bench set
+			IMAGE_PREFIX=`basename ${IMAGE} | cut -d '-' -f 2`
+			[ -z "${IMAGE_PREFIX}" ] &&  IMAGE_PREFIX=`basename ${IMAGE}`
+			(${COUNTING}) || upgrade_image ${IMAGE} || die "Can't upgrade to image ${IMAGE}"
+			# It's not possible to do an upgrade_image and pushing new CFG in one time
+			# because if new CFG include /boot change, it will save change on the old partition
+			# Then we need to force a reboot here
+			(${COUNTING}) || reboot_dut
+			
+			bench_cfg $1.${IMAGE_PREFIX}
+		done
+	else
+		IMAGE_PREFIX=""
+		bench_cfg $1
+	fi
 }
 
 bench_cfg () {
-	# Bench this configuration-set
-	# $1: configuration-set dir
-	# $2: output-file-prefix	
-	echo "Starting sub-configuration serie bench test: $1..."
-	upload_cfg $1 || die "Can't upload $1"
+	# Bench a list of configurations
+	# $1: Directory/prefix-name of output log file
+	
+	if [ -n "${CONFIG_SET_DIR}" ]; then
+		for CFG in `ls -1d ${CONFIG_SET_DIR}/*`; do
+			CFG_PREFIX=`basename ${CFG}`
+			(${COUNTING}) || echo "Start configuration set: ${CFG_PREFIX}"
+			(${COUNTING}) || upload_cfg ${CFG} || die "Can't upload ${CFG}"
+			(${COUNTING}) || reboot_dut
+			bench_pktgen $1.${CFG_PREFIX}
+		done
+	else
+		CFG_PREFIX=""
+		bench_pktgen $1
+	fi
+
+}
+
+bench_pktgen () {
+	# Multiple pkt-gen configuration (multiple differents number of flows)
+	# $1: Directory/prefix-name of output log file
+
+	if [ -n "${PKTGEN_DIR}" ]; then
+		for PKTGEN_CFG in `ls -1d ${PKTGEN_DIR}/*`; do
+			(${COUNTING}) || echo "Start pkt-gen set: ${PKTGEN_CFG}"
+			# Load new netmap pkt-gen variables
+			. ${PKTGEN_CFG}
+			# Then need to reload new configuration file too
+			. ${CONFIG_FILE}
+			PKTGEN_PREFIX=`basename ${PKTGEN_CFG}`
+			bench_iter $1.${PKTGEN_PREFIX}
+		done
+	else
+		PKTGEN_PREFIX=""
+		bench_iter $1
+	fi
+}
+
+bench_iter () {
+	# Iteration function
+	# $1 prefix-name
+	if !(${COUNTING}); then
+		echo "IMAGE=\"${IMAGE_PREFIX}\"" > $1.info
+		echo "CFG=\"${CFG_PREFIX}\"" >> $1.info
+		echo "PKTGEN=\"${PKTGEN_PREFIX}\"" >> $1.info
+		echo -n "UNAME=\"`rcmd ${DUT_ADMIN} "uname -a"`\"" >> $1.info
+	fi
+	
+	BENCH_ITER_COUNTER=0
+	for ITER in `seq 1 ${BENCH_ITER}`; do
+		if (${COUNTING}); then
+			#Increment the TOTAL counter only in COUNTING mode
+			BENCH_ITER_TOTAL=$(( ${BENCH_ITER_TOTAL} + 1 ))
+		else
+			#And start bench otherwise
+			bench $1.${ITER}
+		fi
+	done
+}
+
+bench () {
+	# Benching script
+	# $1: Directory/prefix-name of output log file
+	echo "Start bench serie `basename $1`"
+	#start receiving tool on RECEIVER
+	echo "CMD: ${RECEIVER_START_CMD}" > $1.receiver
+	rcmd ${RECEIVER_ADMIN} "${RECEIVER_START_CMD}" >> $1.receiver 2>&1 &
+	#JOB_RECEIVER=$!
+		
+	#Alternate method with log file stored on RECEIVER (if tool is verbose)	
+	#rcmd ${RECEIVER_ADMIN} "nohup netreceive 9090 \>\& /tmp/bench.log.receiver \&"
+	echo "CMD: ${SENDER_START_CMD}" > $1.sender
+	rcmd ${SENDER_ADMIN} "${SENDER_START_CMD}" >> $1.sender 2>&1 &
+	JOB_SENDER=$!
+	echo -n "Waiting for end of bench ${BENCH_RUNNING_COUNTER}/${BENCH_ITER_TOTAL}..."
+	# There is a bug with pkt-gen: It can sometime never end after finishing sending all packets,
+	# because stuck at "sender_body [1214] pending tx tail 511 head 2047 on ring 2"
+	# Then this simple wait command didn't works:
+	#wait ${JOB_SENDER}
+	# in place, will look every 2 second for "flush tail" in the sender log
+	while true; do
+		sleep 2
+		grep -q 'flush tail' $1.sender && break
+	done
+	rcmd ${RECEIVER_ADMIN} "${RECEIVER_STOP_CMD}" || echo "DEBUG: Can't kill pkt-gen"
+	
+	#scp ${RECEIVER_ADMIN}:/tmp/bench.log.receiver $1.receiver
+	#kill ${JOB_RECEIVER}
+
+	echo "done"
+	
+	# if we did the last test of all, we can exit (avoid to wait for an useless reboot)
+	[ ${BENCH_RUNNING_COUNTER} -eq ${BENCH_ITER_TOTAL} ] && return 0
+
+	BENCH_RUNNING_COUNTER=$(( ${BENCH_RUNNING_COUNTER} + 1 ))	
+	
+	# if we did the last test of the serie, we can exit and avoid an useless reboot
+	# because after this last, it will be rebooted outside this function
+	[ ${BENCH_ITER_COUNTER} -eq ${BENCH_ITER} ] && return 0	
+	
 	reboot_dut
-	echo "Image: ${UPGRADE_IMAGE}" > $2.info
-	echo "CFG: ${CFG}" >> $2.info
-	rcmd ${DUT_ADMIN} "uname -a" >> $2.info
-	echo "Start time: `date`" >> $2.info
-	bench $2
-	echo "End time: `date`" >> $2.info
+	return 0
 }
 
 upload_cfg () {
@@ -195,59 +281,45 @@ upgrade_image () {
 
 usage () {
 	if [ $# -lt 1 ]; then
-		echo "$0 [-h] [-f bench-lab-config] [-c configuration-sets-dir] [-i nanobsd-images-dir] [-n iteration] [-d benchs-results-dir] -r e@mail"
+		echo "$0 [-h] [-f bench-lab-config] [-c configuration-sets-dir] [-i nanobsd-images-dir]"
+		echo "   [-n iteration] [-p pktgen cfg dir ] [-d benchs-results-dir] -r e@mail"
 		echo "
-    bench-lab-configuration files: Files that define all lab bench parameters
-	nanobsd-images-dir: Directory where are all update nanobsd images
-	configuration-sets-dir: Directory that include directory for each configuration sets to test
-	iteration: number of iteration to do for each test
-	benchs-results-dir: Where to put the results
-	e@mail: Email to send report (default root@localhost)"
+ bench-lab-config:        Text file with lab bench parameters (mandatory)
+ nanobsd-images-dir:      Directory where are stored nanobsd update images (optional)
+ configuration-sets-dir:  Directory where are stored configuration sets (optional)
+ pkgen-cfg-dir:           Directory where specific pkt-gen parameters are (optional)
+ iteration:               Number of iteration to do for each bench (3 minimums, 5 by default)
+ benchs-results-dir:      Directory Where to store benches results (/tmp/benchs by default)
+ e@mail:                  Email to send report too at the end (default root@localhost)"
 		exit 1 
 	fi
 }
 
 ##### Main
 
-# Bench configuration file
-BENCH_CONFIG=''
-# List of configuration sets directory
-CFG_LIST=''
-# list of nanobsd upgrade image to be benched
-IMAGES_LIST=''
-# Number of iteration for the same tests (for filling ministat)
-TEST_ITER_MAX=5
-# Bench result directory
-BENCH_DIR="/tmp/benchs"
-# Counting total number of tests bench
-# And checking file/directory presence
-TOTAL_TEST=0                                                                                                                
-# Report receiver
-MAIL="root@localhost"
-
-args=`getopt c:d:f:i:hn:r: $*`
+args=`getopt c:d:f:i:hn:r:p: $*`
 
 set -- $args
 for i
 do
-    case "$i" in
-    -c)
-		CFG_LIST=`ls -1d $2/*`			
+	case "$i" in
+	-c)
+		CONFIG_SET_DIR=$2
 		shift
-       	shift
+		shift
 		;;
-    -d)
-		BENCH_DIR="$2"
+	-d)
+		RESULTS_DIR="$2"
 		shift
 		shift
 		;; 
 	-f)
-		BENCH_CONFIG="$2"
+		CONFIG_FILE="$2"
 		shift
 		shift
 		;;	
         -i)
-		IMAGES_LIST=`ls -1 $2/BSDRP-* | grep upgrade`     
+		IMAGES_DIR="$2"
 		shift
 		shift
 		;;
@@ -255,17 +327,22 @@ do
 		usage
 		shift
 		;;
-    -n)
-		TEST_ITER_MAX=$2	
+	-n)
+		BENCH_ITER=$2	
 		shift
 		shift
 		;;
-    -r)
-		MAIL=$2
+	-r)
+		MAIL="$2"
 		shift
-        shift
-        ;;
-     --)
+		shift
+		;;
+	-p)
+		PKTGEN_DIR="$2"
+		shift
+		shift
+		;;
+	--)
 		shift
 		break
         esac
@@ -276,60 +353,41 @@ if [ $# -gt 0 ] ; then
     usage
 fi
 
-#### Loading configuration file ####
-[ -z  "${BENCH_CONFIG}" ] && die "No configuration file given: -f is mandatory"
-[ -f ${BENCH_CONFIG} ] || die "Can't found configuration file"
-. ${BENCH_CONFIG}
+#### Checking user input ####
+[ -z  "${CONFIG_FILE}" ] && die "No configuration file given: -f is mandatory"
+[ -f ${CONFIG_FILE} ] || die "Can't found configuration file"
+[ -n ${PKTGEN_DIR} ] && [ -d ${PKTGEN_DIR} ] || die "Can't found directory ${PKTGEN_DIR}"
+[ -n ${IMAGES_DIR} ] && [ -d ${IMAGES_DIR} ] || die "Can't found directory ${IMAGES_DIR}"
+[ -n ${RESULTS_DIR} ] && [ -d ${RESULTS_DIR} ] || die "Can't found directory ${RESULTS_DIR}"
+[ -n ${CONFIG_SET_DIR} ] && [ -d ${CONFIG_SET_DIR} ] || die "Can't found directory ${CONFIG_SET_DIR}"
+[ ${BENCH_ITER} -lt 3 ] && die "Need a minimum of 3 series of benchs"
 
-[ -z "${IMAGES_LIST}" ] && IMAGES_LIST="none"
-[ -z "${CFG_LIST}" ] && CFG_LIST="none"
+# Load (first time) the configuration set
+. ${CONFIG_FILE}
 
-#Calculating the number of test to do
-#Notice that the big "bench part" that follow is on the same alogrithm that this loop
-INC_DONE=false
-for UPGRADE_IMAGE in ${IMAGES_LIST};  do
-	if [ ! "${UPGRADE_IMAGE}" = "none" ]; then 
-		[ -f ${UPGRADE_IMAGE} ] || die "Can't found file {IMG}"
-	fi
-	for CFG in ${CFG_LIST}; do
-		if [ ! "${CFG}" = "none" ]; then
-			[ -d ${CFG} ] || die "Can't found directory ${CFG}"
-			# Check if bench allready done
-			# We need to cleanup the filename that is in the form:
-			# BSDRP-259551-upgrade-amd64-serial.imga
-			# For getting only the SVN number
-			SVN_NUMBER=`basename ${UPGRADE_IMAGE} | cut -d '-' -f 2`
-			CFG=`basename ${CFG}`
-			if [ ! -f ${BENCH_DIR}/bench.${SVN_NUMBER}.${CFG}.1 ]; then
-			  TOTAL_TEST=$(( ${TOTAL_TEST} + 1 * ${TEST_ITER_MAX} ))
-			  INC_DONE=true
-			fi
-		fi
-	done
-	if !(${INC_DONE}); then
-		TOTAL_TEST=$(( ${TOTAL_TEST} + 1 * ${TEST_ITER_MAX} ))
-		INC_DONE=true
-	fi
-done
-if !(${INC_DONE}); then
-	TOTAL_TEST=$(( ${TOTAL_TEST} + 1 * ${TEST_ITER_MAX} ))
-	INC_DONE=true
-fi
+# Calculating the number of test to do
 
+COUNTING=true
+bench_image ${RESULTS_DIR}/bench
+
+#echo "Total bench: ${BENCH_ITER_TOTAL}"
+#exit 1
 
 echo "BSDRP automatized upgrade/configuration-sets/benchs script"
 echo ""
-echo "This script will start ${TOTAL_TEST} bench tests using:"
-echo " - Number of iteration: ${TEST_ITER_MAX}"
+echo "This script will start ${BENCH_ITER_TOTAL} bench tests using:"
 echo -n " - Multiples images to test: "
-[ "${IMAGES_LIST}" = "none" ] && echo "no" || echo "yes"
+[ -z "${IMAGES_DIR}" ] && echo "no" || echo "yes"
 echo -n " - Multiples configuration-sets to test: "
-[ -n "${CFG_LIST}" ] && echo "yes" || echo "no"
-echo " - Results dir: ${BENCH_DIR}"
+[ -z "${CONFIG_SET_DIR}" ] && echo "no" || echo "yes"
+echo -n " - Multiples pkt-gen configuration to test: "
+[ -z "${PKTGEN_DIR}" ] && echo "no" || echo "yes"
+echo " - Number of iteration for each set: ${BENCH_ITER}"
+echo " - Results dir: ${RESULTS_DIR}"
 echo ""
 
-[ -d ${BENCH_DIR} ] || mkdir -p ${BENCH_DIR}
-ls ${BENCH_DIR} | grep -q bench && die "You really should clean-up all previous reports in ${BENCH_DIR} before to mismatch your differents results"
+ls ${RESULTS_DIR} | grep -q bench && die "You really should clean-up all previous reports in ${RESULTS_DIR} before to mismatch your differents results"
+
 
 echo -n "Do you want to continue ? (y/n): " 
 USER_CONFIRM=''                            
@@ -348,42 +406,14 @@ echo "Bench started at:" >> ${MAILFILE}
 echo `date` >> ${MAILFILE}
 
 echo "Starting the benchs"
-for UPGRADE_IMAGE in ${IMAGES_LIST}; do
-	BENCH_DONE=false
-	if [ ! "${UPGRADE_IMAGE}" = "none" ]; then
-		echo "Testing image serie: ${UPGRADE_IMAGE}"
-		upgrade_image ${UPGRADE_IMAGE} || die "Can't upgrade to image ${UPGRADE_IMAGE}"
-		# It's not possible to do an upgrade_image and pushing new CFG in one time
-		# because if new CFG include /boot change, it will save change on the old partition
-		reboot_dut
-		SVN_NUMBER=.`basename ${UPGRADE_IMAGE} | cut -d '-' -f 2`
-	else
-		SVN_NUMBER=''
-	fi
-	for CFG in ${CFG_LIST}; do
-		if [ ! "${CFG}" = "none" ]; then
-			# Check if bench already done regarding this image
-			CFG_SET=.`basename ${CFG}`
-			if [ -f ${BENCH_DIR}/bench${SVN_NUMBER}${CFG_SET}.1 ] ; then
-				echo "Allready did bench test regarding image ${UPGRADE_IMAGE} and cfg-set ${CFG_SET}"
-				continue
-			else	
-				bench_cfg ${CFG} ${BENCH_DIR}/bench${SVN_NUMBER}${CFG_SET}
-				BENCH_DONE=true
-			fi
-		fi
-	done
-	if !($BENCH_DONE); then
-		reboot_dut
-		echo "Image: ${UPGRADE_IMAGE}" > ${BENCH_DIR}/bench${SVN_NUMBER}.info
-		echo "Start time: `date`" >> ${BENCH_DIR}/bench${SVN_NUMBER}.info
-		bench ${BENCH_DIR}/bench${SVN_NUMBER}
-	fi
-done
+# bench_image => bench_cfg => bench_pktgen => bench
 
-echo "All bench tests were done, results in ${BENCH_DIR}"
+COUNTING=false
+bench_image ${RESULTS_DIR}/bench
+
+echo "All bench tests were done, results in ${RESULTS_DIR}"
 
 echo "Bench end at:" >> ${MAILFILE}
 echo `date` >> ${MAILFILE}
-mail -s "Benchs ${BENCH_DIR} Done" ${MAIL} < ${MAILFILE}
+mail -s "Benchs ${RESULTS_DIR} Done" ${MAIL} < ${MAILFILE}
 [ -f ${MAILFILE} ] && rm ${MAILFILE}

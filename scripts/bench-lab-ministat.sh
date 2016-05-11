@@ -21,48 +21,24 @@ data_2_ministat () {
 	CLEAN_TWO=`mktemp /tmp/clean.2.data.XXXXXX` || die "can't create /tmp/clean.2.data.xxxx"
 	grep -E 'main_thread[[:space:]]\[[[:digit:]]+\][[:space:]][1-9].*pps' ${CLEAN_ONE} | cut -d ' ' -f 4 > ${CLEAN_TWO}
 	#Now we calculate the median value of this run with ministat
-	echo `ministat -n ${CLEAN_TWO} | tail -n -1 | tr -s ' ' | cut -d ' ' -f 5` >> ${LAB_RESULTS}/$2
+	echo `ministat -n ${CLEAN_TWO} | tail -n -1 | tr -s ' ' | cut -d ' ' -f 5` >> $2
 	rm ${CLEAN_ONE} ${CLEAN_TWO} || die "ERROR: can't delete clean.X.data.xxx"
 	return 0
 }
 
 data_2_gnuplot () {
-	# Now we will generate .dat file with name like: forwarding.dat
+	# Now we will generate gnuplot.data
+	# $1 : Input file
+	# $2 : Prefix of the output file
 	# and contents like:
-	# revision  pps
-	# this file can be used for gnuplot
-	if [ -n "${CFG_LIST}" ]; then
-		# For each CFG detected previously
-		for CFG_TYPE in ${CFG_LIST}; do
-			echo "# (revision)	median	minimum		maximum" > ${LAB_RESULTS}/${CFG_TYPE}.data
-			# For each file regarding the CFG (one file by revision)
-			# But don't forget to exclude the allready existing CFG_TYPE.plot file from the result
-			for DATA in `ls -1 ${LAB_RESULTS} | grep "[[:punct:]]${CFG_TYPE}$"`; do
-				local REV=`basename ${DATA}`
-				REV=`echo ${REV} | cut -d '.' -f 1`
-				if [ ${REV} = "none" ]; then
-				# Get the median, minimum and maximum value regarding all test iteration
-					ministat -n ${LAB_RESULTS}/${DATA} | tail -n -1 | awk '{print $5 " " $3 " " $4}' >> ${LAB_RESULTS}/${CFG_TYPE}.data
-				#echo "${REV}	${PPS}" >> ${LAB_RESULTS}/${CFG_TYPE}.data
-				else
-					ministat -n ${LAB_RESULTS}/${DATA} | tail -n -1 | awk -vrev=${REV} '{print rev " " $5 " " $3 " " $4}' >> ${LAB_RESULTS}/${CFG_TYPE}.data
-				fi
-			done
-		done	
-	else
-		echo "TODO: plot.dat when different configuration sets are not used"	
-	fi
-	# Merge all .data file into one gnuplot.data
-	[ -f ${LAB_RESULTS}/gnuplot.data ] && mv ${LAB_RESULTS}/gnuplot.data ${LAB_RESULTS}/gnuplot.bak
- 	for DATA in `ls -1 ${LAB_RESULTS}/*.data`; do
-        local FILENAME=`basename ${DATA}`
-        local KEY=${FILENAME%.data}
-		[ ! -f ${LAB_RESULTS}/gnuplot.data ] && echo "#key median minimum maximum" > ${LAB_RESULTS}/gnuplot.data
-        echo -n "${KEY} " >> ${LAB_RESULTS}/gnuplot.data
-		grep -v '#' ${DATA} >> ${LAB_RESULTS}/gnuplot.data
-    done
+	# # index median minimum maximum
+	# fastforwarding 554844.5 550613 569875
+	# ipfw-statefull 977952 939800 1063901
+	# pf-statefull 1022447 998915 1075438.5
+	INDEX=`basename $1`
+	[ -f ${LAB_RESULTS}/gnuplot.data ] || echo "#index median minimum maximum" > ${LAB_RESULTS}/gnuplot.data
+	ministat -n $1.pps | tail -n -1 | awk -vid=${INDEX} '{print id " " $5 " " $3 " " $4}' >> ${LAB_RESULTS}/gnuplot.data
 
-	return 0
 }
 
 ## main
@@ -75,46 +51,40 @@ CFG_LIST=''
 [ -d $1 ] || die "usage: $0 benchs-directory"
 
 LAB_RESULTS="$1"
-# Info: /tmp/benchs/bench.1.1.4.receiver
+# Info: /tmp/benchs/bench.244900.fastforwarding.info
 
 INFO_LIST=`ls -1 ${LAB_RESULTS}/*.info`
 [ -z "${INFO_LIST}" ] && die "ERROR: No report files found in ${LAB_RESULTS}"
 
-echo "Summaring results..."
+echo "Ministating results..."
+
+rm ${LAB_RESULTS}/*.pps && echo "Deleting previous .pps files"
+[ -f ${LAB_RESULTS}/gnuplot.data ] && rm ${LAB_RESULTS}/gnuplot.data
+
 for INFO in ${INFO_LIST}; do
-	# Get svn rev number
-	#  Image: /tmp/BSDRP-244900-upgrade-amd64-serial.img
-	#  Image: /monpool/benchs-images/BSDRP-244900-upgrade-amd64-serial.img.xz
-	#  => 244900 
-	SVN=`grep 'Image: ' ${INFO} | cut -d ':' -f 2`
-	# =>  /monpool/benchs-images/BSDRP-244900-upgrade-amd64-serial.img.xz
-	SVN=`basename ${SVN} | cut -d '-' -f 2`
-	# => 244900
-	# Get CFG file name
-	#  CFG: /tmp/bench-configs/forwarding
-	#  => forwarding
-	if grep -q 'CFG: ' ${INFO}; then
-		CFG=`grep 'CFG: ' ${INFO} | sed 's/CFG: //g'`
-		CFG=`basename ${CFG}`
-		MINISTAT_FILE="${SVN}.${CFG}"
-		# If not already, add the configuration type to the list of detected configuration
-		echo ${CFG_LIST} | grep -w -q ${CFG} || CFG_LIST="${CFG_LIST} ${CFG}"
-	else
-		MINISTAT_FILE="${SVN}"
-	fi
+	# We just need to source it
+	. ${INFO}
+	# Now we've got theses variables:
+	# IMAGE="299888" (or image file if SVN number not found)
+	# CFG="fastforwarding"
+	# PKTGEN=""
+	# UNAME="FreeBSD SM 10.3-RELEASE-p2 F..."
+	
+	#MINISTAT_FILE=`basename ${INFO}`
+	MINISTAT_FILE=`echo ${INFO} | sed "s/.info//" | sed "s/bench.//"`
+
 	# Now need to generate ministat input file for each different REPORT
 	#   if report is: /tmp/benchs/bench.1.1.info
 	#   => list all file like /tmp/benchs/bench.1.1.*.receiver
-	DATA_LIST=`echo ${INFO} | sed 's/info/*/g'`
-	DATA_LIST=`ls -1 ${DATA_LIST} | grep receiver`
+	DATA_LIST=`echo ${INFO} | sed 's/info/*.receiver/g'`
+	DATA_LIST=`ls -1 ${DATA_LIST}`
 	# clean allready existing ministat
 	[ -f ${LAB_RESULTS}/${MINISTAT_FILE} ] && rm ${LAB_RESULTS}/${MINISTAT_FILE}
 	for DATA in ${DATA_LIST}; do
-		data_2_ministat ${DATA} ${MINISTAT_FILE}
+		data_2_ministat ${DATA} ${MINISTAT_FILE}.pps
 	done # for DATA
+	data_2_gnuplot ${MINISTAT_FILE}
 done # for REPORT
-echo "Gnuplot input data file generation..."
-data_2_gnuplot
 
 echo "Done"
 exit

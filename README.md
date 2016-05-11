@@ -1,7 +1,8 @@
 # netbenches
 FreeBSD network forwarding performance benchmark results
 
-This repository includes bench scripts, bench configuration files, raw results and gnuplot graphs on few setups.
+This repository includes bench scripts (need netmap pkt-gen and nanobsd like), bench configuration files, raw results and gnuplot graphs on few setups.
+[Bench script documentation is available too] (doc/README.md).
 
 Hardware benched are:
  - HP ProLiant DL360p Gen8 (8 cores Intel Xeon E5-2650 @ 2.60GHz) and 10-Gigabit Chelsio T540-CR
