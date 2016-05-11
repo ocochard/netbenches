@@ -1,4 +1,4 @@
-# FreeBSD benchmark script #
+# FreeBSD network benchmark script #
 
 ## Objectives ##
 
@@ -23,9 +23,9 @@ List of prerequisit:
 
 There are two shell scripts:
 * [bench-lab.sh](../scripts/bench-lab.sh): Main script that start sequentially all benches
-* [bench-lab-ministat.sh]((../scripts/bench-lab-ministat.sh): Extract mathematically data from pkt-gen raw text output and generate gnuplot data file
+* [bench-lab-ministat.sh](../scripts/bench-lab-ministat.sh): Extract mathematically data from pkt-gen raw text output and generate gnuplot data file
 
-The main script needs multiples parameters:
+The main script needs one parameters and allow multiples other:
 ```
 bench-lab.sh [-h] [-f bench-lab-config] [-c configuration-sets-dir] [-i nanobsd-images-dir]
              [-n iteration] [-p pktgen cfg dir ] [-d benchs-results-dir] -r e@mail
@@ -40,6 +40,7 @@ bench-lab.sh [-h] [-f bench-lab-config] [-c configuration-sets-dir] [-i nanobsd-
 
 ```
 Once started, it will:
+
 1. Ping and learn SSH fingerprint for each servers to connect to
 2. Start the image-update loop (cylcing across each nanobsd-update-image)
 3. Upgrade DUT with the next nanobsd image and reboot it
