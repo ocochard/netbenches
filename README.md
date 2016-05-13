@@ -35,7 +35,9 @@ Some results:
     - [Impact of Intel 82599EB descriptors per queue on forwarding performance with 4 cores Xeon L5630] (Xeon_L5630-4Cores-Intel_82599EB/ix.Xxd/results/fbsd10.2/README.md)
  - Intel i350 tuning:
     - [Impact of Intel i350 queue number (1 queue per core) on forwarding performance with 4 cores Atom C2558E] (Atom_C2558_4Cores-Intel_i350/igb.num_queues/results/fbsd11-routing.r287531/README.md)
-
+ - Packet filter (pf) tuning:
+    - [Impact of number of flows on pf performance with FreeBSD 10.3] (Atom_C2558_4Cores-Intel_i350/pf-sessions/results/fbsd10.3/README.md)
+    - [Impact of pf.states_hashsize with default max 10K states with FreeBSD 10.3] (Atom_C2558_4Cores-Intel_i350/pf-states_hashsize/results/fbsd10.3.default10K/README.md)
 
 Synthesis:
   - ![Impact of enabling ipfw/pf on fastforwarding performance on FreeBSD 10.2 with differents hardware] (synthesis/hardware.png)
