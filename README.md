@@ -36,7 +36,8 @@ Some results:
  - Intel i350 tuning:
     - [Impact of Intel i350 queue number (1 queue per core) on forwarding performance with 4 cores Atom C2558E] (Atom_C2558_4Cores-Intel_i350/igb.num_queues/results/fbsd11-routing.r287531/README.md)
  - Packet filter (pf) tuning:
-    - [Impact of number of flows on pf performance with FreeBSD 10.3] (Atom_C2558_4Cores-Intel_i350/pf-sessions/results/fbsd10.3/README.md)
+    - [Impact of number of flows with default pf setting on performance on FreeBSD 10.3] (Atom_C2558_4Cores-Intel_i350/pf-sessions/results/fbsd10.3/README.md)
+    - [Impact of number of flows with 10M states pf setting on performance on FreeBSD 10.3] (Atom_C2558_4Cores-Intel_i350/pf-sessions/results/fbsd10.3.10M/README.md)
     - [Impact of pf.states_hashsize with default max 10K states with FreeBSD 10.3] (Atom_C2558_4Cores-Intel_i350/pf-states_hashsize/results/fbsd10.3.default10K/README.md)
     - [Impact of pf.states_hashsize with 4M max states with FreeBSD 10.3] (Atom_C2558_4Cores-Intel_i350/pf-states_hashsize/results/fbsd10.3.4Mstates/README.md)
 
