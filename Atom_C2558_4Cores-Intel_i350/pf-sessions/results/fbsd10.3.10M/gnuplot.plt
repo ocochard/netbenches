@@ -59,8 +59,8 @@ set y2tics format '%.1s%cb/s'
 set xtics 1
 
 set title "Impact of number states on pf performance (Netgate RCC-VE 4860, 4 cores Intel Atom C2558E)"
-set xlabel "Number of pf active states"
-set ylabel "Packets per second (minimum size, 5M unidir UDP flow, 10M pf states)\n minimum,median,maximum values of 5 benchs"
+set xlabel "Number of pf active states (number of unidirectionnal UDP flows were half this value)\nnet.pf.states_hashsize=33554432" noenhanced
+set ylabel "Packets per second (minimum size)\n minimum,median,maximum values of 5 benchs"
 set y2label "Theorical equity using IMIX distribution (Ethernet throughput)"
 
 # Put the label inside the graph
