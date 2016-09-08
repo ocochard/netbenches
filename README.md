@@ -9,7 +9,8 @@ Hardware benched are:
  - IBM System x3550 M3 (4 cores Intel Xeon L5630 2.13GHz, hyper-threading disabled) and dual port Intel 82599EB 10-Gigabit
  - SuperMicro SuperServer 5018A-FTN4 (8 cores Atom C2758) and 10-Gigabit Chelsio T540-CR
  - Netgate RCC-VE 4860 (4 cores Intel Atom C2558E) and quad port Intel i350 (the 2 Intel i211 are not benched)
- - PC Engines APU (2 cores AMD G-T40E 1 GHz) and 3 Realtek RTL8111E Gigabit NIC
+ - PC Engines APU1D (2 cores AMD G-T40E 1 GHz) and 3 Realtek RTL8111E Gigabit NIC
+ - PC Engines APU2C4 (4 cores AMD GX-412TC) and 4 Intel i210AT Gigabit NIC
 
 Some results:
  - Impact of enabling ipfw or pf:
@@ -42,6 +43,10 @@ Some results:
     - [Impact of number of flows with 10M states pf setting on performance on FreeBSD 10.3] (Atom_C2558_4Cores-Intel_i350/pf-sessions/results/fbsd10.3.10M/README.md)
     - [Impact of pf.states_hashsize with default max 10K states with FreeBSD 10.3] (Atom_C2558_4Cores-Intel_i350/pf-states_hashsize/results/fbsd10.3.default10K/README.md)
     - [Impact of pf.states_hashsize with 4M max states with FreeBSD 10.3] (Atom_C2558_4Cores-Intel_i350/pf-states_hashsize/results/fbsd10.3.4Mstates/README.md)
+
+  - IPSec performance:
+    - [IPSec performance with 4 cores AMD GX-412TC (PC Engines APU2C4)] (AMD_GX-412TC_4Cores_Intel_i210AT/ipsec/results/fbsd11.0/README.md)
+    - [IPSec performance with 2 cores AMD G-T40E (PC Engines APU1D)] (AMD_G-T40E_2Cores_RTL8111E/ipsec/results/fbsd11.0/README.md)
 
 Synthesis:
   - ![Impact of enabling ipfw/pf on fastforwarding performance on FreeBSD 10.2 with differents hardware] (synthesis/hardware.png)

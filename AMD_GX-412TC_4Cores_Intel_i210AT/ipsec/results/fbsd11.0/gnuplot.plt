@@ -46,29 +46,17 @@ set style line 4 lt rgb "#F25900" lw 2 pt 13
 # Fill box and width
 set style fill solid
 set boxwidth 0.8
-# Draw a corresponding IMIX Eth throughput estimation on the right side
-set y2tics
-# IMIX: packet * ( 7*(40+14) + 4*(576+14) + (1500+14))/12*8 = 2834.666667
-set link y2 via y * 2834.666667 inverse y/2834.666667
-# Replace long value by M (million), K (kilo) on ytics
-set ytics format '%.1s%c'
-set y2tics format '%.1s%cb/s' 
-
 
 # Only integer value for xtics
 set xtics 1
 
-set title "Impact of enabling ipfw/pf on fastforwarding performance\n (PC Engines APU2C4, 4 cores AMD GX-412TC Processor and Intel i210AT)"
-set xlabel "Note: fastforwarding is enabled for all ipfw and pf benchs\n2 firewall rules only and harvest.mask=351"
-set ylabel "Packets per second (minimum size, 2000 flows)\n minimum,median,maximum values of 10 benchs"
-set y2label "Theorical equity using simple IMIX distribution (Ethernet throughput)"
+set title "IPSec performance\n (PC Engines APU2C4, 4 cores AMD GX-412TC Processor and Intel i210AT)"
+set xlabel "Encryption algorithms: aes-cbc-128 (rijndael-cbc), no authentication algorithm\nUDP load of 500B, IP pkt size: 528B, Ethernet frame size=542B"
+set ylabel "Ethernet throughput in Mb/s\n minimum,median,maximum values of 5 benchs"
 
 # Put the label inside the graph
 set key on inside top right
 
 # Ploting!
-plot "gnuplot.data" using 0:2:xtic(1) with boxes title "APU2C4 FreeBSD 10.3" ls 1, \
-	 "gnuplot.data" using 0:2:3:4 with yerrorbars lc rgb 'black' pt 1 lw 2 notitle, \
-	 "../../../../AMD_G-T40E_2Cores_RTL8111E/fastforwarding-pf-ipfw/results/fbsd10.3/gnuplot.data" using 0:2:xtic(1) with boxes title "APU1D FreeBSD 10.3" ls 2, \
-	 "../../../../AMD_G-T40E_2Cores_RTL8111E/fastforwarding-pf-ipfw/results/fbsd10.3/gnuplot.data" using 0:2:3:4 with yerrorbars lc rgb 'grey' pt 1 lw 2 notitle
-
+plot "gnuplot.data" using 0:2:xtic(1) with boxes title "FreeBSD 11.0" ls 1, \
+	 "gnuplot.data" using 0:2:3:4 with yerrorbars lc rgb 'black' pt 1 lw 2 notitle
