@@ -5,16 +5,27 @@
 # 
 # Purpose:
 #  This script permit to automatize benching multiple BSDRP images and/or configuration parameters.
-#  In a lab like this one:
+#  In a lab like this one (simple forwarding/firewalling):
 #  +----------+     +-------------------------+     +----------+ 
 #  | Sender   |<--->| Device Under Test (DUT) |<--->| Receiver | 
 #  +----------+     +-------------------------+     +----------+
 #      |                       |                         |
 #    -----------------admin network (ssh)--------------------
 #
+#  Or this one (IPSec or tunnel):
+#
+#    -----------------admin network (ssh)--------------------
+#      |                      |                         |
+#  +----------+     +-------------------------+    +-----------+ 
+#  | Sender   |---->| Device Under Test (DUT) |--->| Reference | 
+#  | Receiver |     |                         |    | Endpoint  |
+#  +----------+     +-------------------------+    +-----------+
+#      |                                                |
+#      -----<--------------------------------------------
+#
 #  this script permit to:
 #  1. change configuration or upgrade image of the DUT (BSDRP based) and reboot it
-#  2. once rebooted, start some tests on the 2 testers and collect the result
+#  2. once rebooted, generate traffic and collect the result
 #  All commands are ssh.
 #   
 
@@ -57,12 +68,12 @@ rcmd () {
 	eval ${SSH_CMD} $1 $2 && return 0 || return 1
 }
 
-reboot_dut () {
-	# Reboot the dut
+reboot_host () {
+	# Reboot host $1 (DUT_ADMIN or REF_ADMIN)
 	# Need to wait an online return before continuing too
-	echo -n "Rebooting DUT and waiting device return online..."
+	echo -n "Rebooting $1 and waiting device return online..."
 	# WARNING: If configuration was not saved, it will ask user for configuration saving
-	rcmd ${DUT_ADMIN} 'shutdown -r +1s' > /dev/null 2>&1
+	rcmd $1 'shutdown -r +1s' > /dev/null 2>&1
 	sleep 20
 	#wait-for-dut online and in forwarding mode
 	local TIMEOUT=${REBOOT_TIMEOUT}
@@ -92,7 +103,7 @@ bench_image () {
 			# It's not possible to do an upgrade_image and pushing new CFG in one time
 			# because if new CFG include /boot change, it will save change on the old partition
 			# Then we need to force a reboot here
-			(${COUNTING}) || reboot_dut
+			(${COUNTING}) || reboot_host ${DUT_ADMIN}
 			
 			bench_cfg $1.${IMAGE_PREFIX}
 		done
@@ -110,8 +121,13 @@ bench_cfg () {
 		for CFG in `ls -1d ${CONFIG_SET_DIR}/*`; do
 			CFG_PREFIX=`basename ${CFG}`
 			(${COUNTING}) || echo "Start configuration set: ${CFG_PREFIX}"
-			(${COUNTING}) || upload_cfg ${CFG} || die "Can't upload ${CFG}"
-			(${COUNTING}) || reboot_dut
+			if [ -d ${CFG}/dut -a -d ${CFG}/refendpoint ]; then
+				(${COUNTING}) || upload_cfg ${CFG}/dut ${DUT_ADMIN} || die "Can't upload ${CFG}/dut to ${DUT_ADMIN}"
+				(${COUNTING}) || upload_cfg ${CFG}/refendpoint ${REF_ADMIN} || die "Can't upload ${CFG}/refendpoint to ${REF_ADMIN}"
+			else
+				(${COUNTING}) || upload_cfg ${CFG} ${DUT_ADMIN} || die "Can't upload ${CFG} to ${DUT_ADMIN}"
+			fi
+			(${COUNTING}) || reboot_host ${DUT_ADMIN}
 			bench_pktgen $1.${CFG_PREFIX}
 		done
 	else
@@ -203,21 +219,22 @@ bench () {
 	# because after this last, it will be rebooted outside this function
 	[ ${BENCH_ITER_COUNTER} -eq ${BENCH_ITER} ] && return 0	
 	
-	reboot_dut
+	reboot_host ${DUT_ADMIN}
 	return 0
 }
 
 upload_cfg () {
 	# Uploading configuration to the DUT
 	# $1: Path to the directory that contains configuration files
-	echo "Uploading cfg $1"
+	# $2: Device to upload to (DUT_ADMIN or REF_ADMIN)
+	echo "Uploading cfg $1 to $2"
 	if [ -d $1/boot ]; then
 		# Before putting file in /boot, we need to remount in RW mode
-		if ! rcmd ${DUT_ADMIN} "mount -uw /" > /dev/null 2>&1; then
+		if ! rcmd $2 "mount -uw /" > /dev/null 2>&1; then
 			return 1
 		fi
 	fi
-	if ! scp -r -2 -o "PreferredAuthentications publickey" -o "StrictHostKeyChecking no" $1/* root@${DUT_ADMIN}:/ > /dev/null 2>&1; then
+	if ! scp -r -2 -o "PreferredAuthentications publickey" -o "StrictHostKeyChecking no" $1/* root@$2:/ > /dev/null 2>&1; then
 		return 1
 	fi
 	if rcmd ${DUT_ADMIN} "config save" > /dev/null 2>&1; then
