@@ -6,7 +6,7 @@
 set yrange [0:*]
 
 # output
-set terminal png truecolor size 1024,768
+set terminal png size 1024,768
 set output 'graph.png'
 #set terminal svg size 1024,768 font "Gill Sans,12" rounded dashed
 #set output 'graph.svg'
@@ -44,7 +44,7 @@ set style line 3 lt rgb "#5060D0" lw 2 pt 5
 set style line 4 lt rgb "#F25900" lw 2 pt 13
 
 # Fill box and width
-set style fill transparent solid 0.75
+set style fill solid
 set boxwidth 0.8
 # Draw a corresponding IMIX Eth throughput estimation on the right side
 set y2tics
@@ -58,8 +58,8 @@ set y2tics format '%.1s%cb/s'
 # Only integer value for xtics
 set xtics 1
 
-set title "Impact of enabling ipfw/pf on forwarding performance (HP ProLiant DL360p Gen8 with 8 cores Intel Xeon E5-2650)"
-set xlabel "Note: 2 firewall rules only"
+set title "Impact of enabling ipfw and pf on forwarding performance (Netgate RCC-VE 4860, 4 cores Intel Atom C2558E)"
+set xlabel "Note: 2 firewall rules only, harvest.mask=351"
 set ylabel "Packets per second (minimum size, 2000 flows)\n minimum,median,maximum values of 5 benchs"
 set y2label "Theorical equity using simple IMIX distribution (Ethernet throughput)"
 
