@@ -65,7 +65,8 @@ rcmd () {
 	# $1: hostname
 	# $2: command to send
 	# return 0 if OK, 1 if not
-	eval ${SSH_CMD} $1 $2 && return 0 || return 1
+	# Need to echap with '', because pkt-gen argument includes ""
+	eval ${SSH_CMD} $1 \'$2\' && return 0 || return 1
 }
 
 reboot_host () {
