@@ -47,6 +47,7 @@ Some results:
  - IPSec performance:
     - [IPSec performance with 4 cores AMD GX-412TC (PC Engines APU2C4)] (AMD_GX-412TC_4Cores_Intel_i210AT/ipsec/results/fbsd11.0/README.md)
     - [IPSec performance with 2 cores AMD G-T40E (PC Engines APU1D)] (AMD_G-T40E_2Cores_RTL8111E/ipsec/results/fbsd11.0/README.md)
+    - [IPsec performance with 4 cores Intel Xeon L5630] (Xeon_L5630-4Cores-Intel_82599EB/ipsec/results/fbsd11.0/README.md)
 
 Synthesis:
   - ![Impact of enabling ipfw/pf on fastforwarding performance on FreeBSD 10.2 with differents hardware] (synthesis/hardware.png)

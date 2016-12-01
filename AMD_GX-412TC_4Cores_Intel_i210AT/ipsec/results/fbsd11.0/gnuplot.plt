@@ -6,7 +6,7 @@
 set yrange [0:*]
 
 # output
-set terminal png size 1920,1080 font "Gill Sans,22"
+set terminal png truecolor size 1920,1080 font "Gill Sans,22"
 set output 'graph.png'
 #set terminal svg size 1024,768 font "Gill Sans,12" rounded dashed
 #set output 'graph.svg'
@@ -50,12 +50,17 @@ set boxwidth 0.8
 # Only integer value for xtics
 set xtics 1
 
-set title "IPSec performance\n (PC Engines APU2C4, 4 cores AMD GX-412TC Processor and Intel i210AT)"
-set xlabel "Encryption algorithms: aes-cbc-128 (rijndael-cbc), no authentication algorithm\nUDP load of 500B, IP pkt size: 528B, Ethernet frame size=542B"
+set title "IPSec performance on PC Engines APU2C4(Quad cores AMD GX-412TC)"
+
+set xlabel "AESNI used, No authentication algorithm, UDP load of 500 Bytes\nMethodology for Benchmarking IPsec Gateways:\nhttp://www.mecs-press.org/ijcnis/ijcnis-v4-n9/IJCNIS-V4-N9-1.pdf"
 set ylabel "Ethernet throughput in Mb/s\n minimum,median,maximum values of 5 benchs"
 
 # Put the label inside the graph
-set key on inside top right
+set key on inside top left
+
+# Label on x axsis are too long
+#set xtics rotate
+set xtics font "Gill Sans,16"
 
 # Ploting!
 plot "gnuplot.data" using 0:2:xtic(1) with boxes title "FreeBSD 11.0" ls 1, \

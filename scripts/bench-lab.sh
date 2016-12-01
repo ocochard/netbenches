@@ -66,6 +66,7 @@ rcmd () {
 	# $2: command to send
 	# return 0 if OK, 1 if not
 	# Need to echap with '', because pkt-gen argument includes ""
+	# but this break cat file | rcmd $1 $2
 	eval ${SSH_CMD} $1 \'$2\' && return 0 || return 1
 }
 
@@ -78,10 +79,10 @@ reboot_host () {
 	sleep 20
 	#wait-for-dut online and in forwarding mode
 	local TIMEOUT=${REBOOT_TIMEOUT}
-	while ! rcmd ${IS_DUT_ONLINE_TARGET} "${IS_DUT_ONLINE_CMD}" > /dev/null 2>&1; do
+	while ! rcmd $1 "netstat -rn" > /dev/null 2>&1; do
 		sleep 5
 		TIMEOUT=$(( ${TIMEOUT} - 1 ))
-		[ ${TIMEOUT} -eq 0 ] && die "DUT didn't switch in forwarding mode after $(( ${REBOOT_TIMEOUT} * 5 )) seconds"
+		[ ${TIMEOUT} -eq 0 ] && die "$1 not reachable mode after $(( ${REBOOT_TIMEOUT} * 5 )) seconds"
 	done
 	echo "done"
 	return 0
@@ -92,7 +93,7 @@ bench_image () {
 	# $1: Directory/prefix-name of output log file
 
 	if [ -n "${IMAGES_DIR}" ]; then
-		for IMAGE in `ls -1 ${IMAGES_DIR}/BSDRP-* | grep upgrade`; do
+		for IMAGE in $(ls -1 ${IMAGES_DIR}/BSDRP-* | grep upgrade); do
 			(${COUNTING}) || echo "Start firmware image set: ${IMAGE}"
 			# When using multiple image, they are using svn revision number in their filename like:
 			# BSDRP-293643-upgrade-amd64-serial.img.xz
@@ -119,12 +120,15 @@ bench_cfg () {
 	# $1: Directory/prefix-name of output log file
 	
 	if [ -n "${CONFIG_SET_DIR}" ]; then
-		for CFG in `ls -1d ${CONFIG_SET_DIR}/*`; do
-			CFG_PREFIX=`basename ${CFG}`
+		for CFG in $(ls -1d ${CONFIG_SET_DIR}/*); do
+			CFG_PREFIX=$(basename ${CFG})
+			[ "${CFG_PREFIX}" = "dut" -o "${CFG_PREFIX}" = "refendpoint" ] && die "Wrong config set directory: use upper dir"
 			(${COUNTING}) || echo "Start configuration set: ${CFG_PREFIX}"
 			if [ -d ${CFG}/dut -a -d ${CFG}/refendpoint ]; then
 				(${COUNTING}) || upload_cfg ${CFG}/dut ${DUT_ADMIN} || die "Can't upload ${CFG}/dut to ${DUT_ADMIN}"
 				(${COUNTING}) || upload_cfg ${CFG}/refendpoint ${REF_ADMIN} || die "Can't upload ${CFG}/refendpoint to ${REF_ADMIN}"
+				# TO DO: should reboot ref_admin in background and not wait before rebooting dut_admin
+				(${COUNTING}) || reboot_host ${REF_ADMIN}
 			else
 				(${COUNTING}) || upload_cfg ${CFG} ${DUT_ADMIN} || die "Can't upload ${CFG} to ${DUT_ADMIN}"
 			fi
@@ -185,26 +189,33 @@ bench () {
 	# $1: Directory/prefix-name of output log file
 	echo "Start bench serie `basename $1`"
 	#start receiving tool on RECEIVER
-	echo "CMD: ${RECEIVER_START_CMD}" > $1.receiver
-	rcmd ${RECEIVER_ADMIN} "${RECEIVER_START_CMD}" >> $1.receiver 2>&1 &
-	#JOB_RECEIVER=$!
-		
+	if [ -n "${RECEIVER_START_CMD}" ]; then
+		echo "CMD: ${RECEIVER_START_CMD}" > $1.receiver
+		rcmd ${RECEIVER_ADMIN} "${RECEIVER_START_CMD}" >> $1.receiver 2>&1 &
+		#JOB_RECEIVER=$!
+	fi	
 	#Alternate method with log file stored on RECEIVER (if tool is verbose)	
 	#rcmd ${RECEIVER_ADMIN} "nohup netreceive 9090 \>\& /tmp/bench.log.receiver \&"
 	echo "CMD: ${SENDER_START_CMD}" > $1.sender
 	rcmd ${SENDER_ADMIN} "${SENDER_START_CMD}" >> $1.sender 2>&1 &
 	JOB_SENDER=$!
 	echo -n "Waiting for end of bench ${BENCH_RUNNING_COUNTER}/${BENCH_ITER_TOTAL}..."
-	# There is a bug with pkt-gen: It can sometime never end after finishing sending all packets,
-	# because stuck at "sender_body [1214] pending tx tail 511 head 2047 on ring 2"
-	# Then this simple wait command didn't works:
-	#wait ${JOB_SENDER}
-	# in place, will look every 2 second for "flush tail" in the sender log
-	while true; do
-		sleep 2
-		grep -q 'flush tail' $1.sender && break
-	done
-	rcmd ${RECEIVER_ADMIN} "${RECEIVER_STOP_CMD}" || echo "DEBUG: Can't kill pkt-gen"
+	if echo ${SENDER_START_CMD} | grep -q pkt-gen; then
+		# There is a bug with pkt-gen: It can sometime never end after finishing sending all packets,
+		# because stuck at "sender_body [1214] pending tx tail 511 head 2047 on ring 2"
+		# Then this simple wait command didn't works:
+		#wait ${JOB_SENDER}
+		# in place, will look every 2 second for "flush tail" in the sender log
+		while true; do
+			sleep 2
+			grep -q 'flush tail' $1.sender && break
+		done
+	else
+		wait ${JOB_SENDER}
+	fi
+	if [ -n "${RECEIVER_STOP_CMD}" ]; then
+		rcmd ${RECEIVER_ADMIN} "${RECEIVER_STOP_CMD}" || echo "DEBUG: Can't kill pkt-gen"
+	fi
 	
 	#scp ${RECEIVER_ADMIN}:/tmp/bench.log.receiver $1.receiver
 	#kill ${JOB_RECEIVER}
@@ -238,7 +249,7 @@ upload_cfg () {
 	if ! scp -r -2 -o "PreferredAuthentications publickey" -o "StrictHostKeyChecking no" $1/* root@$2:/ > /dev/null 2>&1; then
 		return 1
 	fi
-	if rcmd ${DUT_ADMIN} "config save" > /dev/null 2>&1; then
+	if rcmd $2 "config save" > /dev/null 2>&1; then
 		return 0
 	else
 		return 1
@@ -249,13 +260,16 @@ icmp_test_all () {
 	# Test if we can ping all devices
 	local PING_ACCESS_OK=true
 	echo "Testing ICMP connectivity to each devices:"
-	for HOST in ${SENDER_ADMIN} ${RECEIVER_ADMIN} ${DUT_ADMIN}; do
-		echo -n "  ${HOST}..."
-		if ping -c 2 ${HOST} > /dev/null 2>&1; then
-			echo "OK"
-		else
-			echo "NOK"
-			PING=false
+	# TO DO: REF_ADMIN
+	for HOST in ${SENDER_ADMIN} ${RECEIVER_ADMIN} ${DUT_ADMIN} ${REF_ADMIN}; do
+		if [ -n "${HOST}" ]; then
+			echo -n "  ${HOST}..."
+			if ping -c 2 ${HOST} > /dev/null 2>&1; then
+				echo "OK"
+			else
+				echo "NOK"
+				PING_ACCESS_OK=false
+			fi
 		fi
 	done
 	( ${PING_ACCESS_OK} ) && return 0 || return 1
@@ -264,21 +278,24 @@ icmp_test_all () {
 ssh_push_key () {
 	# Pushing ssh key
 	echo "Testing SSH connectivity with key to each devices:"
-	for HOST in ${SENDER_ADMIN} ${RECEIVER_ADMIN} ${DUT_ADMIN}; do
-		echo -n "  ${HOST}..."
-		if ! rcmd ${HOST} "uname" > /dev/null 2>&1; then
-			echo ""
-			echo -n "    Pushing ssh key to ${HOST}..."
-			if [ -f ~/.ssh/id_rsa.pub ]; then
-				cat ~/.ssh/id_rsa.pub | ssh -2 -q -o "StrictHostKeyChecking no" root@${HOST} "cat >> ~/.ssh/authorized_keys" > /dev/null 2>&1
-			elif [ -f ~/.ssh/id_dsa.pub ]; then
-				cat ~/.ssh/id_dsa.pub | ssh -2 -q -o "StrictHostKeyChecking no" root@${HOST} "cat >> ~/.ssh/authorized_keys" > /dev/null 2>&1
+	for HOST in ${SENDER_ADMIN} ${RECEIVER_ADMIN} ${DUT_ADMIN} ${REF_ADMIN}; do
+		if [ -n "${HOST}" ]; then
+			echo -n "  ${HOST}..."
+			if ! rcmd ${HOST} "uname" > /dev/null 2>&1; then
+				echo ""
+				echo -n "    Pushing ssh key to ${HOST}..."
+				# TO DO: use ssh-copy-id
+				if [ -f ~/.ssh/id_rsa.pub ]; then
+					cat ~/.ssh/id_rsa.pub | ssh -2 -q -o "StrictHostKeyChecking no" root@${HOST} "cat >> ~/.ssh/authorized_keys" > /dev/null 2>&1
+				elif [ -f ~/.ssh/id_dsa.pub ]; then
+					cat ~/.ssh/id_dsa.pub | ssh -2 -q -o "StrictHostKeyChecking no" root@${HOST} "cat >> ~/.ssh/authorized_keys" > /dev/null 2>&1
+				else
+					echo "NOK"
+					die "Didn't found user public SSH key"
+				fi
 			else
-				echo "NOK"
-				die "Didn't found user public SSH key"
+				echo "OK"
 			fi
-		else
-			echo "OK"
 		fi
 	done
 	return 0
@@ -288,13 +305,19 @@ upgrade_image () {
 	# Upgrade remote image
 	# $1 Full path to the image
 	echo -n "Upgrading..."
-	if echo $1 | grep -q ".img.xz"; then
-		cat $1 | rcmd  ${DUT_ADMIN} "xzcat \| upgrade" > /dev/null 2>&1
+	if echo "$1" | grep -q ".img.xz"; then
+		cat $1 | rcmd ${DUT_ADMIN} 'xzcat | upgrade' > /dev/null 2>&1
 	else
-		cat $1 | rcmd ${DUT_ADMIN} "cat \| upgrade" > /dev/null 2>&1
+		cat $1 | rcmd ${DUT_ADMIN} 'cat | upgrade' > /dev/null 2>&1
 	fi
-	echo "done"
-	return 0
+	# check for "Upgrade complete" in dmesg
+	if rcmd ${DUT_ADMIN} 'grep -q "Upgrade complete" /var/log/messages'; then
+		echo "done"
+		return 0
+	else
+		echo "failed"
+		return 1
+	fi
 }
 
 usage () {
