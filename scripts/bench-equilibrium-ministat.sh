@@ -11,13 +11,13 @@ data_2_ministat () {
 	# $1 : Input file
 	# $2 : Prefix of the output file
 	grep 'Estimated' $1 | cut -d ' ' -f 5 >> $2
+	grep 'Estimated' $1 | cut -d ' ' -f 10 >> $2.max
 	return 0
 }
 
 data_2_gnuplot () {
 	# Now we will generate gnuplot.data
 	# $1 : Input file
-	# $2 : Prefix of the output file
 	# and contents like:
 	# # index median minimum maximum
 	# fastforwarding 554844.5 550613 569875
@@ -26,6 +26,8 @@ data_2_gnuplot () {
 	INDEX=`basename $1`
 	[ -f ${LAB_RESULTS}/gnuplot.data ] || echo "#index median minimum maximum" > ${LAB_RESULTS}/gnuplot.data
 	ministat -n $1.equilibrium | tail -n -1 | awk -vid=${INDEX} '{print id " " $5 " " $3 " " $4}' >> ${LAB_RESULTS}/gnuplot.data
+	[ -f ${LAB_RESULTS}/gnuplot.data.max ] || echo "#index median minimum maximum" > ${LAB_RESULTS}/gnuplot.data.max
+	ministat -n $1.equilibrium.max | tail -n -1 | awk -vid=${INDEX} '{print id " " $5 " " $3 " " $4}' >> ${LAB_RESULTS}/gnuplot.data.max
 
 }
 
@@ -48,6 +50,7 @@ echo "Ministating results..."
 
 rm ${LAB_RESULTS}/*.pps && echo "Deleting previous .pps files"
 [ -f ${LAB_RESULTS}/gnuplot.data ] && rm ${LAB_RESULTS}/gnuplot.data
+[ -f ${LAB_RESULTS}/gnuplot.data.max ] && rm ${LAB_RESULTS}/gnuplot.data.max
 
 for INFO in ${INFO_LIST}; do
 	# We just need to source it
@@ -58,7 +61,6 @@ for INFO in ${INFO_LIST}; do
 	# PKTGEN=""
 	# UNAME="FreeBSD SM 10.3-RELEASE-p2 F..."
 	
-	#MINISTAT_FILE=`basename ${INFO}`
 	MINISTAT_FILE=`echo ${INFO} | sed "s/.info//" | sed "s/bench.//"`
 
 	# Now need to generate ministat input file for each different REPORT
