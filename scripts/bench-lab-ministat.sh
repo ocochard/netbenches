@@ -35,9 +35,22 @@ data_2_gnuplot () {
 	# fastforwarding 554844.5 550613 569875
 	# ipfw-statefull 977952 939800 1063901
 	# pf-statefull 1022447 998915 1075438.5
+	# TO DO
+	#   generate file like:
+	#   forwarding.data and ipfw-statefull and pf-statefull
+	#   # index median minimum maximum
+	#   revision 554844.5 550613 569875
+	#   revision 977952 939800 1063901
+	#   echo "#index median minimum maximum" > forwarding.data
+	#   grep fastforwarding gnuplot.data |  sed s/.fastforwarding//g >> forwarding.data
+	#   echo "#index median minimum maximum" > ipfw.data
+	#   grep ipfw-statefull gnuplot.data | sed s/.ipfw-statefull//g >> ipfw.data
+	#   echo "#index median minimum maximum" > pf.data
+	#   grep pf-statefull gnuplot.data | sed s/.pf-statefull//g >> pf.data 
 	INDEX=`basename $1`
 	[ -f ${LAB_RESULTS}/gnuplot.data ] || echo "#index median minimum maximum" > ${LAB_RESULTS}/gnuplot.data
 	ministat -n $1.pps | tail -n -1 | awk -vid=${INDEX} '{print id " " $5 " " $3 " " $4}' >> ${LAB_RESULTS}/gnuplot.data
+	
 
 }
 
