@@ -35,22 +35,9 @@ data_2_gnuplot () {
 	# fastforwarding 554844.5 550613 569875
 	# ipfw-statefull 977952 939800 1063901
 	# pf-statefull 1022447 998915 1075438.5
-	# TO DO
-	#   generate file like:
-	#   forwarding.data and ipfw-statefull and pf-statefull
-	#   # index median minimum maximum
-	#   revision 554844.5 550613 569875
-	#   revision 977952 939800 1063901
-	#   echo "#index median minimum maximum" > forwarding.data
-	#   grep fastforwarding gnuplot.data |  sed s/.fastforwarding//g >> forwarding.data
-	#   echo "#index median minimum maximum" > ipfw.data
-	#   grep ipfw-statefull gnuplot.data | sed s/.ipfw-statefull//g >> ipfw.data
-	#   echo "#index median minimum maximum" > pf.data
-	#   grep pf-statefull gnuplot.data | sed s/.pf-statefull//g >> pf.data 
 	INDEX=`basename $1`
 	[ -f ${LAB_RESULTS}/gnuplot.data ] || echo "#index median minimum maximum" > ${LAB_RESULTS}/gnuplot.data
 	ministat -n $1.pps | tail -n -1 | awk -vid=${INDEX} '{print id " " $5 " " $3 " " $4}' >> ${LAB_RESULTS}/gnuplot.data
-	
 
 }
 
@@ -98,6 +85,23 @@ for INFO in ${INFO_LIST}; do
 	done # for DATA
 	data_2_gnuplot ${MINISTAT_FILE}
 done # for REPORT
+
+# Dirty patch
+# Generetate multiple files per config setup
+if [ -f ${LAB_RESULTS}/gnuplot.data ]; then
+	if grep -q fastforwarding ${LAB_RESULTS}/gnuplot.data; then
+		echo "#index median minimum maximum" > ${LAB_RESULTS}/forwarding.data
+		grep fastforwarding gnuplot.data | sed s/.fastforwarding//g >> ${LAB_RESULTS}/forwarding.data
+	fi
+	if grep -q pf-statefull ${LAB_RESULTS}/gnuplot.data; then
+		echo "#index median minimum maximum" > ${LAB_RESULTS}/pf.data
+		grep pf-statefull gnuplot.data | sed s/.pf-statefull//g >> ${LAB_RESULTS}/pf.data
+	fi
+	if grep -q ipfw-statefull ${LAB_RESULTS}/gnuplot.data; then
+		echo "#index median minimum maximum" > ${LAB_RESULTS}/ipfw.data
+		grep pf-statefull gnuplot.data | sed s/.pf-statefull//g >> ${LAB_RESULTS}/ipfw.data
+fi
+fi
 
 echo "Done"
 exit

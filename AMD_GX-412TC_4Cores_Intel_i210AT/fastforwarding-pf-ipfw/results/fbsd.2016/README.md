@@ -5,4 +5,3 @@ One year (2016) of ipfw/pf's impact on fastforwarding performance
   - Traffic load at 1.448Mpps (Gigabit line-rate)
 
 ![One year (2016) of ipfw/pf's impact on fastforwarding performance](graph.png)
-
