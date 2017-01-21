@@ -50,8 +50,9 @@ set boxwidth 0.8
 # Only integer value for xtics
 set xtics 1
 
-set title "IPSec performance\nPC Engines APU1D: Dual core AMD G-T40E and Realtek RTL8111E NIC"
-set xlabel "No authentication algorithm, UDP load of 500 Bytes\nMethodology for Benchmarking IPsec Gateways:\nhttp://www.mecs-press.org/ijcnis/ijcnis-v4-n9/IJCNIS-V4-N9-1.pdf"
+set title "IPSec performance on PC Engines APU2C4(Quad cores AMD GX-412TC)"
+
+set xlabel "AESNI used, No authentication algorithm, UDP load of 500 Bytes\nMethodology for Benchmarking IPsec Gateways:\nhttp://www.mecs-press.org/ijcnis/ijcnis-v4-n9/IJCNIS-V4-N9-1.pdf"
 set ylabel "Ethernet throughput in Mb/s\n minimum,median,maximum values of 5 benchs"
 
 # Put the label inside the graph
@@ -62,5 +63,5 @@ set key on inside top left
 set xtics font "Gill Sans,16"
 
 # Ploting!
-plot "gnuplot.data" using 0:2:xtic(1) with boxes title "FreeBSD 11.0" ls 1, \
-	 "gnuplot.data" using 0:2:3:4 with yerrorbars lc rgb 'black' pt 1 lw 2 notitle
+plot "gnuplot.data.max" using 0:2:xtic(1) with boxes title "FreeBSD 11.0" ls 1, \
+	 "gnuplot.data.max" using 0:2:3:4 with yerrorbars lc rgb 'black' pt 1 lw 2 notitle
