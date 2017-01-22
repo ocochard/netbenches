@@ -52,7 +52,7 @@ set xtics 1
 
 set title "projects/ipsec performance improvement on Netgate RCC-VE 4860 (4 cores Intel Atom C2558E)"
 
-set xlabel "AESNI used, No authentication algorithm, 4 SAD/SPD, UDP load of 500 Bytes\nMethodology for Benchmarking IPsec Gateways:\nhttp://www.mecs-press.org/ijcnis/ijcnis-v4-n9/IJCNIS-V4-N9-1.pdf"
+set xlabel "AESNI used, 4 SAD/SPD, UDP load of 500 Bytes\nMethodology for Benchmarking IPsec Gateways:\nhttp://www.mecs-press.org/ijcnis/ijcnis-v4-n9/IJCNIS-V4-N9-1.pdf"
 set ylabel "Ethernet throughput in Mb/s\n minimum,median,maximum values of 5 benchs"
 
 # Put the label inside the graph
@@ -63,8 +63,8 @@ set key on inside top left
 set xtics font "Gill Sans,16"
 
 # Ploting!
-plot "ipsec.data" using 0:2:xtic(1) with boxes title "FreeBSD projects/ipsec (r309881)" ls 2, \
-	 "ipsec.data" using 0:2:3:4 with yerrorbars lc rgb 'black' pt 1 lw 2 notitle, \
-     "head.data" using 0:2:xtic(1) with boxes title "FreeBSD 12-head (r309881)" ls 1, \
-	 "head.data" using 0:2:3:4 with yerrorbars lc rgb 'black' pt 1 lw 2 notitle, \
+plot "ipsec.ah.data" using 0:2:xtic(1) with boxes title "FreeBSD projects/ipsec (r309881)" ls 2, \
+	 "ipsec.ah.data" using 0:2:3:4 with yerrorbars lc rgb 'black' pt 1 lw 2 notitle, \
+     "head.ah.data" using 0:2:xtic(1) with boxes title "FreeBSD 12-head (r309881)" ls 1, \
+	 "head.ah.data" using 0:2:3:4 with yerrorbars lc rgb 'black' pt 1 lw 2 notitle, \
 	 
