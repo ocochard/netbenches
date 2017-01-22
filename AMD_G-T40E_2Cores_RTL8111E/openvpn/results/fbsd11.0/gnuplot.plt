@@ -62,5 +62,5 @@ set key on inside top left
 set xtics font "Gill Sans,16"
 
 # Ploting!
-plot "gnuplot.data" using 0:2:xtic(1) with boxes title "FreeBSD 11.0" ls 1, \
-	 "gnuplot.data" using 0:2:3:4 with yerrorbars lc rgb 'black' pt 1 lw 2 notitle
+plot "gnuplot.data.max" using 0:2:xtic(1) with boxes title "FreeBSD 11.0" ls 1, \
+	 "gnuplot.data.max" using 0:2:3:4 with yerrorbars lc rgb 'black' pt 1 lw 2 notitle
