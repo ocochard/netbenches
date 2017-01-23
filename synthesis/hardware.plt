@@ -6,15 +6,10 @@
 set yrange [0:*]
 
 # output
-#set terminal png size 1024,768
-#set terminal png size 1920,1080 font "Gill Sans,22"
-#set terminal png size 3840,2160 font "Gill Sans,44"
-set terminal pngcairo size 1024,768 enhanced font "Gill Sans,12"
-set output 'hardware.png'
-#set terminal svg size 1024,768 font "Gill Sans,16" rounded dashed
+set terminal png size 1920,1080 font "Gill Sans,22"
+set output 'graph.png'
+#set terminal svg size 1024,768 font "Gill Sans,12" rounded dashed
 #set output 'graph.svg'
-#set terminal pdf size 10,6 color font "Gill Sans,16" rounded dashed enhanced
-#set output 'graph.pdf'
 
 # Line style for axes
 set style line 80 lt 0
@@ -49,9 +44,8 @@ set style line 3 lt rgb "#5060D0" lw 2 pt 5
 set style line 4 lt rgb "#F25900" lw 2 pt 13
 
 # Fill box and width
-set style fill solid
-#transparent pattern 4 bo
-#solid 0.5 noborder
+#set style fill solid
+set style fill transparent solid 0.75
 set boxwidth 0.8
 # Draw a corresponding IMIX Eth throughput estimation on the right side
 set y2tics
@@ -64,22 +58,25 @@ set y2tics format '%.1s%cb/s'
 
 # Only integer value for xtics
 set xtics 1
+set grid mytics
+set mytics 2
 
-set title "Impact of enabling ipfw/pf on fastforwarding performance with FreeBSD 10.2"
-set xlabel "Note: fastforwarding is enabled for all ipfw and pf benchs. 2 firewall rules only"
-set ylabel "Packets per second (minimum size, 2000 flows)\n minimum,median,maximum values of 5 benchs"
-set y2label "Theorical equity using simple IMIX distribution (Ethernet throughput)"
+set title noenhanced "pf/ipfw impact on inet4 forwarding performance on FreeBSD 11-stable r312663"
+set xlabel "2 firewall rules only, harvest.mask=351"
+set ylabel "Packets per second (minimum size, 2000 flows)\n minimum,median,maximum values of 10 benchs"
+set y2label "Theorical equity using IMIX distribution (Ethernet throughput)"
 
 # Put the label inside the graph
 set key on inside top right
 
 # Ploting!
-plot "../Xeon_E5-2650-8Cores-Chelsio_T540-CR/fastforwarding-pf-ipfw.4nxq10g/results/fbsd10.2/gnuplot.data" using 0:2:xtic(1) with boxes title "HP ProLiant DL360p Gen8 with 8 cores Intel Xeon E5-2650 and Chelsio T540-CR" ls 4, \
-	 "../Xeon_E5-2650-8Cores-Chelsio_T540-CR/fastforwarding-pf-ipfw.4nxq10g/results/fbsd10.2/gnuplot.data" using 0:2:3:4 with yerrorbars lc rgb 'black' pt 1 lw 2 notitle, \
-	"../Xeon_L5630-4Cores-Intel_82599EB/fastforwarding-pf-ipfw/results/fbsd10.2/gnuplot.data" using 0:2:xtic(1) with boxes title "IBM System x3550 M3, 4 cores Intel Xeon L5630 and Intel 82599EB" ls 3, \
-	 "../Xeon_L5630-4Cores-Intel_82599EB/fastforwarding-pf-ipfw/results/fbsd10.2/gnuplot.data" using 0:2:3:4 with yerrorbars lc rgb 'black' pt 1 lw 2 notitle, \
-     "../Atom_C2558_4Cores-Intel_i350/fastforwarding-pf-ipfw/results/fbsd10.2/gnuplot.data" using 0:2:xtic(1) with boxes title "Netgate RCC-VE 4860, 4 cores Intel Atom C2558E and Intel i350" ls 2, \
-	 "../Atom_C2558_4Cores-Intel_i350/fastforwarding-pf-ipfw/results/fbsd10.2/gnuplot.data" using 0:2:3:4 with yerrorbars lc rgb 'black' pt 1 lw 2 notitle, \
-	 "../AMD_G-T40E_2Cores_RTL8111E/fastforwarding-pf-ipfw/results/fbsd10.2/gnuplot.data" using 0:2:xtic(1) with boxes title "PC Engines APU, 2 cores AMD G-T40E and RTL8111E" ls 1, \
-	 "../AMD_G-T40E_2Cores_RTL8111E/fastforwarding-pf-ipfw/results/fbsd10.2/gnuplot.data" using 0:2:3:4 with yerrorbars lc rgb 'black' pt 1 lw 2 notitle
-	 
+plot "hp.data" using 0:2:xtic(1) with boxes title "HP ProLiant DL360p Gen8 (8 cores Intel Xeon E5-2650 and Chelsio 10G T540-CR)" ls 2, \
+	 "hp.data" using 0:2:3:4 with yerrorbars lc rgb 'black' pt 1 lw 2 notitle, \
+	"sm.data" using 0:2:xtic(1) with boxes title "SuperMicro 5018A-FTN4 (8 cores Atom C2758 and Chelsio 10G T540-CR)" ls 4, \
+	 "sm.data" using 0:2:3:4 with yerrorbars lc rgb 'orange' pt 1 lw 2 notitle, \
+	"ibm.data" using 0:2:xtic(1) with boxes title "IBM System x3550 M3 (4 cores Intel Xeon L5630 and Intel 10G 82599EB)" ls 3, \
+	 "ibm.data" using 0:2:3:4 with yerrorbars lc rgb 'blue' pt 1 lw 2 notitle, \
+     "netgate.data" using 0:2:xtic(1) with boxes title "Netgate RCC-VE 4860 (4 cores Intel Atom C2558E and Intel i350)" ls 5, \
+	 "netgate.data" using 0:2:3:4 with yerrorbars lc rgb 'black' pt 1 lw 2 notitle, \
+	 "apu2.data" using 0:2:xtic(1) with boxes title "PC Engines APU2C4 (4 cores AMD GX-412TC and Intel i210AT)" ls 1, \
+	 "apu2.data" using 0:2:3:4 with yerrorbars lc rgb 'black' pt 1 lw 2 notitle
