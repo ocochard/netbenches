@@ -61,7 +61,7 @@ set grid mytics
 set mytics 2
 
 set title "Impact of enabling HyperThreading on forwarding/ipfw/pf performance with FreeBSD 11-stable r312663\n(HP ProLiant DL360p Gen8 with 8 cores Intel Xeon E5-2650, Chelsio 10Giga NIC T540-CR)"
-set xlabel "Note: Chelsio with default queues, fastforwarding is enabled for all ipfw and pf benchs. 2 firewall rules only"
+set xlabel "Note: Chelsio with default queues, 2 firewall rules only"
 set ylabel "Packets per second (minimum size, 2000 flows)\n minimum,median,maximum values of 5 benchs"
 set y2label "Theorical equity using IMIX distribution (Ethernet throughput)"
 
@@ -69,7 +69,7 @@ set y2label "Theorical equity using IMIX distribution (Ethernet throughput)"
 set key on inside top right
 
 # Ploting!
-plot "gnuplot.data" using 0:2:xtic(1) with boxes title "Hyper Threading OFF (8 cores: cxgbe autoconfigue 8 txq and 8 rxq)" ls 2, \
-	 "gnuplot.data" using 0:2:3:4 with yerrorbars lc rgb 'green' pt 1 lw 2 notitle, \
-	 "HT.data" using 0:2:xtic(1) with boxes title "Hyper Threading ON (16 cores: cxgbe autoconfigue 16 txq and 8 rxq)" ls 1, \
-	 "HT.data" using 0:2:3:4 with yerrorbars lc rgb 'red' pt 1 lw 2 notitle
+plot "../fbsd11-stable.r312663/gnuplot.data" using 0:2:xtic(1) with boxes title "Hyper Threading OFF (8 cores: cxgbe autoconfigue 8 txq and 8 rxq)" ls 2, \
+	 "../fbsd11-stable.r312663/gnuplot.data" using 0:2:3:4 with yerrorbars lc rgb 'green' pt 1 lw 2 notitle, \
+	 "gnuplot.data" using 0:2:xtic(1) with boxes title "Hyper Threading ON (16 cores: cxgbe autoconfigue 16 txq and 8 rxq)" ls 1, \
+	 "gnuplot.data" using 0:2:3:4 with yerrorbars lc rgb 'red' pt 1 lw 2 notitle
