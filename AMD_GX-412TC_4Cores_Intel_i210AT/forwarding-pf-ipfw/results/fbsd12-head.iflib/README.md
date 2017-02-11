@@ -71,3 +71,8 @@ flame graph:
    - [r312905](bench.312905.svg)
    - [r313448](bench.313448.svg)
 
+They were generated with this command (sched_idletd filtered):
+```
+stackcollapse-pmc.pl bench.312905.1.pmc.graph | grep -v sched_idletd | flamegraph.pl > bench.312905.svg
+
+```
