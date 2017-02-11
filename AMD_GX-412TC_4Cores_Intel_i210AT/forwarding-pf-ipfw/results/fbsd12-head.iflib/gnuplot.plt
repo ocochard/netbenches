@@ -6,7 +6,7 @@
 set yrange [0:*]
 
 # output
-set terminal png size 1920,1080 font "Gill Sans,22"
+set terminal png size 1920,1080 font "Gill Sans,18"
 set output 'graph.png'
 #set terminal svg size 1024,768 font "Gill Sans,12" rounded dashed
 #set output 'graph.svg'
@@ -47,6 +47,8 @@ set style line 4 lt rgb "#F25900" lw 2 pt 13
 set style fill solid
 set boxwidth 0.8
 # Draw a corresponding IMIX Eth throughput estimation on the right side
+#set xtics rotate
+set xtics noenhanced
 set y2tics
 # IMIX: packet * ( 7*(40+14) + 4*(576+14) + (1500+14))/12*8 = 2834.666667
 set link y2 via y * 2834.666667 inverse y/2834.666667
@@ -69,7 +71,7 @@ set ylabel "Packets per second (minimum size, 2000 flows)\n minimum,median,maxim
 set y2label "Theorical equity using simple IMIX distribution (Ethernet throughput)"
 
 # Put the label inside the graph
-set key on inside top right
+set key on inside top right noenhanced
 
 # Ploting!
 plot "gnuplot.data" using 0:2:xtic(1) with boxes notitle ls 2, \

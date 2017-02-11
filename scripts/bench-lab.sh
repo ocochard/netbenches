@@ -194,7 +194,7 @@ bench () {
 	if ($PMC); then
 		rcmd ${DUT_ADMIN} "kldstat -qm hwpmc || kldload hwpmc" || die "Can't load hwmpc"
 		rcmd ${DUT_ADMIN} "mount | grep -q '/data' || mount /data" || die "Can't mount /data"
-		rcmd ${DUT_ADMIN} "pmcstat -S CPU_CLK_UNHALTED_CORE -l 20 -O /data/pmc.out" >> $1.pmc.log &
+		rcmd ${DUT_ADMIN} "pmcstat -S ${PMC_EVENT} -l 20 -O /data/pmc.out" >> $1.pmc.log &
 		JOB_PMC=$!
 	fi
 	#start receiving tool on RECEIVER
