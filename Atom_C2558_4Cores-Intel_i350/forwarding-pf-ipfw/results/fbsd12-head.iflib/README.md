@@ -62,8 +62,8 @@ Difference at 95.0% confidence
 ```
 
 flame graph:
-   - [r311848](311848.svg)
-   - [r311849](311849.svg)
-   - [r312904](312904.svg)
-   - [r312905](312905.svg)
-   - [r313448](313448.svg)
+   - [r311848](bench.311848.svg)
+   - [r311849](bench.311849.svg)
+   - [r312904](bench.312904.svg)
+   - [r312905](bench.312905.svg)
+   - [r313448](bench.313448.svg)
