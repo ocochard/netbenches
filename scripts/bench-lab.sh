@@ -231,10 +231,10 @@ bench () {
 
 	if ($PMC); then
 		wait ${JOB_PMC}
-		rcmd ${DUT_ADMIN} "pmcstat -R /data/pmc.out -z16 -G /data/pmc.graph" || die "can't convert pmc.out to pmc.graph"
-		scp ${SSH_USER}@${DUT_ADMIN}:/data/pmc.out $1.pmc.out || die "can't download pmc.out"
-		scp ${SSH_USER}@${DUT_ADMIN}:/data/pmc.graph $1.pmc.graph  || die "can't download pmc.graph"
-		rcmd ${DUT_ADMIN} "rm /data/pmc.out && rm /data/pmc.graph && umount /data" || echo "Can't delete old data files"
+		rcmd ${DUT_ADMIN} "pmcstat -R /data/pmc.out -z16 -G /data/pmc.graph" >> $1.pmc.log || die "can't convert pmc.out to pmc.graph"
+		scp ${SSH_USER}@${DUT_ADMIN}:/data/pmc.out $1.pmc.out >> $1.pmc.log 2>&1 || die "can't download pmc.out"
+		scp ${SSH_USER}@${DUT_ADMIN}:/data/pmc.graph $1.pmc.graph >> $1.pmc.log 2>&1 || die "can't download pmc.graph"
+		rcmd ${DUT_ADMIN} "rm /data/pmc.out && rm /data/pmc.graph && umount /data" >> $1.pmc.log || echo "Can't delete old data files"
 	fi
 
 	echo "done"

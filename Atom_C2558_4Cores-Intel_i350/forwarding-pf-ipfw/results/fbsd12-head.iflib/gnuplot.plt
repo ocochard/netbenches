@@ -6,7 +6,7 @@
 set yrange [0:*]
 
 # output
-set terminal png size 1920,1080 font "Gill Sans,22"
+set terminal png size 1920,1080 font "Gill Sans,18"
 set output 'graph.png'
 #set terminal svg size 1024,768 font "Gill Sans,12" rounded dashed
 #set output 'graph.svg'
@@ -53,7 +53,7 @@ set link y2 via y * 2834.666667 inverse y/2834.666667
 # Replace long value by M (million), K (kilo) on ytics
 set ytics format '%.1s%c'
 set y2tics format '%.1s%cb/s' 
-
+set xtics noenhanced
 
 # Only integer value for xtics
 set xtics 1
