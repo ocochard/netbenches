@@ -33,7 +33,8 @@ set -eu
 
 ##### User modifiable variables section #####
 # SSH Command line
-SSH_CMD="/usr/bin/ssh -x -a -q -2 -o \"PreferredAuthentications publickey\" -o \"StrictHostKeyChecking no\" -l root"
+SSH_USER="root"
+SSH_CMD="/usr/bin/ssh -x -a -q -2 -o \"ConnectTimeout=120\" -o \"PreferredAuthentications publickey\" -o \"StrictHostKeyChecking no\" -l ${SSH_USER}"
 
 ###### End of user modifiable variable section #####
 
@@ -55,6 +56,8 @@ BENCH_ITER=5
 BENCH_ITER_TOTAL=0
 # Report's email receiver
 MAIL="root@localhost"
+# PMC mode (collect hwpmc data)
+PMC=false
 
 # An usefull function (from: http://code.google.com/p/sh-die/)
 die() { echo -n "EXIT: " >&2; echo "$@" >&2; exit 1; }
@@ -93,7 +96,7 @@ bench_image () {
 	# $1: Directory/prefix-name of output log file
 
 	if [ -n "${IMAGES_DIR}" ]; then
-		for IMAGE in $(ls -1 ${IMAGES_DIR}/BSDRP-* | grep upgrade); do
+		for IMAGE in $(ls -1 ${IMAGES_DIR}/BSDRP-* | egrep 'upgrade.*\.img($|\.xz)'); do
 			(${COUNTING}) || echo "Start firmware image set: ${IMAGE}"
 			# When using multiple image, they are using svn revision number in their filename like:
 			# BSDRP-293643-upgrade-amd64-serial.img.xz
@@ -188,6 +191,12 @@ bench () {
 	# Benching script
 	# $1: Directory/prefix-name of output log file
 	echo "Start bench serie `basename $1`"
+	if ($PMC); then
+		rcmd ${DUT_ADMIN} "kldstat -qm hwpmc || kldload hwpmc" || die "Can't load hwmpc"
+		rcmd ${DUT_ADMIN} "mount | grep -q '/data' || mount /data" || die "Can't mount /data"
+		rcmd ${DUT_ADMIN} "pmcstat -S CPU_CLK_UNHALTED_CORE -l 20 -O /data/pmc.out" >> $1.pmc.log &
+		JOB_PMC=$!
+	fi
 	#start receiving tool on RECEIVER
 	if [ -n "${RECEIVER_START_CMD}" ]; then
 		echo "CMD: ${RECEIVER_START_CMD}" > $1.receiver
@@ -200,25 +209,33 @@ bench () {
 	rcmd ${SENDER_ADMIN} "${SENDER_START_CMD}" >> $1.sender 2>&1 &
 	JOB_SENDER=$!
 	echo -n "Waiting for end of bench ${BENCH_RUNNING_COUNTER}/${BENCH_ITER_TOTAL}..."
-	if echo ${SENDER_START_CMD} | grep -q pkt-gen; then
+	#if echo ${SENDER_START_CMD} | grep -q pkt-gen; then
 		# There is a bug with pkt-gen: It can sometime never end after finishing sending all packets,
 		# because stuck at "sender_body [1214] pending tx tail 511 head 2047 on ring 2"
 		# Then this simple wait command didn't works:
 		#wait ${JOB_SENDER}
 		# in place, will look every 2 second for "flush tail" in the sender log
-		while true; do
-			sleep 2
-			grep -q 'flush tail' $1.sender && break
-		done
-	else
+	#	while true; do
+	#		sleep 2
+	#		grep -q 'flush tail' $1.sender && break
+	#	done
+	#else
 		wait ${JOB_SENDER}
-	fi
+	#fi
 	if [ -n "${RECEIVER_STOP_CMD}" ]; then
 		rcmd ${RECEIVER_ADMIN} "${RECEIVER_STOP_CMD}" || echo "DEBUG: Can't kill pkt-gen"
 	fi
 	
 	#scp ${RECEIVER_ADMIN}:/tmp/bench.log.receiver $1.receiver
 	#kill ${JOB_RECEIVER}
+
+	if ($PMC); then
+		wait ${JOB_PMC}
+		rcmd ${DUT_ADMIN} "pmcstat -R /data/pmc.out -z16 -G /data/pmc.graph" || die "can't convert pmc.out to pmc.graph"
+		scp ${SSH_USER}@${DUT_ADMIN}:/data/pmc.out $1.pmc.out || die "can't download pmc.out"
+		scp ${SSH_USER}@${DUT_ADMIN}:/data/pmc.graph $1.pmc.graph  || die "can't download pmc.graph"
+		rcmd ${DUT_ADMIN} "rm /data/pmc.out && rm /data/pmc.graph && umount /data" || echo "Can't delete old data files"
+	fi
 
 	echo "done"
 	
@@ -323,22 +340,23 @@ upgrade_image () {
 usage () {
 	if [ $# -lt 1 ]; then
 		echo "$0 [-h] [-f bench-lab-config] [-c configuration-sets-dir] [-i nanobsd-images-dir]"
-		echo "   [-n iteration] [-p pktgen cfg dir ] [-d benchs-results-dir] -r e@mail"
+		echo "   [-n iteration] [-p pktgen cfg dir ] [-d benchs-results-dir] [-P] -r e@mail"
 		echo "
- bench-lab-config:        Text file with lab bench parameters (mandatory)
- nanobsd-images-dir:      Directory where are stored nanobsd update images (optional)
- configuration-sets-dir:  Directory where are stored configuration sets (optional)
- pkgen-cfg-dir:           Directory where specific pkt-gen parameters are (optional)
- iteration:               Number of iteration to do for each bench (3 minimums, 5 by default)
- benchs-results-dir:      Directory Where to store benches results (/tmp/benchs by default)
- e@mail:                  Email to send report too at the end (default root@localhost)"
+ -f bench-lab-config:        Text file with lab bench parameters (mandatory)
+ -i nanobsd-images-dir:      Directory where are stored nanobsd update images (optional)
+ -c configuration-sets-dir:  Directory where are stored configuration sets (optional)
+ -p pkgen-cfg-dir:           Directory where specific pkt-gen parameters are (optional)
+ -n iteration:               Number of iteration to do for each bench (3 minimums, 5 by default)
+ -d benchs-results-dir:      Directory Where to store benches results (/tmp/benchs by default)
+ -r e@mail:                  Email to send report too at the end (default root@localhost)
+ -P :                        PMC collection mode"
 		exit 1 
 	fi
 }
 
 ##### Main
 
-args=`getopt c:d:f:i:hn:r:p: $*`
+args=`getopt c:d:f:i:hn:r:Pp: $*`
 
 set -- $args
 for i
@@ -369,7 +387,7 @@ do
 		shift
 		;;
 	-n)
-		BENCH_ITER=$2	
+		(${PMC}) || BENCH_ITER=$2	
 		shift
 		shift
 		;;
@@ -381,6 +399,11 @@ do
 	-p)
 		PKTGEN_DIR="$2"
 		shift
+		shift
+		;;
+	-P)
+		BENCH_ITER=1
+		PMC=true
 		shift
 		;;
 	--)
@@ -401,7 +424,7 @@ fi
 [ -n ${IMAGES_DIR} ] && [ -d ${IMAGES_DIR} ] || die "Can't found directory ${IMAGES_DIR}"
 [ -n ${RESULTS_DIR} ] && [ -d ${RESULTS_DIR} ] || die "Can't found directory ${RESULTS_DIR}"
 [ -n ${CONFIG_SET_DIR} ] && [ -d ${CONFIG_SET_DIR} ] || die "Can't found directory ${CONFIG_SET_DIR}"
-[ ${BENCH_ITER} -lt 3 ] && die "Need a minimum of 3 series of benchs"
+!($PMC) && [ ${BENCH_ITER} -lt 3 ] && die "Need a minimum of 3 series of benchs"
 
 # Load (first time) the configuration set
 . ${CONFIG_FILE}
@@ -425,6 +448,7 @@ echo -n " - Multiples pkt-gen configuration to test: "
 [ -z "${PKTGEN_DIR}" ] && echo "no" || echo "yes"
 echo " - Number of iteration for each set: ${BENCH_ITER}"
 echo " - Results dir: ${RESULTS_DIR}"
+(${PMC}) && echo " - PMC mode: Will collect PMC data"
 echo ""
 
 ls ${RESULTS_DIR} | grep -q bench && die "You really should clean-up all previous reports in ${RESULTS_DIR} before to mismatch your differents results"
