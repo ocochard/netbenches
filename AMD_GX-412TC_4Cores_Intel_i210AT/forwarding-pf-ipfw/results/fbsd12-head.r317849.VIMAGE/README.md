@@ -45,7 +45,7 @@ Difference at 95.0% confidence
         (Student's t, pooled s = 1527.13)
 ```
 
-But pf performance is decreased:
+But pf performance is decreased (-2.4%):
 
 ```
 x r317849 pf-statefull (packets-per-seconds)
