@@ -60,7 +60,7 @@ set y2tics format '%.0s%cb/s'
 # Only integer value for xtics
 set xtics 1
 
-set title "Impact of adding VIMAGE support on forwarding/ipfw/pf performance on FreeBSD 12-head r317849\n (HP ProLiant DL360p Gen8 with 8 cores Intel Xeon E5-2650, Chelsio 10Giga NIC T540-CR)"
+set title "Impact of adding VIMAGE support on forwarding/ipfw/pf performance on FreeBSD 12-head r317849\n (IBM System x3550 M3 with 4 cores Intel Xeon L5630, Intel 82599EB NIC)"
 set xlabel "Note: 2 firewall rules only and harvest.mask=351"
 set ylabel "Packets per second (minimum size, 2000 flows)\n minimum,median,maximum values of 5 benchs"
 set y2label "Theorical equity using simple IMIX distribution (Ethernet throughput)"
