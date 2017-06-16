@@ -44,9 +44,10 @@ set style line 3 lt rgb "#5060D0" lw 2 pt 5
 set style line 4 lt rgb "#F25900" lw 2 pt 13
 
 # Fill box and width
-#set style fill solid
-set style fill transparent solid 0.40
-set boxwidth 0.8
+#set bars fullwidth
+set style fill solid 1.0 border -1
+set style histogram errorbars gap 2 lw 2
+set boxwidth 0.9 relative
 # Draw a corresponding IMIX Eth throughput estimation on the right side
 set y2tics
 # IMIX: packet * ( 7*(40+14) + 4*(576+14) + (1500+14))/12*8 = 2834.666667
@@ -60,7 +61,7 @@ set y2tics format '%.1s%cb/s'
 # Only integer value for xtics
 set xtics 1
 
-set title "Impact of ipfw/pf/ipf on forwarding performance\n (PC Engines APU2C4, 4 cores AMD GX-412TC Processor and Intel i210AT)"
+set title noenhanced "Impact of enabling ipfw/pf/ipf on FreeBSD 12-head r319810M forwarding performance\n(PC Engines APU2C4, 4 cores AMD GX-412TC Processor and Intel i210AT)"
 set xlabel "Note: Minimum firewall rules and harvest.mask=351"
 set ylabel "Packets per second (minimum size, 2000 flows)\n minimum,median,maximum values of 5 benchs"
 set y2label "Theorical equity using simple IMIX distribution (Ethernet throughput)"
@@ -69,11 +70,7 @@ set y2label "Theorical equity using simple IMIX distribution (Ethernet throughpu
 set key on inside top right
 
 # Ploting!
-plot "11.0.inet4.data" using 0:2:xtic(1) with boxes title "FreeBSD 11.0 inet4" ls 2, \
-	 "11.0.inet4.data" using 0:2:3:4 with yerrorbars lc rgb 'green' pt 1 lw 2 notitle, \
-	 "11.0.inet6.data" using 0:2:xtic(1) with boxes title "FreeBSD 11.0 inet6" ls 1, \
-	 "11.0.inet6.data" using 0:2:3:4 with yerrorbars lc rgb 'red' pt 1 lw 2 notitle, \
-	 "11.1BETA1.inet4.data" using 0:2:xtic(1) with boxes title "FreeBSD 11.1-BETA1 inet4" ls 3, \
-	 "11.1BETA1.inet4.data" using 0:2:3:4 with yerrorbars lc rgb 'blue' pt 1 lw 2 notitle, \
-	 "11.1BETA1.inet6.data" using 0:2:xtic(1) with boxes title "FreeBSD 11.1-BETA1 inet6" ls 4, \
-	 "11.1BETA1.inet6.data" using 0:2:3:4 with yerrorbars lc rgb 'orange' pt 1 lw 2 notitle
+plot "11.0.inet4.data" using 2:3:4:xticlabels(1) with histogram title "FreeBSD 11.0 inet4" ls 2, \
+	 "11.0.inet6.data" using 2:3:4:xticlabels(1) with histogram title "FreeBSD 11.0 inet6" ls 1, \
+	 "11.1BETA1.inet4.data" using 2:3:4:xticlabels(1) with histogram title "FreeBSD 11.1-BETA1 inet4" ls 3, \
+	 "11.1BETA1.inet6.data" using 2:3:4:xticlabels(1) with histogram title "FreeBSD 11.1-BETA1 inet6" ls 4
