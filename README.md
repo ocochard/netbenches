@@ -28,7 +28,8 @@ Some results:
  - comparing 12-head and 11-stable:
     - [fbsd12-head vs 11-stable r318516 with 4 cores AMD GX-412TC](AMD_GX-412TC_4Cores_Intel_i210AT/forwarding-pf-ipfw/results/fbsd12-head-vs-11-stable.r318516/README.md)
  - comparing 11.0 and 11.1-BETA1:
-    - [fbsd11.0 vs 11.1-BETA1  with 4 cores AMD GX-412TC](AMD_GX-412TC_4Cores_Intel_i210AT/forwarding-pf-ipfw/results/fbsd11.0vs11.1/README.md)
+    - [FreeBSD 11.0 vs 11.1-BETA1 on a 8 cores Xeon E5-2650 with Chelsio T540](/Xeon_E5-2650-8Cores-Chelsio_T540-CR/forwarding-pf-ipfw/results/fbsd11.0vs11.1/README.md)
+    - [FreeBSD 11.0 vs 11.1-BETA1 on a 4 cores AMD GX-412TC with Intel i210](AMD_GX-412TC_4Cores_Intel_i210AT/forwarding-pf-ipfw/results/fbsd11.0vs11.1/README.md)
  - Impact of adding VIMAGE support (without using it):
     - [Impact of adding VIMAGE on forwarding/pf/ipfw performance with 8 cores Xeon E5-2650](Xeon_E5-2650-8Cores-Chelsio_T540-CR/forwarding-pf-ipfw/results/fbsd12-head.r317849.VIMAGE/README.md)
     - [Impact of adding VIMAGE on forwarding/pf/ipfw performance with 8 cores Atom C2758](Atom_C2758_8Cores-Chelsio_T540-CR/forwarding-pf-ipfw/results/fbsd12-head.r317849.VIMAGE/README.md)
