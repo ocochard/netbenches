@@ -2,6 +2,7 @@ Impact of D11476 on forwarding performance
   - PC Engines APU2C4 (quad core AMD GX-412T Processor 1 GHz)
   - 3 Intel i210AT Gigabit Ethernet ports
   - FreeBSD 12-head 317849
+  - LRO/TSO disabled
   - 2000 flows of smallest UDP packets
   - Traffic load at 1.448Mpps (Gigabit line-rate)
 
@@ -9,8 +10,8 @@ Impact of D11476 on forwarding performance
 
 inet 4 forwarding performance is improved (+2.9%):
 ```
-x r320657 packets-per-second
-+ r320657 with D11476 packets-per-second
+x r320657, inet4 packets-per-second
++ r320657 with D11476, inet4 packets-per-second
 +--------------------------------------------------------------------------+
 |        x                                                          +      |
 |xx      x x                                                       ++   + +|
@@ -28,8 +29,8 @@ Difference at 95.0% confidence
 
 inet6 forwarding performance not impacted:
 ```
-x r320657 packets-per-second
-+ r320657 with D11476 packets-per-second
+x r320657, inet6 packets-per-second
++ r320657 with D11476, inet6 packets-per-second
 +--------------------------------------------------------------------------+
 |+       +      +       x   x           +   x   +                         x|
 |                        |__________________M____A_______________________| |
