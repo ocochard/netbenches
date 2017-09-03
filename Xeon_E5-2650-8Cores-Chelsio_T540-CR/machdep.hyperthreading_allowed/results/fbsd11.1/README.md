@@ -1,5 +1,4 @@
 ```
-ministat -w 74 -s HT-enabled-8rxq.pps HT-enabled-16rxq.pps HT-disabled.pps
 x HT-enabled-8rxq(default).packets-per-seconds
 + HT-enabled-16rxq.packets-per-seconds
 * HT-disabled.packets-per-seconds

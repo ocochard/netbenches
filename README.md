@@ -51,7 +51,7 @@ Some results:
     - [Impact of Intel 82599EB descriptors per queue on forwarding performance with 4 cores Xeon L5630](Xeon_L5630-4Cores-Intel_82599EB/ix.Xxd/results/fbsd10.2/README.md)
     - [Impact of AIM on Intel 82599EB](Xeon_L5630-4Cores-Intel_82599EB/Intel.aim/results/fbsd11-stable.r312663/README.md)
  - Hyper Threading impact:
-    - [Impact of enabling HT on forwarding/ipfw/pf performance](Xeon_E5-2650-8Cores-Chelsio_T540-CR/forwarding-pf-ipfw/results/fbsd11-stable.r312663-HT/README.md)
+    - [Impact of enabling HT on forwarding performance](Xeon_E5-2650-8Cores-Chelsio_T540-CR/machdep.hyperthreading_allowed/results/fbsd11.1/README.md)
  - Intel i350 tuning:
     - [Impact of Intel i350 number of queues(1 queue per core) on forwarding performance with 4 cores Atom C2558E](Atom_C2558_4Cores-Intel_i350/hw.igb.num_queues/results/fbsd11.1/README.md)
     - [Impact of AIM on Intel i350](Atom_C2558_4Cores-Intel_i350/hw.igb.enable_aim/results/fbsd11.1/README.md)
