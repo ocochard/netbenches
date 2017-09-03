@@ -17,8 +17,8 @@ Some results:
     - [Impact of enabling ipfw or pf on forwarding performance with 4 cores Xeon L5630](Xeon_L5630-4Cores-Intel_82599EB/forwarding-pf-ipfw/results/fbsd11-stable.r312663/README.md)
     - [Impact of enabling ipfw or pf on forwarding performance with 8 cores Atom C2758](Atom_C2758_8Cores-Chelsio_T540-CR/forwarding-pf-ipfw/results/fbsd11-stable.r312663/README.md)
     - [Impact of enabling ipfw or pf on forwarding performance with 4 cores Atom C2558E](Atom_C2558_4Cores-Intel_i350/forwarding-pf-ipfw/results/fbsd11-stable.r312663/README.md)
+    - [Impact of enabling ipfw or pf on forwarding performance with 4 cores AMD GX-412TC](AMD_GX-412TC_4Cores_Intel_i210AT/forwarding-pf-ipfw/results/fbsd11.1/README.md)
     - [Impact of enabling ipfw or pf on forwarding performance with 2 cores AMD G-T40E](AMD_G-T40E_2Cores_RTL8111E/forwarding-pf-ipfw/results/fbsd11-stable.r312663//README.md)
-    - [Impact of enabling ipfw or pf on forwarding performance with 4 cores AMD GX-412TC](AMD_GX-412TC_4Cores_Intel_i210AT/forwarding-pf-ipfw/results/fbsd11-stable.r312663/README.md)
     - [One year (2016) of forwarding performance with 8 cores Atom 2758](Atom_C2758_8Cores-Chelsio_T540-CR/forwarding-pf-ipfw/results/fbsd.2016/README.md)
     - [One year (2016) of forwarding performance with 4 cores Atom 2558](Atom_C2558_4Cores-Intel_i350/forwarding-pf-ipfw/results/fbsd.2016/README.md)
     - [One year (2016) of forwarding performance with 4 cores AMD GX-412TC](AMD_GX-412TC_4Cores_Intel_i210AT/forwarding-pf-ipfw/results/fbsd.2016/README.md)
@@ -53,8 +53,8 @@ Some results:
  - Hyper Threading impact:
     - [Impact of enabling HT on forwarding/ipfw/pf performance](Xeon_E5-2650-8Cores-Chelsio_T540-CR/forwarding-pf-ipfw/results/fbsd11-stable.r312663-HT/README.md)
  - Intel i350 tuning:
-    - [Impact of Intel i350 queue number (1 queue per core) on forwarding performance with 4 cores Atom C2558E](Atom_C2558_4Cores-Intel_i350/igb.num_queues/results/fbsd11-routing.r287531/README.md)
-    - [Impact of AIM on Intel i350](Atom_C2558_4Cores-Intel_i350//Intel.aim/results/fbsd11-stable.r312663/README.md)
+    - [Impact of Intel i350 number of queues(1 queue per core) on forwarding performance with 4 cores Atom C2558E](Atom_C2558_4Cores-Intel_i350/hw.igb.num_queues/results/fbsd11.1/README.md)
+    - [Impact of AIM on Intel i350](Atom_C2558_4Cores-Intel_i350/hw.igb.enable_aim/results/fbsd11.1/README.md)
  - Packet filter (pf) tuning:
     - [Impact of number of flows with default pf setting on performance on FreeBSD 10.3](Atom_C2558_4Cores-Intel_i350/pf-sessions/results/fbsd10.3/README.md)
     - [Impact of number of flows with 10M states pf setting on performance on FreeBSD 10.3](Atom_C2558_4Cores-Intel_i350/pf-sessions/results/fbsd10.3.10M/README.md)
