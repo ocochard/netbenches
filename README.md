@@ -13,12 +13,12 @@ Hardware benched are:
 
 Some results:
  - ipfw/pf/ipf's impact on forwarding performance:
-    - [Impact of enabling firewalls on forwarding performance with 8 cores Xeon E5-2650](Xeon_E5-2650-8Cores-Chelsio_T540-CR/forwarding-pf-ipfw/results/fbsd11-routing.r287531/README.md)
-    - [Impact of enabling firewalls on forwarding performance with 4 cores Xeon L5630](Xeon_L5630-4Cores-Intel_82599EB/forwarding-pf-ipfw/results/fbsd11-stable.r312663/README.md)
-    - [Impact of enabling firewalls or pf on forwarding performance with 8 cores Atom C2758](Atom_C2758_8Cores-Chelsio_T540-CR/forwarding-pf-ipfw/results/fbsd11-stable.r312663/README.md)
-    - [Impact of enabling firewalls or pf on forwarding performance with 4 cores Atom C2558](Atom_C2558_4Cores-Intel_i350/forwarding-pf-ipfw/results/fbsd11.1/README.md)
-    - [Impact of enabling firewalls or pf on forwarding performance with 4 cores AMD GX-412TC](AMD_GX-412TC_4Cores_Intel_i210AT/forwarding-pf-ipfw/results/fbsd11.1/README.md)
-    - [Impact of enabling firewalls on forwarding performance with 2 cores AMD G-T40E](AMD_G-T40E_2Cores_RTL8111E/forwarding-pf-ipfw/results/fbsd11-stable.r312663//README.md)
+    - [Impact of firewalls on forwarding performance with 8 cores Xeon E5-2650](Xeon_E5-2650-8Cores-Chelsio_T540-CR/forwarding-pf-ipfw/results/fbsd11-routing.r287531/README.md)
+    - [Impact of firewalls on forwarding performance with 4 cores Xeon L5630](Xeon_L5630-4Cores-Intel_82599EB/forwarding-pf-ipfw/results/fbsd11-stable.r312663/README.md)
+    - [Impact of firewalls on forwarding performance with 8 cores Atom C2758](Atom_C2758_8Cores-Chelsio_T540-CR/forwarding-pf-ipfw/results/fbsd11.1/README.md)
+    - [Impact of firewalls on forwarding performance with 4 cores Atom C2558](Atom_C2558_4Cores-Intel_i350/forwarding-pf-ipfw/results/fbsd11.1/README.md)
+    - [Impact of firewalls on forwarding performance with 4 cores AMD GX-412TC](AMD_GX-412TC_4Cores_Intel_i210AT/forwarding-pf-ipfw/results/fbsd11.1/README.md)
+    - [Impact of firewalls on forwarding performance with 2 cores AMD G-T40E](AMD_G-T40E_2Cores_RTL8111E/forwarding-pf-ipfw/results/fbsd11-stable.r312663//README.md)
     - [One year (2016) of forwarding performance with 8 cores Atom 2758](Atom_C2758_8Cores-Chelsio_T540-CR/forwarding-pf-ipfw/results/fbsd.2016/README.md)
     - [One year (2016) of forwarding performance with 4 cores Atom 2558](Atom_C2558_4Cores-Intel_i350/forwarding-pf-ipfw/results/fbsd.2016/README.md)
     - [One year (2016) of forwarding performance with 4 cores AMD GX-412TC](AMD_GX-412TC_4Cores_Intel_i210AT/forwarding-pf-ipfw/results/fbsd.2016/README.md)
@@ -30,6 +30,12 @@ Some results:
  - comparing 11.0 and 11.1-BETA1:
     - [FreeBSD 11.0 vs 11.1-BETA1 on a 8 cores Xeon E5-2650 with Chelsio T540](/Xeon_E5-2650-8Cores-Chelsio_T540-CR/forwarding-pf-ipfw/results/fbsd11.0vs11.1/README.md)
     - [FreeBSD 11.0 vs 11.1-BETA1 on a 4 cores AMD GX-412TC with Intel i210](AMD_GX-412TC_4Cores_Intel_i210AT/forwarding-pf-ipfw/results/fbsd11.0vs11.1/README.md)
+ - Impact of entropy sources:
+    - [Impact of random.harvest.mask on forwarding performance with 8 cores Xeon E5-2650](Xeon_E5-2650-8Cores-Chelsio_T540-CR/kern.random.harvest.mask/results/fbsd11.1/README.md)
+    - [Impact of random.harvest.mask on forwarding performance with 8 cores Atom C2758](Atom_C2758_8Cores-Chelsio_T540-CR/kern.random.harvest.mask/results/fbsd11.1/README.md)
+    - [Impact of random.harvest.mask on forwarding performance with 4 cores Atom C2558](Atom_C2558_4Cores-Intel_i350/kern.random.harvest.mask/results/fbsd11.1/README.md)
+    - [Impact of random.harvest.mask on forwarding performance with 4 cores AMD GX-412TC](AMD_GX-412TC_4Cores_Intel_i210AT/kern.random.harvest.mask/results/fbsd11.1/README.md)
+
  - Impact of adding VIMAGE support (without using it):
     - [Impact of adding VIMAGE on forwarding/pf/ipfw performance with 8 cores Xeon E5-2650](Xeon_E5-2650-8Cores-Chelsio_T540-CR/forwarding-pf-ipfw/results/fbsd12-head.r317849.VIMAGE/README.md)
     - [Impact of adding VIMAGE on forwarding/pf/ipfw performance with 8 cores Atom C2758](Atom_C2758_8Cores-Chelsio_T540-CR/forwarding-pf-ipfw/results/fbsd12-head.r317849.VIMAGE/README.md)
@@ -39,9 +45,8 @@ Some results:
  - Impact of number of static routes:
     - [Impact of number of static routes on forwarding performance with 4 cores Xeon L5630](Xeon_L5630-4Cores-Intel_82599EB/route-contention/results/fbsd10.2/README.md)
  - Chelsio NIC T540-CR tuning:
-    - [Impact of Chelsio T540-CR queue number (1 queue per core) on forwarding performance with 8 cores Xeon E5-2650](Xeon_E5-2650-8Cores-Chelsio_T540-CR/nXxq10g/results/fbsd11-stable.r312663/README.md)
-    - [Impact of Chelsio T540-CR queue number on forwarding performance with 8 cores Atom C2758](Atom_C2758_8Cores-Chelsio_T540-CR/nXxq10g.random.harvest.mask.351/results/fbsd10.3/README.md)
-    - [Impact of random.harvest.mask and Chelsio T540-CR queue number (1 queue per core) on forwarding performance with 8 cores Xeon E5-2650](Xeon_E5-2650-8Cores-Chelsio_T540-CR/nXxq10g.random.harvest.mask.351/results/fbsd11-routing.r287531/README.md)
+    - [Impact of queue number on forwarding performance with 8 cores Xeon E5-2650](Xeon_E5-2650-8Cores-Chelsio_T540-CR/nXxq10g/results/fbsd11-stable.r312663/README.md)
+    - [Impact of queue number on forwarding performance with 8 cores Atom C2758](Atom_C2758_8Cores-Chelsio_T540-CR/hw.cxgbe.nXxq10g/results/fbsd11.1/README.md)
     - [Impact of disabling cxgbe.toecaps_allowed on forwarding performance with 8 cores Xeon E5-2650](Xeon_E5-2650-8Cores-Chelsio_T540-CR/cxgbe.toecaps_allowed/results/fbsd11-routing.r287531/README.md)
  - Intel 82599EB NIC tuning:
     - [Impact of Intel 82599EB queue number (1 queue per core) on forwarding performance with 4 cores Xeon L5630](Xeon_L5630-4Cores-Intel_82599EB/ix.num_queues/results/fbsd11-routing.r287531/README.md)	
