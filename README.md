@@ -6,8 +6,8 @@ This repository includes bench scripts (need netmap pkt-gen and nanobsd like), b
 
 Hardware benched are:
  - HP ProLiant DL360p Gen8 (8 cores Intel Xeon E5-2650 @ 2.60GHz) and 10-Gigabit Chelsio T540-CR
- - IBM System x3550 M3 (4 cores Intel Xeon L5630 2.13GHz, hyper-threading disabled) and dual port Intel 82599EB 10-Gigabit
  - SuperMicro SuperServer 5018A-FTN4 (8 cores Atom C2758) and 10-Gigabit Chelsio T540-CR
+ - SuperMicro SuperServer 5018A-FTN4 (8 cores Atom C2758) and 10-Gigabit Intel 82599
  - Netgate RCC-VE 4860 (4 cores Intel Atom C2558) and quad port Intel i350 (the 2 Intel i211 are not benched)
  - PC Engines APU2C4 (4 cores AMD GX-412TC) and 4 Intel i210AT Gigabit NIC
 
