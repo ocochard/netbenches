@@ -60,8 +60,8 @@ set y2tics format '%.1s%cb/s'
 # Only integer value for xtics
 set xtics 1
 
-set title noenhanced "Impact of enabling ipfw/pf/ipf on FreeBSD 11.1 with yandex's patches forwarding performance\n(SuperMicro 5018A-FTN4, 8 cores ATOM C2758 and Intel 82599)"
-set xlabel noenhanced "Note: Minimum firewall rules, harvest.mask=351, hw.ix.rx_process_limit=-1"
+set title noenhanced "Impact of enabling ipfw/pf/ipf on FreeBSD 11.1 forwarding performance\n(SuperMicro 5018A-FTN4, 8 cores ATOM C2758 and Intel 82599)"
+set xlabel "Note: Minimum firewall rules, harvest.mask=351, AFDATA and RADIX locks patched"
 set ylabel "Packets per second (minimum size, 2000 flows)\n minimum,median,maximum values of 5 benchs"
 set y2label "Theorical equity using simple IMIX distribution (Ethernet throughput)"
 
@@ -69,5 +69,5 @@ set y2label "Theorical equity using simple IMIX distribution (Ethernet throughpu
 set key on inside top right
 
 # Ploting!
-plot "inet4-yandex.data" using 2:3:4:xticlabels(1) with histogram title "inet4" ls 2, \
-	 "inet6-yandex.data" using 2:3:4:xticlabels(1) with histogram title "inet6" ls 3
+plot "inet4.data" using 2:3:4:xticlabels(1) with histogram title "inet4" ls 2, \
+	 "inet6.data" using 2:3:4:xticlabels(1) with histogram title "inet6" ls 3
