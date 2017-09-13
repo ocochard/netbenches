@@ -38,7 +38,7 @@ Some results:
     - [Impact of random.harvest.mask on forwarding performance with 4 cores AMD GX-412TC](AMD_GX-412TC_4Cores_Intel_i210AT/kern.random.harvest.mask/results/fbsd11.1/README.md)
 
  - Impact of adding VIMAGE support (without using it):
-    - [Impact of adding VIMAGE on forwarding/pf/ipfw performance with 8 cores Xeon E5-2650](Xeon_E5-2650-8Cores-Chelsio_T540-CR/forwarding-pf-ipfw/results/fbsd12-head.r317849.VIMAGE/README.md)
+    - [Impact of adding VIMAGE on forwarding/pf/ipfw performance with 8 cores Xeon E5-2650](Xeon_E5-2650-8Cores-Chelsio_T540-CR/forwarding-pf-ipfw/results/fbsd11.1-yandex.VIMAGE/README.md)
     - [Impact of adding VIMAGE on forwarding/pf/ipfw performance with 8 cores Atom C2758](Atom_C2758_8Cores-Chelsio_T540-CR/forwarding-pf-ipfw/results/fbsd12-head.r317849.VIMAGE/README.md)
     - [Impact of adding VIMAGE on forwarding/pf/ipfw performance with 4 cores Atom C2558](Atom_C2558_4Cores-Intel_i350/forwarding-pf-ipfw/results/fbsd12-head.r317849.VIMAGE/README.md)
     - [Impact of adding VIMAGE on forwarding/pf/ipfw performance with 4 cores AMD GX-412TC](AMD_GX-412TC_4Cores_Intel_i210AT/forwarding-pf-ipfw/results/fbsd12-head.r317849.VIMAGE/README.md)
@@ -63,7 +63,7 @@ Some results:
     - [Impact of AIM on Intel i350](Atom_C2558_4Cores-Intel_i350/hw.igb.enable_aim/results/fbsd11.1/README.md)
  - Packet filter (pf) tuning:
     - [Impact of number of flows with default pf setting on performance on FreeBSD 10.3](Atom_C2558_4Cores-Intel_i350/pf-sessions/results/fbsd10.3/README.md)
-    - [Impact of number of flows with 10M states pf setting on performance on FreeBSD 10.3](Atom_C2558_4Cores-Intel_i350/pf-sessions/results/fbsd10.3.10M/README.md)
+    - [Impact of number of flows with 10M states pf setting on performance on FreeBSD 11.1-yandex](Atom_C2558_4Cores-Intel_i350/pf-sessions/results/fbsd11.1-yandex/README.md)
     - [Impact of pf.states_hashsize with default max 10K states with FreeBSD 10.3](Atom_C2558_4Cores-Intel_i350/pf-states_hashsize/results/fbsd10.3.default10K/README.md)
     - [Impact of pf.states_hashsize with 4M max states with FreeBSD 10.3](Atom_C2558_4Cores-Intel_i350/pf-states_hashsize/results/fbsd10.3.4Mstates/README.md)
 
