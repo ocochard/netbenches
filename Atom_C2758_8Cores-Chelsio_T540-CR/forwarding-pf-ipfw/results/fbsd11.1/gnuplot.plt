@@ -6,7 +6,7 @@
 set yrange [0:*]
 
 # output
-set terminal png truecolor size 1920,1080 font "Gill Sans,22"
+set terminal png transparent truecolor size 1920,1080 font "Gill Sans,22"
 set output 'graph.png'
 #set terminal svg size 1024,768 font "Gill Sans,12" rounded dashed
 #set output 'graph.svg'
@@ -61,7 +61,7 @@ set y2tics format '%.1s%cb/s'
 set xtics 1
 
 set title noenhanced "Impact of enabling ipfw/pf/ipf on FreeBSD 11.1 forwarding performance\n(SuperMicro 5018A-FTN4, 8 cores ATOM C2758 and Chelsio T540-CR)"
-set xlabel noenhanced "Note: Minimum firewall rules, harvest.mask=351, hw.igb.rx_process_limit=-1"
+set xlabel noenhanced "Note: Minimum firewall rules, harvest.mask=351"
 set ylabel "Packets per second (minimum size, 2000 flows)\n minimum,median,maximum values of 5 benchs"
 set y2label "Theorical equity using simple IMIX distribution (Ethernet throughput)"
 
