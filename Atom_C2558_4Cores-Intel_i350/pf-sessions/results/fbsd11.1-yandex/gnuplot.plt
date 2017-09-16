@@ -58,8 +58,8 @@ set y2tics format '%.1s%cb/s'
 # Only integer value for xtics
 set xtics 1
 
-set title noenhanced "pf state numbers impact on forwarding performance (Netgate RCC-VE 4860, 4 cores Intel Atom C2558E)"
-set xlabel noenhanced "Number of pf active states (unidirectionnal UDP flows were half this value)\nnet.pf.states_hashsize=33554432 and set limit { states 10000000 }"
+set title noenhanced "Impact of UDP flows numbers on pf performance (Netgate RCC-VE 4860, 4 cores Intel Atom C2558E)"
+set xlabel noenhanced "Number of UDP flows (pf states are double)\nnet.pf.states_hashsize=33554432 and set limit { states 10000000 }"
 set ylabel noenhanced "Packets per second (minimum size)\n minimum,median,maximum values of 5 benchs"
 set y2label "Theorical equity using simple IMIX distribution (Ethernet throughput)"
 

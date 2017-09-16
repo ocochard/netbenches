@@ -61,11 +61,9 @@ Some results:
  - Intel i350 tuning:
     - [Impact of Intel i350 number of queues(1 queue per core) on forwarding performance with 4 cores Atom C2558](Atom_C2558_4Cores-Intel_i350/hw.igb.num_queues/results/fbsd11.1/README.md)
     - [Impact of AIM on Intel i350](Atom_C2558_4Cores-Intel_i350/hw.igb.enable_aim/results/fbsd11.1/README.md)
+
  - Packet filter (pf) tuning:
-    - [Impact of number of flows with default pf setting on performance on FreeBSD 10.3](Atom_C2558_4Cores-Intel_i350/pf-sessions/results/fbsd10.3/README.md)
-    - [Impact of number of flows with 10M states pf setting on performance on FreeBSD 11.1-yandex](Atom_C2558_4Cores-Intel_i350/pf-sessions/results/fbsd11.1-yandex/README.md)
-    - [Impact of pf.states_hashsize with default max 10K states with FreeBSD 10.3](Atom_C2558_4Cores-Intel_i350/pf-states_hashsize/results/fbsd10.3.default10K/README.md)
-    - [Impact of pf.states_hashsize with 4M max states with FreeBSD 10.3](Atom_C2558_4Cores-Intel_i350/pf-states_hashsize/results/fbsd10.3.4Mstates/README.md)
+    - [Impact of number of flows on pf performance on FreeBSD 11.1-yandex](Atom_C2558_4Cores-Intel_i350/pf-sessions/results/fbsd11.1-yandex/README.md)
  - ipfw tuning:
     - [Impact of number of flows with maximum ipfw hash table on FreeBSD 11.1-yandex](Atom_C2558_4Cores-Intel_i350/ipfw-sessions/results/fbsd11.1-yandex/README.md)
 
