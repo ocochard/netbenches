@@ -1,13 +1,13 @@
 #!/bin/sh
 #
-# Bench-lab for BSD Router Project 
+# Bench-lab for BSD Router Project
 # http://bsdrp.net/documentation/examples/freebsd_performance_regression_lab
-# 
+#
 # Purpose:
 #  This script permit to automatize benching multiple BSDRP images and/or configuration parameters.
 #  In a lab like this one (simple forwarding/firewalling):
-#  +----------+     +-------------------------+     +----------+ 
-#  | Sender   |<--->| Device Under Test (DUT) |<--->| Receiver | 
+#  +----------+     +-------------------------+     +----------+
+#  | Sender   |<--->| Device Under Test (DUT) |<--->| Receiver |
 #  +----------+     +-------------------------+     +----------+
 #      |                       |                         |
 #    -----------------admin network (ssh)--------------------
@@ -16,8 +16,8 @@
 #
 #    -----------------admin network (ssh)--------------------
 #      |                      |                         |
-#  +----------+     +-------------------------+    +-----------+ 
-#  | Sender   |---->| Device Under Test (DUT) |--->| Reference | 
+#  +----------+     +-------------------------+    +-----------+
+#  | Sender   |---->| Device Under Test (DUT) |--->| Reference |
 #  | Receiver |     |                         |    | Endpoint  |
 #  +----------+     +-------------------------+    +-----------+
 #      |                                                |
@@ -27,7 +27,7 @@
 #  1. change configuration or upgrade image of the DUT (BSDRP based) and reboot it
 #  2. once rebooted, generate traffic and collect the result
 #  All commands are ssh.
-#   
+#
 
 set -eu
 
@@ -44,7 +44,7 @@ BENCH_RUNNING_COUNTER=1
 CONFIG_FILE=''
 # Directory containing configuration sets
 CONFIG_SET_DIR=''
-# Directory containing nanobsd upgrade image 
+# Directory containing nanobsd upgrade image
 IMAGES_DIR=''
 # Directory containing pkg-gen configuration file
 PKTGEN_DIR=''
@@ -109,7 +109,7 @@ bench_image () {
 			# because if new CFG include /boot change, it will save change on the old partition
 			# Then we need to force a reboot here
 			(${COUNTING}) || reboot_host ${DUT_ADMIN}
-			
+
 			bench_cfg $1.${IMAGE_PREFIX}
 		done
 	else
@@ -121,7 +121,7 @@ bench_image () {
 bench_cfg () {
 	# Bench a list of configurations
 	# $1: Directory/prefix-name of output log file
-	
+
 	if [ -n "${CONFIG_SET_DIR}" ]; then
 		for CFG in $(ls -1d ${CONFIG_SET_DIR}/*); do
 			CFG_PREFIX=$(basename ${CFG})
@@ -174,7 +174,7 @@ bench_iter () {
 		echo "PKTGEN=\"${PKTGEN_PREFIX}\"" >> $1.info
 		echo -n "UNAME=\"`rcmd ${DUT_ADMIN} "uname -a"`\"" >> $1.info
 	fi
-	
+
 	BENCH_ITER_COUNTER=0
 	for ITER in `seq 1 ${BENCH_ITER}`; do
 		if (${COUNTING}); then
@@ -202,8 +202,8 @@ bench () {
 		echo "CMD: ${RECEIVER_START_CMD}" > $1.receiver
 		rcmd ${RECEIVER_ADMIN} "${RECEIVER_START_CMD}" >> $1.receiver 2>&1 &
 		#JOB_RECEIVER=$!
-	fi	
-	#Alternate method with log file stored on RECEIVER (if tool is verbose)	
+	fi
+	#Alternate method with log file stored on RECEIVER (if tool is verbose)
 	#rcmd ${RECEIVER_ADMIN} "nohup netreceive 9090 \>\& /tmp/bench.log.receiver \&"
 	echo "CMD: ${SENDER_START_CMD}" > $1.sender
 	rcmd ${SENDER_ADMIN} "${SENDER_START_CMD}" >> $1.sender 2>&1 &
@@ -225,7 +225,7 @@ bench () {
 	if [ -n "${RECEIVER_STOP_CMD}" ]; then
 		rcmd ${RECEIVER_ADMIN} "${RECEIVER_STOP_CMD}" || echo "DEBUG: Can't kill pkt-gen"
 	fi
-	
+
 	#scp ${RECEIVER_ADMIN}:/tmp/bench.log.receiver $1.receiver
 	#kill ${JOB_RECEIVER}
 
@@ -238,16 +238,16 @@ bench () {
 	fi
 
 	echo "done"
-	
+
 	# if we did the last test of all, we can exit (avoid to wait for an useless reboot)
 	[ ${BENCH_RUNNING_COUNTER} -eq ${BENCH_ITER_TOTAL} ] && return 0
 
-	BENCH_RUNNING_COUNTER=$(( ${BENCH_RUNNING_COUNTER} + 1 ))	
-	
+	BENCH_RUNNING_COUNTER=$(( ${BENCH_RUNNING_COUNTER} + 1 ))
+
 	# if we did the last test of the serie, we can exit and avoid an useless reboot
 	# because after this last, it will be rebooted outside this function
-	[ ${BENCH_ITER_COUNTER} -eq ${BENCH_ITER} ] && return 0	
-	
+	[ ${BENCH_ITER_COUNTER} -eq ${BENCH_ITER} ] && return 0
+
 	reboot_host ${DUT_ADMIN}
 	return 0
 }
@@ -350,7 +350,7 @@ usage () {
  -d benchs-results-dir:      Directory Where to store benches results (/tmp/benchs by default)
  -r e@mail:                  Email to send report too at the end (default root@localhost)
  -P :                        PMC collection mode"
-		exit 1 
+		exit 1
 	fi
 }
 
@@ -371,12 +371,12 @@ do
 		RESULTS_DIR="$2"
 		shift
 		shift
-		;; 
+		;;
 	-f)
 		CONFIG_FILE="$2"
 		shift
 		shift
-		;;	
+		;;
         -i)
 		IMAGES_DIR="$2"
 		shift
@@ -387,7 +387,7 @@ do
 		shift
 		;;
 	-n)
-		(${PMC}) || BENCH_ITER=$2	
+		(${PMC}) || BENCH_ITER=$2
 		shift
 		shift
 		;;
@@ -454,11 +454,11 @@ echo ""
 ls ${RESULTS_DIR} | grep -q bench && die "You really should clean-up all previous reports in ${RESULTS_DIR} before to mismatch your differents results"
 
 
-echo -n "Do you want to continue ? (y/n): " 
-USER_CONFIRM=''                            
-while [ "$USER_CONFIRM" != "y" -a "$USER_CONFIRM" != "n" ]; do                            
-	read USER_CONFIRM <&1                                                                                           
-done                                                                                                                
+echo -n "Do you want to continue ? (y/n): "
+USER_CONFIRM=''
+while [ "$USER_CONFIRM" != "y" -a "$USER_CONFIRM" != "n" ]; do
+	read USER_CONFIRM <&1
+done
 [ "$USER_CONFIRM" = "n" ] && exit 0
 
 icmp_test_all || die "ICMP connectivity test failed"
