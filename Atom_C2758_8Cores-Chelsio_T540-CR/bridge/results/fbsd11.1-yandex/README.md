@@ -33,5 +33,5 @@ Difference at 95.0% confidence
 ```
 
 Flamegraph:
-   - [without if_bridge](bench.bridge.svg)
-   - [with if_bridge](bench.no-bridge.svg)
+   - [without if_bridge](bench.no-bridge.svg)
+   - [with if_bridge](bench.bridge.svg)
