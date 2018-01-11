@@ -1,4 +1,4 @@
-Impact of a software bridge on forwarding performance
+Impact of an if_bridge on forwarding performance
   - SuperMicro SuperServer 5018A-FTN4 (8 cores Atom C2758 at 2.4GHz)
   - Quad port Chelsio 10-Gigabit T540-CR and OPT SFP (SFP-10G-LR)
   - FreeBSD 11.1 with Yandex (AFDATA and RADIX lock) patches
@@ -33,5 +33,5 @@ Difference at 95.0% confidence
 ```
 
 Flamegraph:
-   - [without bridge](bench.bridge.svg)
-   - [with a bridge](bench.no-bridge.svg)
+   - [without if_bridge](bench.bridge.svg)
+   - [with if_bridge](bench.no-bridge.svg)
