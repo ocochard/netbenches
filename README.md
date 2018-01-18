@@ -5,6 +5,7 @@ This repository includes bench scripts (need netmap pkt-gen and nanobsd like), b
 [Bench script documentation is available too](doc/README.md).
 
 Hardware benched are:
+ - Dell PowerEdgre R630 (2x12 cores Intel Xeon E5-2650 @ 2.2GHz) and: Intel 82599, Chelsio T520-CR, Mellanox ConnectX-3 and ConnectX-4
  - HP ProLiant DL360p Gen8 (8 cores Intel Xeon E5-2650 @ 2.60GHz) and 10-Gigabit Chelsio T540-CR
  - SuperMicro SuperServer 5018A-FTN4 (8 cores Atom C2758) and 10-Gigabit Chelsio T540-CR
  - SuperMicro SuperServer 5018A-FTN4 (8 cores Atom C2758) and 10-Gigabit Intel 82599
@@ -13,6 +14,7 @@ Hardware benched are:
 
 Some results:
  - ipfw/pf/ipf's impact on forwarding performance:
+    - [Impact of firewalls on forwarding performance with 2x12 cores Xeon E5-2650 & Mellanox ConnectX-4](Xeon_E5-2650-2x12Cores-Mellanox_ConnectX-4/forwarding-pf-ipfw/results/fbsd12.r328085.BSDRP/README.md)
     - [Impact of firewalls on forwarding performance with 8 cores Xeon E5-2650 & Chelsio T540](Xeon_E5-2650-8Cores-Chelsio_T540-CR/forwarding-pf-ipfw/results/fbsd11.1-yandex/README.md)
     - [Impact of firewalls on forwarding performance with 8 cores Atom C2758 & Chelsio T540](Atom_C2758_8Cores-Chelsio_T540-CR/forwarding-pf-ipfw/results/fbsd11.1-yandex/README.md)
     - [Impact of firewalls on forwarding performance with 8 cores Atom C2758 & Intel 82599](Atom_C2758_8Cores-Intel_82599/forwarding-pf-ipfw/results/fbsd11.1-yandex/README.md)
