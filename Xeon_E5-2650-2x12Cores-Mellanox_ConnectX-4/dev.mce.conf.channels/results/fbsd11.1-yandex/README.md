@@ -1,18 +1,10 @@
-```
-x 24-default.pps
-+ 8.pps
-+--------------------------------------------------------------------------+
-|+                                                                        x|
-|++                                                                       x|
-|++                                                                       x|
-|                                                                         A|
-|A|                                                                        |
-+--------------------------------------------------------------------------+
-    N           Min           Max        Median           Avg        Stddev
-x   5      14612786      14655025      14635409      14636945     17320.208
-+   5       7235714       7334113     7262152.5     7277344.5     46215.466
-Difference at 95.0% confidence
-	-7.3596e+06 +/- 50898
-	-50.281% +/- 0.331225%
-	(Student's t, pooled s = 34898.8)
-```
+Number of NIC's queues vs forwarding performance
+  - Dell PowerEdge R630 with 2 Intel E5-2650 v4 2.2Ghz (2x12 cores)
+  - Mellanox ConnectX-4 LC (10Giga DAC cable)
+  - Minimum firewall rules
+  - HyperThreading and LRO/TSO disabled
+  - harvest.mask=351
+  - Yandex patches applied: AFDATA lock, RADIX lock"
+
+![Number of NIC's queues vs forwarding performance on FreeBSD 11.1-yandex](graph.png)
+
