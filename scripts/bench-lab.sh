@@ -194,6 +194,7 @@ bench () {
 	if ($PMC); then
 		rcmd ${DUT_ADMIN} "kldstat -qm hwpmc || kldload hwpmc" || die "Can't load hwmpc"
 		rcmd ${DUT_ADMIN} "mount | grep -q '/data' || mount /data" || die "Can't mount /data"
+		rcmd ${DUT_ADMIN} "test -f /data/pmc.out && rm /data/pmc.out" || true
 		rcmd ${DUT_ADMIN} "pmcstat -S ${PMC_EVENT} -l 20 -O /data/pmc.out" >> $1.pmc.log &
 		JOB_PMC=$!
 	fi
@@ -231,6 +232,7 @@ bench () {
 
 	if ($PMC); then
 		wait ${JOB_PMC}
+		rcmd ${DUT_ADMIN} "pgrep -q pmcstat" && die "pmcstat is still running"
 		rcmd ${DUT_ADMIN} "pmcstat -R /data/pmc.out -z16 -G /data/pmc.graph" >> $1.pmc.log || die "can't convert pmc.out to pmc.graph"
 		scp ${SSH_USER}@${DUT_ADMIN}:/data/pmc.out $1.pmc.out >> $1.pmc.log 2>&1 || die "can't download pmc.out"
 		scp ${SSH_USER}@${DUT_ADMIN}:/data/pmc.graph $1.pmc.graph >> $1.pmc.log 2>&1 || die "can't download pmc.graph"
