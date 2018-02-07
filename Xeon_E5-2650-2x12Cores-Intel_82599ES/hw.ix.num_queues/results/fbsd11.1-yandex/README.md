@@ -1,20 +1,10 @@
-```
-x 8-default.pps
-+ 12.pps
-* 24.pps
-+--------------------------------------------------------------------------+
-|x         +*      x    x                                         * ***   *|
-|     |_________A__M_____|                                                 |
-|          A|                                                              |
-|                                                                 |__A__|  |
-+--------------------------------------------------------------------------+
-    N           Min           Max        Median           Avg        Stddev
-x   5       6258834       6872624       6722617     6651303.4     255364.68
-+   5       6510812       6549367       6522993     6530623.3     17063.806
-No difference proven at 95.0% confidence
-*   5     7978128.5       8192376       8066597     8070907.7     79671.066
-Difference at 95.0% confidence
-	1.4196e+06 +/- 275870
-	21.3432% +/- 4.96072%
-	(Student's t, pooled s = 189154)
-```
+Impact of queues number on forwarding performance
+  - Dell PowerEdge R630 with 2 Intel E5-2650 v4 2.2Ghz (2x12 cores)
+  - Dual port Intel 82599ES
+  - FreeBSD 11.1 with AFDATA and RADIX patches
+  - 2000 flows of smallest UDP packets
+  - 2 static routes
+  - Traffic load at 14.48 Mpps
+  - random.harvest.mask=351
+
+![Intel 82599ES rx/tx queue number impact on FreeBSD forwarding performance](graph.png)
