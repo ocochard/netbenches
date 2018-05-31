@@ -1,6 +1,6 @@
 #!/bin/sh
 # This script prepare the result from bench-lab.sh to be used by ministat and/or gnuplot
-# 
+#
 set -eu
 
 # An usefull function (from: http://code.google.com/p/sh-die/)

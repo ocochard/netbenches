@@ -198,31 +198,31 @@ bench () {
 		rcmd ${DUT_ADMIN} "pmcstat -S ${PMC_EVENT} -l 20 -O /data/pmc.out" >> $1.pmc.log &
 		JOB_PMC=$!
 	fi
-	#start receiving tool on RECEIVER
+	# start receiving tool on RECEIVER
 	if [ -n "${RECEIVER_START_CMD}" ]; then
 		echo "CMD: ${RECEIVER_START_CMD}" > $1.receiver
 		rcmd ${RECEIVER_ADMIN} "${RECEIVER_START_CMD}" >> $1.receiver 2>&1 &
 		#JOB_RECEIVER=$!
 	fi
-	#Alternate method with log file stored on RECEIVER (if tool is verbose)
-	#rcmd ${RECEIVER_ADMIN} "nohup netreceive 9090 \>\& /tmp/bench.log.receiver \&"
+	# Alternate method with log file stored on RECEIVER (if tool is verbose)
+	# rcmd ${RECEIVER_ADMIN} "nohup netreceive 9090 \>\& /tmp/bench.log.receiver \&"
 	echo "CMD: ${SENDER_START_CMD}" > $1.sender
 	rcmd ${SENDER_ADMIN} "${SENDER_START_CMD}" >> $1.sender 2>&1 &
 	JOB_SENDER=$!
 	echo -n "Waiting for end of bench ${BENCH_RUNNING_COUNTER}/${BENCH_ITER_TOTAL}..."
-	#if echo ${SENDER_START_CMD} | grep -q pkt-gen; then
+	if echo ${SENDER_START_CMD} | grep -q pkt-gen; then
 		# There is a bug with pkt-gen: It can sometime never end after finishing sending all packets,
 		# because stuck at "sender_body [1214] pending tx tail 511 head 2047 on ring 2"
 		# Then this simple wait command didn't works:
 		#wait ${JOB_SENDER}
 		# in place, will look every 2 second for "flush tail" in the sender log
-	#	while true; do
-	#		sleep 2
-	#		grep -q 'flush tail' $1.sender && break
-	#	done
-	#else
+		while true; do
+			sleep 2
+			grep -q 'flush tail' $1.sender && break
+		done
+	else
 		wait ${JOB_SENDER}
-	#fi
+	fi
 	if [ -n "${RECEIVER_STOP_CMD}" ]; then
 		rcmd ${RECEIVER_ADMIN} "${RECEIVER_STOP_CMD}" || echo "DEBUG: Can't kill pkt-gen"
 	fi
