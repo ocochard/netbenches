@@ -61,7 +61,7 @@ set y2tics format '%.1s%cb/s'
 # Only integer value for xtics
 set xtics 1
 
-set title noenhanced "Comparing BSDRP 1.80 vs 1.81 forwarding performance\nHP ProLiant DL360p Gen8 with 8 cores Intel Xeon E5-2650 2.60GHz and Chelsio T540-CR"
+set title noenhanced "Comparing BSDRP 1.80 vs 1.90 forwarding performance\nHP ProLiant DL360p Gen8 with 8 cores Intel Xeon E5-2650 2.60GHz and Chelsio T540-CR"
 set xlabel "Note: Minimum firewall rules, harvest.mask=351, HT off"
 set ylabel "Packets per second (minimum size, 5000 flows)\n minimum,median,maximum values of 5 benchs"
 set y2label "Theorical equity using simple IMIX distribution (Ethernet throughput)"
@@ -74,5 +74,5 @@ f(x)=7000000
 plot f(x) with lines title "Minimum throughput requiered for 10Gbit full-duplex IMIX" ls 5 lw 4, \
 	"1.80.inet4.data" using 2:3:4:xticlabels(1) with histogram title "BSDRP 1.80 inet4" ls 2, \
 	 "1.80.inet6.data" using 2:3:4:xticlabels(1) with histogram title "BSDRP 1.80 inet6" ls 1, \
-	 "1.81.inet4.data" using 2:3:4:xticlabels(1) with histogram title "BSDRP 1.81 inet4" ls 3, \
-	 "1.81.inet6.data" using 2:3:4:xticlabels(1) with histogram title "BSDRP 1.81 inet6" ls 4
+	 "1.81.inet4.data" using 2:3:4:xticlabels(1) with histogram title "BSDRP 1.90 inet4" ls 3, \
+	 "1.81.inet6.data" using 2:3:4:xticlabels(1) with histogram title "BSDRP 1.90 inet6" ls 4
