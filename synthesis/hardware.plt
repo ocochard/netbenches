@@ -6,7 +6,7 @@
 set yrange [0:*]
 
 # output
-set terminal png size 1920,1080 font "Gill Sans,22"
+set terminal png truecolor size 1920,1080 font "Gill Sans,22"
 set output 'graph.png'
 #set terminal svg size 1024,768 font "Gill Sans,12" rounded dashed
 #set output 'graph.svg'
@@ -44,39 +44,34 @@ set style line 3 lt rgb "#5060D0" lw 2 pt 5
 set style line 4 lt rgb "#F25900" lw 2 pt 13
 
 # Fill box and width
-#set style fill solid
-set style fill transparent solid 0.75
-set boxwidth 0.8
+#set bars fullwidth
+set style fill solid 1.0 border -1
+set style histogram errorbars gap 2 lw 2
+set boxwidth 0.9 relative
 # Draw a corresponding IMIX Eth throughput estimation on the right side
 set y2tics
 # IMIX: packet * ( 7*(40+14) + 4*(576+14) + (1500+14))/12*8 = 2834.666667
 set link y2 via y * 2834.666667 inverse y/2834.666667
 # Replace long value by M (million), K (kilo) on ytics
-set ytics format '%.1s%c'
+set ytics format '%.0s%c'
+#set ytics format '%.1s%c'
 set y2tics format '%.1s%cb/s' 
 
 
 # Only integer value for xtics
 set xtics 1
-set grid mytics
-set mytics 2
 
-set title noenhanced "pf/ipfw impact on inet4 forwarding performance on FreeBSD 11-stable r312663"
-set xlabel "2 firewall rules only, harvest.mask=351"
-set ylabel "Packets per second (minimum size, 2000 flows)\n minimum,median,maximum values of 10 benchs"
-set y2label "Theorical equity using IMIX distribution (Ethernet throughput)"
+set title noenhanced "BSDRP 1.90 (FreeBSD 11.2-BETA3, AFDATA+RADIX lock patched + pf MFC) forwarding performance on 10Gigabit hardware"
+set xlabel "SM 5018A-FTN4 (8 core Atom and Chelsio T540), HP DL360 (8 cores Xeon E5-2650 and Chelsio T540)\nDell R630(2x12 cores Xeon E5R630 and Mellanox X-4)"
+set ylabel "Packets per second (minimum size, 5000 flows)\n minimum,median,maximum values of 5 benchs"
+set y2label "Theorical equity using simple IMIX distribution (Ethernet throughput)"
 
 # Put the label inside the graph
-set key on inside top right
+set key on inside top left
 
+f(x)=7000000
 # Ploting!
-plot "hp.data" using 0:2:xtic(1) with boxes title "HP ProLiant DL360p Gen8 (8 cores Intel Xeon E5-2650 and Chelsio 10G T540-CR)" ls 2, \
-	 "hp.data" using 0:2:3:4 with yerrorbars lc rgb 'black' pt 1 lw 2 notitle, \
-	"sm.data" using 0:2:xtic(1) with boxes title "SuperMicro 5018A-FTN4 (8 cores Atom C2758 and Chelsio 10G T540-CR)" ls 4, \
-	 "sm.data" using 0:2:3:4 with yerrorbars lc rgb 'orange' pt 1 lw 2 notitle, \
-	"ibm.data" using 0:2:xtic(1) with boxes title "IBM System x3550 M3 (4 cores Intel Xeon L5630 and Intel 10G 82599EB)" ls 3, \
-	 "ibm.data" using 0:2:3:4 with yerrorbars lc rgb 'blue' pt 1 lw 2 notitle, \
-     "netgate.data" using 0:2:xtic(1) with boxes title "Netgate RCC-VE 4860 (4 cores Intel Atom C2558E and Intel i350)" ls 5, \
-	 "netgate.data" using 0:2:3:4 with yerrorbars lc rgb 'black' pt 1 lw 2 notitle, \
-	 "apu2.data" using 0:2:xtic(1) with boxes title "PC Engines APU2C4 (4 cores AMD GX-412TC and Intel i210AT)" ls 1, \
-	 "apu2.data" using 0:2:3:4 with yerrorbars lc rgb 'black' pt 1 lw 2 notitle
+plot f(x) with lines title "Minimum throughput requiered for 10Gbit full-duplex IMIX" ls 5 lw 4, \
+	"forwarding.data" using 2:3:4:xticlabels(1) with histogram title "forwarding" ls 2, \
+	 "IPFW-stateful.data" using 2:3:4:xticlabels(1) with histogram title "IPFW stateful" ls 3, \
+	  "PF-stateful.data" using 2:3:4:xticlabels(1) with histogram title "PF stateful" ls 4
