@@ -4,7 +4,7 @@ Impact of pf states_hashsize with 100K states
   - FreeBSD 12.0-CURRENT r336223
   - 50K unidirection flows of smallest UDP packets (So 100K in pf states table)
   - 2 static routes
-  - Traffic load at 14.88 Mpps
+  - Traffic load at 1.48 Mpps
 
 ![Impact of states_hashsize with 100K states](graph.png)
 
