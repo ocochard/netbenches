@@ -68,7 +68,7 @@ for INFO in ${INFO_LIST}; do
 	# CFG="fastforwarding"
 	# PKTGEN=""
 	# UNAME="FreeBSD SM 10.3-RELEASE-p2 F..."
-	
+
 	#MINISTAT_FILE=$(basename ${INFO})
 	MINISTAT_FILE=$(echo ${INFO} | sed "s/.info//" | sed "s/bench.//")
 
