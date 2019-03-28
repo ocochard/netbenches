@@ -60,7 +60,7 @@ set y2tics format '%.1s%cb/s'
 # Only integer value for xtics
 set xtics 1
 
-set title noenhanced "Impact of enabling firewalls on BSDRP 1.92 (FreeBSD 12-stable r345325) forwarding performance\nPlatform:PC Engines APU2C4, 4 cores AMD GX-412TC Processor and Intel i210AT"
+set title noenhanced "Impact of enabling firewalls on BSDRP 1.92 (FreeBSD 12-stable r345325) forwarding performance\nPlatform:SuperMicro 5018A-FTN4, 8 cores ATOM C2758 and Intel 82599"
 set xlabel noenhanced "Note: Minimum firewall rules, harvest.mask=351, tx_abdicate enabled, ICMP redirect disabled"
 set ylabel "Packets per second (minimum size, 2000 flows)\n minimum,median,maximum values of 5 benchs"
 set y2label "Theorical equity using simple IMIX distribution (Ethernet throughput)"
@@ -68,8 +68,6 @@ set y2label "Theorical equity using simple IMIX distribution (Ethernet throughpu
 # Put the label inside the graph
 set key on inside top right
 
-f(x)=700000
 # Ploting!
-plot f(x) with lines title "Minimum throughput requiered for 1Gbit full-duplex IMIX" ls 5 lw 4, \
-     "inet4.data" using 2:3:4:xticlabels(1) with histogram title "inet4" ls 2, \
+plot "inet4.data" using 2:3:4:xticlabels(1) with histogram title "inet4" ls 2, \
 	 "inet6.data" using 2:3:4:xticlabels(1) with histogram title "inet6" ls 3
