@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 # Bench-lab for BSD Router Project
-# http://bsdrp.net/documentation/examples/freebsd_performance_regression_lab
+# https://bsdrp.net/documentation/examples/freebsd_performance_regression_lab
 #
 # Purpose:
 #  This script permit to automatize benching multiple BSDRP images and/or configuration parameters.
@@ -58,6 +58,10 @@ BENCH_ITER_TOTAL=0
 MAIL="root@localhost"
 # PMC mode (collect hwpmc data)
 PMC=false
+# Custom command, to be used during the bench
+# Like a tcpdump to measure impact of tcpdump running
+# env CUSTOM_CMD="tcpdump -pni igb1 -c 10 -w /tmp/dump.pcap host 8.8.8.8 " ../scripts/bench-lab.sh
+: ${CUSTOM_CMD:=""}
 
 # An usefull function (from: http://code.google.com/p/sh-die/)
 die() { echo -n "EXIT: " >&2; echo "$@" >&2; exit 1; }
@@ -198,9 +202,18 @@ bench () {
 		rcmd ${DUT_ADMIN} "pmcstat -z 50 -S ${PMC_EVENT} -l 20 -O /data/pmc.out" >> $1.pmc.log &
 		JOB_PMC=$!
 	fi
+
+	if [ -n "${CUSTOM_CMD}" ]; then
+		rcmd ${DUT_ADMIN} "${CUSTOM_CMD}" &
+		JOB_CUSTOM_CMD=$!
+	fi
+
 	# start receiving tool on RECEIVER
 	if [ -n "${RECEIVER_START_CMD}" ]; then
 		echo "CMD: ${RECEIVER_START_CMD}" > $1.receiver
+		if [ -n "${CUSTOM_CMD}" ]; then
+			echo "Custom command before/during the bench: ${CUSTOM_CMD}" >> $1.receiver
+		fi
 		rcmd ${RECEIVER_ADMIN} "${RECEIVER_START_CMD}" >> $1.receiver 2>&1 &
 		#JOB_RECEIVER=$!
 	fi
@@ -347,6 +360,7 @@ usage () {
  -f bench-lab-config:        Text file with lab bench parameters (mandatory)
  -i nanobsd-images-dir:      Directory where are stored nanobsd update images (optional)
  -c configuration-sets-dir:  Directory where are stored configuration sets (optional)
+ -C custom command:          Custom command to be run on the DUT before/during bench (optional)
  -p pkgen-cfg-dir:           Directory where specific pkt-gen parameters are (optional)
  -n iteration:               Number of iteration to do for each bench (3 minimums, 5 by default)
  -d benchs-results-dir:      Directory Where to store benches results (/tmp/benchs by default)
@@ -358,14 +372,14 @@ usage () {
 
 ##### Main
 
-args=`getopt c:d:f:i:hn:r:Pp: $*`
+args=$(getopt c:d:f:i:hn:r:Pp: $*)
 
 set -- $args
 for i
 do
 	case "$i" in
 	-c)
-		CONFIG_SET_DIR=$2
+		CONFIG_SET_DIR="$2"
 		shift
 		shift
 		;;
@@ -450,6 +464,8 @@ echo -n " - Multiples pkt-gen configuration to test: "
 [ -z "${PKTGEN_DIR}" ] && echo "no" || echo "yes"
 echo " - Number of iteration for each set: ${BENCH_ITER}"
 echo " - Results dir: ${RESULTS_DIR}"
+[ -n "${CUSTOM_CMD}" ] && echo " - Custom command: ${CUSTOM_CMD}"
+
 (${PMC}) && echo " - PMC mode: Will collect PMC data"
 echo ""
 
