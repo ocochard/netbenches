@@ -187,6 +187,11 @@ bench_iter () {
 		else
 			#And start bench otherwise
 			bench $1.${ITER}
+			# Sometimes, pkt-gen in receiver mode crash, restart again
+			while grep -q 'ouch, thread 0 exited with error' $1.${ITER}.receiver; do
+				echo "Detected pkt-gen receiver crash, restarting this run..."
+				bench $1.${ITER}
+			done
 		fi
 	done
 }
