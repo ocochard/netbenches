@@ -6,8 +6,17 @@
 # Purpose:
 #  This script permit to automatize benching multiple BSDRP images and/or configuration parameters.
 #  In a lab like this one (simple forwarding/firewalling):
+#  +----------+     +-------------------------+
+#  | Sender   |---->| Device Under Test (DUT) |
+#  |          |     |                         |
+#  |          |<----|                         |
+#  +----------+     +-------------------------+
+#      |                       |
+#    ---------admin network (ssh)------
+#
+#  Or using 3 devices (if sender not powerfull enough, standard care if more than 30Mpps)
 #  +----------+     +-------------------------+     +----------+
-#  | Sender   |<--->| Device Under Test (DUT) |<--->| Receiver |
+#  | Sender   |---->| Device Under Test (DUT) |---->| Receiver |
 #  +----------+     +-------------------------+     +----------+
 #      |                       |                         |
 #    -----------------admin network (ssh)--------------------
@@ -63,6 +72,13 @@ PMC=false
 # env CUSTOM_CMD="tcpdump -pni igb1 -c 10 -w /tmp/dump.pcap host 8.8.8.8 " ../scripts/bench-lab.sh
 : ${CUSTOM_CMD:=""}
 
+# Case when starting 2 pkt-gen, using 2 different NIC on the generator
+# (like with DDoS bencch, one pkt-gen generating legitimate trafic, and the other
+# generating DDoS)
+: ${SENDER_START_CMD_2:=""}
+
+: ${SENDER_STOP_CMD:=""}
+
 # An usefull function (from: http://code.google.com/p/sh-die/)
 die() { echo -n "EXIT: " >&2; echo "$@" >&2; exit 1; }
 
@@ -86,7 +102,8 @@ reboot_host () {
 	sleep 20
 	#wait-for-dut online and in forwarding mode
 	local TIMEOUT=${REBOOT_TIMEOUT}
-	while ! rcmd $1 "netstat -rn" > /dev/null 2>&1; do
+	#while ! rcmd $1 "netstat -rn" > /dev/null 2>&1; do
+	while ! rcmd ${IS_DUT_ONLINE_TARGET} "${IS_DUT_ONLINE_CMD}" > /dev/null 2>&1; do
 		sleep 5
 		TIMEOUT=$(( ${TIMEOUT} - 1 ))
 		[ ${TIMEOUT} -eq 0 ] && die "$1 not reachable mode after $(( ${REBOOT_TIMEOUT} * 5 )) seconds"
@@ -217,11 +234,20 @@ bench () {
 		rcmd ${RECEIVER_ADMIN} "${RECEIVER_START_CMD}" >> $1.receiver 2>&1 &
 		#JOB_RECEIVER=$!
 	fi
+
 	# Alternate method with log file stored on RECEIVER (if tool is verbose)
 	# rcmd ${RECEIVER_ADMIN} "nohup netreceive 9090 \>\& /tmp/bench.log.receiver \&"
 	echo "CMD: ${SENDER_START_CMD}" > $1.sender
 	rcmd ${SENDER_ADMIN} "${SENDER_START_CMD}" >> $1.sender 2>&1 &
 	JOB_SENDER=$!
+
+	# Case with 2 generators
+	if [ -n "${SENDER_START_CMD_2}" ]; then
+		echo "CMD: ${SENDER_START_CMD_2}" > $1.sender_2
+		rcmd ${SENDER_ADMIN} "${SENDER_START_CMD_2}" >> $1.sender_2 2>&1 &
+		JOB_SENDER_2=$!
+	fi
+
 	echo -n "Waiting for end of bench ${BENCH_RUNNING_COUNTER}/${BENCH_ITER_TOTAL}..."
 	if echo ${SENDER_START_CMD} | grep -q pkt-gen; then
 		# There is a bug with pkt-gen: It can sometime never end after finishing sending all packets,
@@ -233,11 +259,16 @@ bench () {
 			sleep 2
 			grep -q 'flush tail' $1.sender && break
 		done
+		# XXXXX Need to stop JOB_SENDER_2 too!!!
 	else
 		wait ${JOB_SENDER}
 	fi
 	if [ -n "${RECEIVER_STOP_CMD}" ]; then
 		rcmd ${RECEIVER_ADMIN} "${RECEIVER_STOP_CMD}" || echo "DEBUG: Can't kill pkt-gen"
+	fi
+
+	if [ -n "${SENDER_STOP_CMD}" ]; then
+		rcmd ${SENDER_ADMIN} "${SENDER_STOP_CMD}" || echo "DEBUG: Can't kill pkt-gen"
 	fi
 
 	#scp ${RECEIVER_ADMIN}:/tmp/bench.log.receiver $1.receiver
