@@ -60,7 +60,7 @@ set y2tics format '%.1s%cb/s'
 # Only integer value for xtics
 set xtics 1
 
-set title noenhanced "Impact of enabling ipfw/pf/ipf on FreeBSD 12-stable r354440 forwarding performance\nHP ProLiant DL360p Gen8 with 8 cores Intel Xeon E5-2650 2.60GHz and Chelsio T540-CR"
+set title noenhanced "Impact of enabling ipfw/pf/ipf on FreeBSD 12-stable r354440 forwarding performance\nSuperMicro SuperServer 5018A-FTN4 with 8 cores Atom C2758 and Chelsio T540-CR"
 set xlabel "Note: Minimum firewall rules, ICMP redirect disabled"
 set ylabel "Packets per second (minimum size, 5000 flows)\n minimum,median,maximum values of 5 benchs"
 set y2label "Theorical equity using simple IMIX distribution (Ethernet throughput)"
