@@ -7,9 +7,9 @@ set yrange [0:*]
 
 # output
 set terminal png truecolor size 1920,1080 font "Gill Sans,22"
-set output 'graph.png'
+set output 'hardware.png'
 #set terminal svg size 1024,768 font "Gill Sans,12" rounded dashed
-#set output 'graph.svg'
+#set output 'hardware.svg'
 
 # Line style for axes
 set style line 80 lt 0
@@ -55,23 +55,24 @@ set link y2 via y * 2834.666667 inverse y/2834.666667
 # Replace long value by M (million), K (kilo) on ytics
 set ytics format '%.0s%c'
 #set ytics format '%.1s%c'
-set y2tics format '%.1s%cb/s' 
-
+set y2tics format '%.1s%cb/s'
 
 # Only integer value for xtics
 set xtics 1
 
-set title noenhanced "BSDRP 1.90 (FreeBSD 11.2-BETA3, AFDATA+RADIX lock patched + pf MFC) forwarding performance on 10Gigabit hardware"
-set xlabel "SM 5018A-FTN4 (8 core Atom and Chelsio T540), HP DL360 (8 cores Xeon E5-2650 and Chelsio T540)\nDell R630(2x12 cores Xeon E5R630 and Mellanox X-4)"
+set title noenhanced "BSDRP 1.96 (FreeBSD 12-STABLE r354440) forwarding performance on 10Gigabit hardware"
+set xlabel "SM 5018A-FTN4 (8 core Atom and Chelsio T540), HP DL360 (8 cores Xeon E5-2650 and Chelsio T540),\nDell R630(2x12 cores Xeon E5-2650 v4 and Chelsio T520)"
 set ylabel "Packets per second (minimum size, 5000 flows)\n minimum,median,maximum values of 5 benchs"
 set y2label "Theorical equity using simple IMIX distribution (Ethernet throughput)"
 
 # Put the label inside the graph
-set key on inside top left
+set key on inside top right
 
-f(x)=7000000
-# Ploting!
-plot f(x) with lines title "Minimum throughput requiered for 10Gbit full-duplex IMIX" ls 5 lw 4, \
+f(x)=14880000
+h(x)=7000000
+# Plotingm!
+plot h(x) with lines title "Min. req. for 10G FDX with simple IMIX" ls 5 lw 4, \
+	f(x) with lines title "10 Gigabit line-rate" ls 1 lw 4, \
 	"forwarding.data" using 2:3:4:xticlabels(1) with histogram title "forwarding" ls 2, \
-	 "IPFW-stateful.data" using 2:3:4:xticlabels(1) with histogram title "IPFW stateful" ls 3, \
-	  "PF-stateful.data" using 2:3:4:xticlabels(1) with histogram title "PF stateful" ls 4
+	 "ipfw-stateful.data" using 2:3:4:xticlabels(1) with histogram title "IPFW stateful" ls 3, \
+	  "pf-stateful.data" using 2:3:4:xticlabels(1) with histogram title "PF stateful" ls 4

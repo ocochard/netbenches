@@ -62,7 +62,7 @@ set xtics 1
 
 set title noenhanced "Impact of enabling ipfw/pf/ipf on FreeBSD 12-stable r354440 forwarding performance\nDell R630 with 2x12 cores Intel Xeon E5 2650 and Chelsio T540-CR"
 set xlabel "Note: Minimum firewall rules, ICMP redirect disabled, HT disabled, 16rxq"
-set ylabel "Packets per second (minimum size, 5000 flows)\n minimum,median,maximum values of 5 benchs"
+set ylabel "Packets per second (minimum size, 5000 flows)\n minimum,median,maximum values of 5 benches"
 set y2label "Theorical equity using simple IMIX distribution (Ethernet throughput)"
 
 # Put the label inside the graph
@@ -74,4 +74,4 @@ h(x)=7000000
 plot "inet4.data" using 2:3:4:xticlabels(1) with histogram title "inet4" ls 2, \
 	 "inet6.data" using 2:3:4:xticlabels(1) with histogram title "inet6" ls 3, \
      f(x) with lines title "10 Gigabit line-rate" ls 1 lw 4, \
-	h(x) with lines title "10G FDX Simple IMIX rate" ls 5 lw 4
+	h(x) with lines title "Min req for 10G FDX with simple IMIX" ls 5 lw 4

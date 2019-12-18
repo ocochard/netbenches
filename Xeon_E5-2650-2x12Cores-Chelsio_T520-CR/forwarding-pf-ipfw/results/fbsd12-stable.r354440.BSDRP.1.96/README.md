@@ -3,5 +3,6 @@ Impact of enabling firewalls on BSDRP 1.96 (12-stable r354440) forwarding perfor
   - Chelsio T520-CR
   - Minimum firewall rules
   - ICMP redirect disabled
+  - 16 rxq
 
 ![Impact of enabling firewalls on BSDRP 1.96 forwarding performance](graph.png)
