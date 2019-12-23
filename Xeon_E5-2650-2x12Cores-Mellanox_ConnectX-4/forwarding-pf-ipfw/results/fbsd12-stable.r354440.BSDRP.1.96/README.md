@@ -4,5 +4,9 @@ Impact of enabling firewalls on BSDRP 1.96 (FreeBSD 12-stable r354440) forwardin
   - Minimum firewall rules
   - HyperThreading and LRO/TSO disabled
   - harvest.mask=351
+  - RX & TX queues reduced to 16
+  - RX & TX queue size increased to 8192
+  - RX & TX coalese usecs increased to 200us
+  - RX & TX pkts increased to 1024
 
 ![Impact of enabling firewalls on BSDRP 1.96 forwarding performance](graph.png)
