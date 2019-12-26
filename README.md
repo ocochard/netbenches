@@ -5,12 +5,13 @@ This repository includes bench scripts (need netmap pkt-gen and nanobsd like), b
 [Bench script documentation is available too](doc/README.md).
 
 Hardware benched are:
- - Dell PowerEdgre R630 (2x12 cores Intel Xeon E5-2650 @ 2.2GHz) and: Intel 82599, Chelsio T520-CR, Mellanox ConnectX-3 and ConnectX-4
+ - Dell PowerEdgre R630 (2x12 cores Intel Xeon E5-2650 V4 @ 2.2GHz) and: Intel 82599, Chelsio T520-CR, Mellanox ConnectX-3 and ConnectX-4
  - HP ProLiant DL360p Gen8 (8 cores Intel Xeon E5-2650 @ 2.60GHz) and 10-Gigabit Chelsio T540-CR
- - SuperMicro SuperServer 5018A-FTN4 (8 cores Atom C2758) and 10-Gigabit Chelsio T540-CR
- - SuperMicro SuperServer 5018A-FTN4 (8 cores Atom C2758) and 10-Gigabit Intel 82599
- - Netgate RCC-VE 4860 (4 cores Intel Atom C2558) and quad port Intel i350 (the 2 Intel i211 are not benched)
- - PC Engines APU2C4 (4 cores AMD GX-412TC) and 4 Intel i210AT Gigabit NIC
+ - SuperMicro X9SRL-F (10 cores Intel Xeon E5-2650L V2 @ 1.70GHz) and 10-Gigabit Chelsio T540-CR
+ - SuperMicro 5018A-FTN4 (8 cores Atom C2758 @ 2.40GHz) and 10-Gigabit Chelsio T540-CR
+ - SuperMicro 5018A-FTN4 (8 cores Atom C2758 @ 2.40GHz) and 10-Gigabit Intel 82599
+ - Netgate RCC-VE 4860 (4 cores Intel Atom C2558 @ 2.40GHz) and quad port Intel i350 (the dual port Intel i211 are not benched)
+ - PC Engines APU2C4 (4 cores AMD GX-412TC @ 1GHz) and 4 Intel i210AT Gigabit NIC
 
 Some results:
  - firewalls (ipfw/pf/ipf) impact on forwarding performance:

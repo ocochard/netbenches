@@ -67,6 +67,8 @@ BENCH_ITER_TOTAL=0
 MAIL="root@localhost"
 # PMC mode (collect hwpmc data)
 PMC=false
+# STAT mode (collect stats)
+STATS=false
 # Custom command, to be used during the bench
 # Like a tcpdump to measure impact of tcpdump running
 # env CUSTOM_CMD="tcpdump -pni igb1 -c 10 -w /tmp/dump.pcap host 8.8.8.8 " ../scripts/bench-lab.sh
@@ -123,8 +125,8 @@ bench_image () {
 			# BSDRP-293643-upgrade-amd64-serial.img.xz
 			# BSDRP-294235-upgrade-amd64-serial.img.xz
 			# Use this revision as prefix for the next bench set
-			IMAGE_PREFIX=`basename ${IMAGE} | cut -d '-' -f 2`
-			[ -z "${IMAGE_PREFIX}" ] &&  IMAGE_PREFIX=`basename ${IMAGE}`
+			IMAGE_PREFIX=$(basename ${IMAGE} | cut -d '-' -f 2)
+			[ -z "${IMAGE_PREFIX}" ] &&  IMAGE_PREFIX=$(basename ${IMAGE})
 			(${COUNTING}) || upgrade_image ${IMAGE} || die "Can't upgrade to image ${IMAGE}"
 			# It's not possible to do an upgrade_image and pushing new CFG in one time
 			# because if new CFG include /boot change, it will save change on the old partition
@@ -171,13 +173,13 @@ bench_pktgen () {
 	# $1: Directory/prefix-name of output log file
 
 	if [ -n "${PKTGEN_DIR}" ]; then
-		for PKTGEN_CFG in `ls -1d ${PKTGEN_DIR}/*`; do
+		for PKTGEN_CFG in $(ls -1d ${PKTGEN_DIR}/*); do
 			(${COUNTING}) || echo "Start pkt-gen set: ${PKTGEN_CFG}"
 			# Load new netmap pkt-gen variables
 			. ${PKTGEN_CFG}
-			# Then need to reload new configuration file too
+			PKTGEN_PREFIX=$(basename ${PKTGEN_CFG})
+			# Then need to reload configuration file too update PKTGEN variable
 			. ${CONFIG_FILE}
-			PKTGEN_PREFIX=`basename ${PKTGEN_CFG}`
 			bench_iter $1.${PKTGEN_PREFIX}
 		done
 	else
@@ -190,14 +192,15 @@ bench_iter () {
 	# Iteration function
 	# $1 prefix-name
 	if !(${COUNTING}); then
-		echo "IMAGE=\"${IMAGE_PREFIX}\"" > $1.info
-		echo "CFG=\"${CFG_PREFIX}\"" >> $1.info
-		echo "PKTGEN=\"${PKTGEN_PREFIX}\"" >> $1.info
-		echo -n "UNAME=\"`rcmd ${DUT_ADMIN} "uname -a"`\"" >> $1.info
+		(echo "IMAGE=\"${IMAGE_PREFIX}\""
+		echo "CFG=\"${CFG_PREFIX}\""
+		echo "PKTGEN=\"${PKTGEN_PREFIX}\""
+		echo -n "UNAME=\"$(rcmd ${DUT_ADMIN} "uname -a")\""
+		) > $1.info
 	fi
 
 	BENCH_ITER_COUNTER=0
-	for ITER in `seq 1 ${BENCH_ITER}`; do
+	for ITER in $(seq 1 ${BENCH_ITER}); do
 		if (${COUNTING}); then
 			#Increment the TOTAL counter only in COUNTING mode
 			BENCH_ITER_TOTAL=$(( ${BENCH_ITER_TOTAL} + 1 ))
@@ -216,13 +219,20 @@ bench_iter () {
 bench () {
 	# Benching script
 	# $1: Directory/prefix-name of output log file
-	echo "Start bench serie `basename $1`"
+	echo "Start bench serie $(basename $1)"
 	if ($PMC); then
 		rcmd ${DUT_ADMIN} "kldstat -qm hwpmc || kldload hwpmc" || die "Can't load hwmpc"
 		rcmd ${DUT_ADMIN} "mount | grep -q '/data' || mount /data" || die "Can't mount /data"
 		rcmd ${DUT_ADMIN} "test -f /data/pmc.out && rm /data/pmc.out" || true
 		rcmd ${DUT_ADMIN} "pmcstat -z 50 -S ${PMC_EVENT} -l 20 -O /data/pmc.out" >> $1.pmc.log &
 		JOB_PMC=$!
+	fi
+
+	if ($STATS); then
+		rcmd ${DUT_ADMIN} "mount | grep -q '/data' || mount /data" || die "Can't mount /data"
+		rcmd ${DUT_ADMIN} "test -f /data/stats.data && rm /data/stats.data" || true
+		rcmd ${DUT_ADMIN} "collect_stats -c 120 -r /data/stats.data" >> $1.stats.log &
+		JOB_STATS=$!
 	fi
 
 	if [ -n "${CUSTOM_CMD}" ]; then
@@ -286,6 +296,14 @@ bench () {
 		scp ${SSH_USER}@${DUT_ADMIN}:/data/pmc.out $1.pmc.out >> $1.pmc.log 2>&1 || die "can't download pmc.out"
 		scp ${SSH_USER}@${DUT_ADMIN}:/data/pmc.graph $1.pmc.graph >> $1.pmc.log 2>&1 || die "can't download pmc.graph"
 		rcmd ${DUT_ADMIN} "rm /data/pmc.out && rm /data/pmc.graph && umount /data" >> $1.pmc.log || echo "Can't delete old data files"
+	fi
+
+	if ($STATS); then
+		wait ${JOB_STATS}
+		rcmd ${DUT_ADMIN} "pgrep -q collect_stats" && die "collect_stats is still running"
+		scp ${SSH_USER}@${DUT_ADMIN}:/data/stats.data $1.stats.data >> $1.stats.log 2>&1 || die "can't download stats.data"
+		# XXX If PMC mode enabled, it will umount /data
+		rcmd ${DUT_ADMIN} "rm /data/stats.data && umount /data" >> $1.stats.log || echo "Can't delete old data files"
 	fi
 
 	echo "done"
@@ -391,7 +409,7 @@ upgrade_image () {
 usage () {
 	if [ $# -lt 1 ]; then
 		echo "$0 [-h] [-f bench-lab-config] [-c configuration-sets-dir] [-i nanobsd-images-dir]"
-		echo "   [-n iteration] [-p pktgen cfg dir ] [-d benchs-results-dir] [-P] -r e@mail"
+		echo "   [-n iteration] [-p pktgen cfg dir ] [-d benchs-results-dir] [-P] [-S] -r e@mail"
 		echo "
  -f bench-lab-config:        Text file with lab bench parameters (mandatory)
  -i nanobsd-images-dir:      Directory where are stored nanobsd update images (optional)
@@ -401,14 +419,15 @@ usage () {
  -n iteration:               Number of iteration to do for each bench (3 minimums, 5 by default)
  -d benchs-results-dir:      Directory Where to store benches results (/tmp/benchs by default)
  -r e@mail:                  Email to send report too at the end (default root@localhost)
- -P :                        PMC collection mode"
+ -P :                        PMC collection mode
+ -S :						 STATS mode"
 		exit 1
 	fi
 }
 
 ##### Main
 
-args=$(getopt c:d:f:i:hn:r:Pp: $*)
+args=$(getopt c:d:f:i:hn:r:PSp: $*)
 
 set -- $args
 for i
@@ -458,7 +477,12 @@ do
 		PMC=true
 		shift
 		;;
-	--)
+	-S)
+		BENCH_ITER=1
+		STATS=true
+		shift
+		;;
+--)
 		shift
 		break
         esac
@@ -476,7 +500,7 @@ fi
 [ -n ${IMAGES_DIR} ] && [ -d ${IMAGES_DIR} ] || die "Can't found directory ${IMAGES_DIR}"
 [ -n ${RESULTS_DIR} ] && [ -d ${RESULTS_DIR} ] || die "Can't found directory ${RESULTS_DIR}"
 [ -n ${CONFIG_SET_DIR} ] && [ -d ${CONFIG_SET_DIR} ] || die "Can't found directory ${CONFIG_SET_DIR}"
-!($PMC) && [ ${BENCH_ITER} -lt 3 ] && die "Need a minimum of 3 series of benchs"
+#!($PMC) && [ ${BENCH_ITER} -lt 3 ] && die "Need a minimum of 3 series of benchs"
 
 # Load (first time) the configuration set
 . ${CONFIG_FILE}
@@ -519,10 +543,10 @@ icmp_test_all || die "ICMP connectivity test failed"
 ssh-add -l > /dev/null 2 || echo "WARNING: No key loaded in ssh-agent?"
 ssh_push_key || ( echo "SSH connectivity test failed";exit 1 )
 
-MAILFILE=`mktemp /tmp/bench-mail.XXXXXX` || die "can't create tmp/bench-mail.xxx"
+MAILFILE=$(mktemp /tmp/bench-mail.XXXXXX) || die "can't create tmp/bench-mail.xxx"
 
 echo "Bench started at:" >> ${MAILFILE}
-echo `date` >> ${MAILFILE}
+echo $(date) >> ${MAILFILE}
 
 echo "Starting the benchs"
 # bench_image => bench_cfg => bench_pktgen => bench
@@ -532,7 +556,8 @@ bench_image ${RESULTS_DIR}/bench
 
 echo "All bench tests were done, results in ${RESULTS_DIR}"
 
-echo "Bench end at:" >> ${MAILFILE}
-echo `date` >> ${MAILFILE}
+(echo "Bench end at:"
+echo $(date)
+) >> ${MAILFILE}
 mail -s "Benchs ${RESULTS_DIR} Done" ${MAIL} < ${MAILFILE}
 [ -f ${MAILFILE} ] && rm ${MAILFILE}
