@@ -5,9 +5,9 @@ This repository includes bench scripts (need netmap pkt-gen and nanobsd like), b
 [Bench script documentation is available too](doc/README.md).
 
 Hardware benched are:
- - Dell PowerEdgre R630 (2x12 cores Intel Xeon E5-2650 V4 @ 2.2GHz) and: Intel 82599, Chelsio T520-CR, Mellanox ConnectX-3 and ConnectX-4
+ - Dell PowerEdgre R630 (2x12 cores Intel Xeon E5-2650 v4 @ 2.2GHz) and: Intel 82599, Chelsio T520-CR, Mellanox ConnectX-3 and ConnectX-4
  - HP ProLiant DL360p Gen8 (8 cores Intel Xeon E5-2650 @ 2.60GHz) and 10-Gigabit Chelsio T540-CR
- - SuperMicro X9SRL-F (10 cores Intel Xeon E5-2650L V2 @ 1.70GHz) and 10-Gigabit Chelsio T540-CR
+ - SuperMicro X9SRL-F (10 cores Intel Xeon E5-2650L v2 @ 1.70GHz) and 10-Gigabit Chelsio T540-CR
  - SuperMicro 5018A-FTN4 (8 cores Atom C2758 @ 2.40GHz) and 10-Gigabit Chelsio T540-CR
  - SuperMicro 5018A-FTN4 (8 cores Atom C2758 @ 2.40GHz) and 10-Gigabit Intel 82599
  - Netgate RCC-VE 4860 (4 cores Intel Atom C2558 @ 2.40GHz) and quad port Intel i350 (the dual port Intel i211 are not benched)
@@ -15,8 +15,9 @@ Hardware benched are:
 
 Some results:
  - firewalls (ipfw/pf/ipf) impact on forwarding performance:
-    - [Impact of firewalls on forwarding performance with 2x12 cores Xeon E5-2650 & Mellanox ConnectX-4](Xeon_E5-2650_2x12Cores-Mellanox_ConnectX-4/forwarding-pf-ipfw/results/fbsd12-stable.r354440.BSDRP.1.96/README.md)
-    - [Impact of firewalls on forwarding performance with 2x12 cores Xeon E5-2650 & Chelsio T520-CR](Xeon_E5-2650_2x12Cores-Chelsio_T520-CR/forwarding-pf-ipfw/results/fbsd12-stable.r354440.BSDRP.1.96/README.md)
+    - [Impact of firewalls on forwarding performance with 2x12 cores Xeon E5-2650 & Mellanox ConnectX-4](Xeon_E5-2650v4_2x12Cores-Mellanox_ConnectX-4/forwarding-pf-ipfw/results/fbsd12-stable.r354440.BSDRP.1.96/README.md)
+    - [Impact of firewalls on forwarding performance with 2x12 cores Xeon E5-2650 & Chelsio T520-CR](Xeon_E5-2650v4_2x12Cores-Chelsio_T520-CR/forwarding-pf-ipfw/results/fbsd12-stable.r354440.BSDRP.1.96/README.md)
+    - [Impact of firewalls on forwarding performance with 10 cores Xeon E5-2650L & Chelsio T540](Xeon_E5-2650Lv2_10Cores-Chelsio_T540-CR/forwarding-pf-ipfw/results/fbsd12-stable.r354440.BSDRP.1.96/README.md)
     - [Impact of firewalls on forwarding performance with 8 cores Xeon E5-2650 & Chelsio T540](Xeon_E5-2650_8Cores-Chelsio_T540-CR/forwarding-pf-ipfw/results/fbsd12-stable.r354440.BSDRP.1.96/README.md)
     - [Impact of firewalls on forwarding performance with 8 cores Atom C2758 & Chelsio T540](Atom_C2758_8Cores-Chelsio_T540-CR/forwarding-pf-ipfw/results/fbsd12-stable.r354440.BSDRP.1.96/README.md)
     - [Impact of firewalls on forwarding performance with 8 cores Atom C2758 & Intel 82599](Atom_C2758_8Cores-Intel_82599/forwarding-pf-ipfw/results/fbsd12-stable.r354440.BSDRP.1.96/README.md)
@@ -35,7 +36,7 @@ Some results:
  - comparing 12-head and 11-stable:
     - [fbsd12-head vs 11-stable r318516 with 4 cores AMD GX-412TC](AMD_GX-412TC_4Cores-Intel_i210AT/forwarding-pf-ipfw/results/fbsd12-head-vs-11-stable.r318516/README.md)
  - comparing 11.0 and 11.1-BETA1:
-    - [FreeBSD 11.0 vs 11.1-BETA1 on a 8 cores Xeon E5-2650 with Chelsio T540](/Xeon_E5-2650_8Cores-Chelsio_T540-CR/forwarding-pf-ipfw/results/fbsd11.0vs11.1/README.md)
+    - [FreeBSD 11.0 vs 11.1-BETA1 on a 8 cores Xeon E5-2650 with Chelsio T540](Xeon_E5-2650_8Cores-Chelsio_T540-CR/forwarding-pf-ipfw/results/fbsd11.0vs11.1/README.md)
     - [FreeBSD 11.0 vs 11.1-BETA1 on a 4 cores AMD GX-412TC with Intel i210](AMD_GX-412TC_4Cores-Intel_i210AT/forwarding-pf-ipfw/results/fbsd11.0vs11.1/README.md)
  - Impact of entropy sources:
     - [Impact of random.harvest.mask on forwarding performance with 8 cores Xeon E5-2650](Xeon_E5-2650_8Cores-Chelsio_T540-CR/kern.random.harvest.mask/results/fbsd11.1/README.md)
@@ -60,7 +61,7 @@ Some results:
  - Impact of number of static routes:
     - [Impact of number of static routes on forwarding performance with 4 cores Xeon L5630](Xeon_L5630_4Cores-Intel_82599EB/route-contention/results/fbsd10.2/README.md)
  - Mellanox ConnectX-4 tuning:
-    - [Impact of queue number on forwarding performance with 2x12 cores Xeon E5-2650](Xeon_E5-2650_2x12Cores-Mellanox_ConnectX-4/dev.mce.conf.channels/results/fbsd11.1-yandex/README.md)
+    - [Impact of queue number on forwarding performance with 2x12 cores Xeon E5-2650](Xeon_E5-2650v4_2x12Cores-Mellanox_ConnectX-4/dev.mce.conf.channels/results/fbsd11.1-yandex/README.md)
  - Chelsio NIC T540-CR tuning:
     - [Impact of queue number on forwarding performance with 8 cores Xeon E5-2650](Xeon_E5-2650_8Cores-Chelsio_T540-CR/nXxq10g/results/fbsd11-stable.r312663/README.md)
     - [Impact of queue number on forwarding performance with 8 cores Atom C2758](Atom_C2758_8Cores-Chelsio_T540-CR/hw.cxgbe.nXxq10g/results/fbsd11.1/README.md)
