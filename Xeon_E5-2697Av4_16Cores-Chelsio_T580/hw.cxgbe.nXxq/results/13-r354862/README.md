@@ -5,8 +5,6 @@ Impact of number of increasing default RX queues on forwarding performance
   - 5000 flows of smallest UDP packets (1 byte payload)
 
 ```
-x net.inet.ip.redirect=1 (default): Number of inet4 packets-per-second forwarded
-+ net.inet.ip.redirect=0: Number of inet4 pps forwarded
 x 8 RX queues (default): Number of inet4 packets-per-second forwarded
 + 16 RX queues: Number of inet4 pps forwarded
 * 32 RX queues: Number of inet4 pps forwarded

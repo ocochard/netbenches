@@ -7,7 +7,7 @@ Impact of enabling machdep.hyperthreading_intr_allowed on forwarding performance
 
 ```
 x machdep.hyperthreading_intr_allowed=0 (default): Number of inet4 packets-per-second forwarded
-+ machdep.hyperthreading_intr_allowed=1: Number of pps
++ machdep.hyperthreading_intr_allowed=1: Number of inet4 packets-per-second forwarded
 +--------------------------------------------------------------------------+
 | x                                                                       +|
 | x                                                                       +|

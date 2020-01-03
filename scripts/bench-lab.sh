@@ -242,7 +242,7 @@ bench () {
 
 	# start receiving tool on RECEIVER
 	if [ -n "${RECEIVER_START_CMD}" ]; then
-		echo "CMD: ${RECEIVER_START_CMD}" > $1.receiver
+		echo "CMD on ${RECEIVER_ADMIN}: ${RECEIVER_START_CMD}" > $1.receiver
 		if [ -n "${CUSTOM_CMD}" ]; then
 			echo "Custom command before/during the bench: ${CUSTOM_CMD}" >> $1.receiver
 		fi
@@ -252,7 +252,7 @@ bench () {
 
 	# Alternate method with log file stored on RECEIVER (if tool is verbose)
 	# rcmd ${RECEIVER_ADMIN} "nohup netreceive 9090 \>\& /tmp/bench.log.receiver \&"
-	echo "CMD: ${SENDER_START_CMD}" > $1.sender
+	echo "CMD on ${SENDER_ADMIN}: ${SENDER_START_CMD}" > $1.sender
 	rcmd ${SENDER_ADMIN} "${SENDER_START_CMD}" >> $1.sender 2>&1 &
 	JOB_SENDER=$!
 
@@ -420,7 +420,7 @@ usage () {
  -d benchs-results-dir:      Directory Where to store benches results (/tmp/benchs by default)
  -r e@mail:                  Email to send report too at the end (default root@localhost)
  -P :                        PMC collection mode
- -S :						 STATS mode"
+ -S :                        STATS mode"
 		exit 1
 	fi
 }
