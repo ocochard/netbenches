@@ -5,6 +5,7 @@ This repository includes bench scripts (need netmap pkt-gen and nanobsd like), b
 [Bench script documentation is available too](doc/README.md).
 
 Hardware benched are:
+ - SuperMicro X10SRW-F (16 cores Intel Xeon E5-2697A v4 @ 2.60GHz) and: 40G Chelsio T580-LP-CR, 100G Mellanox ConnectX-4 MCX416A-CCAT
  - Dell PowerEdgre R630 (2x12 cores Intel Xeon E5-2650 v4 @ 2.2GHz) and: Intel 82599, Chelsio T520-CR, Mellanox ConnectX-3 and ConnectX-4
  - [HP ProLiant DL360p Gen8 (8 cores Intel Xeon E5-2650 @ 2.60GHz) and 10-Gigabit Chelsio T540-CR](Xeon_E5-2650_8Cores-Chelsio_T540-CR)
  - [SuperMicro X9SRL-F (10 cores Intel Xeon E5-2650L v2 @ 1.70GHz) and 10-Gigabit Chelsio T540-CR](Xeon_E5-2650Lv2_10Cores-Chelsio_T540-CR)
@@ -15,6 +16,7 @@ Hardware benched are:
 
 Some results:
  - Impact of firewalls (ipfw/pf/ipf) on forwarding performance on:
+    - [16 cores Xeon E5-2697A & 100G Mellanox ConnectX-4](Xeon_E5-2697Av4_16Cores-Mellanox_ConnectX-4/firewalls/results/fbsd12-stable.r354440.BSDRP.1.96/README.md)
     - [2x12 cores Xeon E5-2650 & Mellanox ConnectX-4](Xeon_E5-2650v4_2x12Cores-Mellanox_ConnectX-4/forwarding-pf-ipfw/results/fbsd12-stable.r354440.BSDRP.1.96/README.md)
     - [2x12 cores Xeon E5-2650 & Chelsio T520-CR](Xeon_E5-2650v4_2x12Cores-Chelsio_T520-CR/forwarding-pf-ipfw/results/fbsd12-stable.r354440.BSDRP.1.96/README.md)
     - [10 cores Xeon E5-2650L & Chelsio T540](Xeon_E5-2650Lv2_10Cores-Chelsio_T540-CR/forwarding-pf-ipfw/results/fbsd12-stable.r354440.BSDRP.1.96/README.md)
