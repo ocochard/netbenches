@@ -6,7 +6,7 @@ This repository includes bench scripts (need netmap pkt-gen and nanobsd like), b
 
 Hardware benched are:
  - SuperMicro X10SRW-F (16 cores Intel Xeon E5-2697A v4 @ 2.60GHz) and: 40G Chelsio T580-LP-CR, 100G Mellanox ConnectX-4 MCX416A-CCAT
- - Dell PowerEdgre R630 (2x12 cores Intel Xeon E5-2650 v4 @ 2.2GHz) and: Intel 82599, Chelsio T520-CR, Mellanox ConnectX-3 and ConnectX-4
+ - Dell PowerEdgre R630 (2x12 cores Intel Xeon E5-2650 v4 @ 2.2GHz) and: Intel 82599, Chelsio T520-CR, Mellanox ConnectX-3 and ConnectX-4 (MCX4121A-XCA)
  - [HP ProLiant DL360p Gen8 (8 cores Intel Xeon E5-2650 @ 2.60GHz) and 10-Gigabit Chelsio T540-CR](Xeon_E5-2650_8Cores-Chelsio_T540-CR)
  - [SuperMicro X9SRL-F (10 cores Intel Xeon E5-2650L v2 @ 1.70GHz) and 10-Gigabit Chelsio T540-CR](Xeon_E5-2650Lv2_10Cores-Chelsio_T540-CR)
  - [SuperMicro 5018A-FTN4 (8 cores Atom C2758 @ 2.40GHz) and 10-Gigabit Chelsio T540-CR](Atom_C2758_8Cores-Chelsio_T540-CR)
