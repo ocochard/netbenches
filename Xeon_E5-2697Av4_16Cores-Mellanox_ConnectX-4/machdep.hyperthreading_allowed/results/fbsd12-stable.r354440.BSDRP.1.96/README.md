@@ -1,3 +1,6 @@
+Impact of Hyperthreading on forwarding feature (mlx drivers by default
+uses all available threads, so 16 queues if HT is off, and 32 if HT is on):
+
 ```
 x HT enabled (default): inet4 packets-per-second forwarded
 + machdep.hyperthreading_allowed="0": inet4 packets-per-second forwarded

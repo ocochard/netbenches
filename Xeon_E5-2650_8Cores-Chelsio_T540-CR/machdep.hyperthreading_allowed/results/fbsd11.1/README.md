@@ -1,7 +1,10 @@
+Impact of HyperThreading on forwarding performance.
+No benefit on This Intel Xeon E5-2650 (8c,16t), inet4 packets-per-seconds forwarded:
+
 ```
-x HT-enabled-8rxq(default).packets-per-seconds
-+ HT-enabled-16rxq.packets-per-seconds
-* HT-disabled.packets-per-seconds
+x HT-enabled and 8 queues(default)
++ HT-enabled increased to 16 queues (using all thread)
+* HT-disabled and 8 queues
 +--------------------------------------------------------------------------+
 |                                                                        **|
 |x      xx    x          +       + + +  +                               ***|
@@ -22,4 +25,3 @@ Difference at 95.0% confidence
         24.4544% +/- 2.62824%
         (Student's t, pooled s = 67554.4)
 ```
-

@@ -14,7 +14,7 @@ Hardware benched are:
  - [Netgate RCC-VE 4860 (4 cores Intel Atom C2558 @ 2.40GHz) and quad port Intel i350 (the dual port Intel i211 are not benched)](Atom_C2558_4Cores-Intel_i350)
  - [PC Engines APU2C4 (4 cores AMD GX-412TC @ 1GHz) and 4 Intel i210AT Gigabit NIC](AMD_GX-412TC_4Cores_Intel_i210AT)
 
-Some results:
+Specific benches:
  - Impact of firewalls (ipfw/pf/ipf) on forwarding performance on:
     - [16 cores Xeon E5-2697A & 100G Mellanox ConnectX-4](Xeon_E5-2697Av4_16Cores-Mellanox_ConnectX-4/firewalls/results/fbsd12-stable.r354440.BSDRP.1.96/README.md)
     - [2x12 cores Xeon E5-2650 & Mellanox ConnectX-4](Xeon_E5-2650v4_2x12Cores-Mellanox_ConnectX-4/forwarding-pf-ipfw/results/fbsd12-stable.r354440.BSDRP.1.96/README.md)
@@ -35,8 +35,14 @@ Some results:
     - [One year (2016) of forwarding performance with 4 cores AMD GX-412TC & Intel i210](AMD_GX-412TC_4Cores-Intel_i210AT/forwarding-pf-ipfw/results/fbsd.2016/README.md)
     - [One year (2015) of fastforwarding performance evolution with with 8 cores Xeon E5-2650](Xeon_E5-2650_8Cores-Chelsio_T540-CR/forwarding-pf-ipfw/results/fbsd11-head.2015/README.md)
     - [One year (2015) of fastforwarding performance evolution with 4 cores Atom C2558](Atom_C2558_4Cores-Intel_i350/forwarding-pf-ipfw/results/fbsd11-head.2015/README.md)
-
- - comparing 12-head and 11-stable:
+ - Hyper Threading impact:
+    - [16 cores Xeon E5-2697A & 100G Mellanox ConnectX-4](Xeon_E5-2697Av4_16Cores-Mellanox_ConnectX-4/machdep.hyperthreading_allowed/results/fbsd12-stable.r354440.BSDRP.1.96/README.md)
+    - [10 cores Xeon E5-2650L & Chelsio T540](Xeon_E5-2650Lv2_10Cores-Chelsio_T540-CR/machdep.hyperthreading_intr/results/fbsd12-stable.r354440.BSDRP.1.96/README.md)
+    - [8 cores Xeon E5-2650 & Chelsio T540](Xeon_E5-2650_8Cores-Chelsio_T540-CR/machdep.hyperthreading_allowed/results/fbsd11.1/README.md)
+ - IPFW-at-NIC-level (DDoS protection)
+    - [16 cores Xeon E5-2697A & 100G Mellanox ConnectX-4](Xeon_E5-2697Av4_16Cores-Mellanox_ConnectX-4/ipfw/results/fbsd13-r356316-pfil_cxgbe-20-30/README.md)
+    - [10 cores Xeon E5-2650L & Chelsio T540](Xeon_E5-2650Lv2_10Cores-Chelsio_T540-CR/ipfw/results/fbsd13-r355538/README.md)
+  - comparing 12-head and 11-stable:
     - [fbsd12-head vs 11-stable r318516 with 4 cores AMD GX-412TC](AMD_GX-412TC_4Cores-Intel_i210AT/forwarding-pf-ipfw/results/fbsd12-head-vs-11-stable.r318516/README.md)
  - comparing 11.0 and 11.1-BETA1:
     - [FreeBSD 11.0 vs 11.1-BETA1 on a 8 cores Xeon E5-2650 with Chelsio T540](Xeon_E5-2650_8Cores-Chelsio_T540-CR/forwarding-pf-ipfw/results/fbsd11.0vs11.1/README.md)
@@ -78,8 +84,6 @@ Some results:
     - [Impact of Intel 82599EB Rx|Tx process limit on forwarding performance with 4 cores Xeon L5630](Xeon_L5630_4Cores-Intel_82599EB/Xx_process_limit/results/fbsd10.2/README.md)
     - [Impact of Intel 82599EB descriptors per queue on forwarding performance with 4 cores Xeon L5630](Xeon_L5630_4Cores-Intel_82599EB/ix.Xxd/results/fbsd10.2/README.md)
     - [Impact of AIM on Intel 82599EB](Xeon_L5630_4Cores-Intel_82599EB/Intel.aim/results/fbsd11-stable.r312663/README.md)
- - Hyper Threading impact:
-    - [Impact of enabling HT on forwarding performance](Xeon_E5-2650_8Cores-Chelsio_T540-CR/machdep.hyperthreading_allowed/results/fbsd11.1/README.md)
  - Intel i350 tuning:
     - [Impact of Intel i350 number of queues(1 queue per core) on forwarding performance with 4 cores Atom C2558](Atom_C2558_4Cores-Intel_i350/hw.igb.num_queues/results/fbsd11.1/README.md)
     - [Impact of AIM on Intel i350](Atom_C2558_4Cores-Intel_i350/hw.igb.enable_aim/results/fbsd11.1/README.md)
