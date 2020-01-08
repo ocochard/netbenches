@@ -61,7 +61,7 @@ set y2tics format '%.1s%cb/s'
 set xtics 1
 
 set title noenhanced "Impact of enabling ipfw/pf/ipf on FreeBSD 12-stable r354440 forwarding performance\nXeon E5-2697A v4 16cores and Mellanox ConnectX-4 100GBase-SR4"
-set xlabel "Note: Minimum firewall rules, ICMP redirect disabled"
+set xlabel "Note: Minimum firewall rules, ICMP redirect disabled, TSO/LRO disabled"
 set ylabel "Packets per second (minimum size, 5000 flows)\n minimum,median,maximum values of 5 benches"
 set y2label "Theorical equity using simple IMIX distribution (Ethernet throughput)"
 
