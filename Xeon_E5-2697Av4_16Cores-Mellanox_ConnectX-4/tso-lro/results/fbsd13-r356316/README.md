@@ -40,7 +40,9 @@ No difference proven at 95.0% confidence
 => No impact on inet6... something wrong
 
 Flamegraphs:
-- [enabled (default) inet4] (bench.enabled-default.inet4.pmc.svg)
-- [enabled (default) inet6] (bench.enabled-default.inet6.pmc.svg)
-- [disabled inet4] (bench.disabled.inet4.pmc.svg)
-- [disabled inet6] (bench.disabled.inet6.pmc.svg)
+* inet4
+  * [enabled (default) inet4](bench.enabled-default.inet4.pmc.svg)
+  * [disabled inet4](bench.disabled.inet4.pmc.svg)
+* inet6
+  * [enabled (default) inet6](bench.enabled-default.inet6.pmc.svg)
+  * [disabled inet6](bench.disabled.inet6.pmc.svg)
