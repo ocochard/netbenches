@@ -66,12 +66,13 @@ set ylabel "Packets per second (minimum size, 5000 flows)\n minimum,median,maxim
 set y2label "Theorical equity using simple IMIX distribution (Ethernet throughput)"
 
 # Put the label inside the graph
-set key on inside top right
+set key on inside center right
 
 f(x)=14880000
 h(x)=7000000
+g(x)=28000000
 # Ploting!
 plot "inet4.data" using 2:3:4:xticlabels(1) with histogram title "inet4" ls 2, \
 	 "inet6.data" using 2:3:4:xticlabels(1) with histogram title "inet6" ls 3, \
-     f(x) with lines title "10 Gigabit line-rate" ls 1 lw 4, \
-	h(x) with lines title "Min req for 10G FDX with simple IMIX" ls 5 lw 4
+	g(x) with lines title "Min req for 40G bidir with simple IMIX dist" ls 1 lw 4, \
+	h(x) with lines title "Min req for 10G bidir with simple IMIX dist" ls 4 lw 4
