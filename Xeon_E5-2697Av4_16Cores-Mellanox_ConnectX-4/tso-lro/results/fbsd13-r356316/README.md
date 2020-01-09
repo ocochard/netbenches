@@ -1,6 +1,23 @@
-Impact of TSO & LRO on forwarding performance.
-Packets-per-second forwarded:
+Impact of TSO & LRO on (UDP only packets) forwarding performance.
+Hypothesis: LRO and TSO features shouldn't have any impact on UDP packets.
 
+Setup a forwarding lab:
+```
++---------+   +---------+   +---------+
+| netmap  |   |         |   | netmap  |
+| pkt-gen |   |   DUT   |   | pkt-gen |
+|generator|   |         |   |receiver |
+|     cxl0|->-|mce0 cxl1|->-|cxl0     |
+|         |   |         |   |         |
++---------+   +---------+   +---------+
+```
+Data:
+  * Generator is sending 5000 flows of smallest UDP packet at 40Mpps rate.
+  * DUT is configured as forwarding device.
+  * Receiver is measuring receiving rate.
+  * 2 configurations set: One with default (LRO and TSO enabled) and second with `-tso4 -tso6 -lro -vlanhwtso` set on all NICs
+
+Packets-per-second forwarded difference with inet4:
 ```
 x enabled (default): inet4
 + disabled: inet4
@@ -19,8 +36,9 @@ Difference at 95.0% confidence
 	(Student's t, pooled s = 84196.1)
 ```
 
-=> huge improvement by disabling this on inet4
+=> huge improvement by disabling theses features on inet4 !?! How TSO/LRO impact UDP only traffic ?
 
+Packets-per-second forwarded difference with inet6:
 ```
 x enabled (default): inet6
 + disabled: inet6
@@ -37,7 +55,7 @@ x   5      28064201      28107933      28082922      28085502     18654.875
 No difference proven at 95.0% confidence
 ```
 
-=> No impact on inet6... something wrong
+=> No impact with inet6 UDP packets ???... something wrong
 
 Flamegraphs:
 * inet4
