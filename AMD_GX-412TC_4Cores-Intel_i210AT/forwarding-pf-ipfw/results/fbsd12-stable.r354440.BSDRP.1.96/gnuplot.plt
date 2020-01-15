@@ -62,7 +62,7 @@ set xtics 1
 
 set title noenhanced "Impact of enabling firewalls on FreeBSD 12-stable r354440 forwarding performance\nPC Engines APU2 (4 cores AMD GX-412T and Gigabit Intel i210AT)"
 set xlabel "Note: Minimum firewall rules, ICMP redirect disabled, HT disabled"
-set ylabel "Packets per second (minimum size, 5000 flows)\n minimum,median,maximum values of 5 benches"
+set ylabel "Packets per second (minimum size, 2000 flows)\n minimum,median,maximum values of 5 benches"
 set y2label "Theorical equity using simple IMIX distribution (Ethernet throughput)"
 
 # Put the label inside the graph
