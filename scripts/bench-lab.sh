@@ -258,7 +258,7 @@ bench () {
 
 	# Case with 2 generators
 	if [ -n "${SENDER_START_CMD_2}" ]; then
-		echo "CMD: ${SENDER_START_CMD_2}" > $1.sender_2
+		echo "CMD on ${SENDER_ADMIN}: ${SENDER_START_CMD_2}" > $1.sender_2
 		rcmd ${SENDER_ADMIN} "${SENDER_START_CMD_2}" >> $1.sender_2 2>&1 &
 		JOB_SENDER_2=$!
 	fi
