@@ -70,4 +70,4 @@ set key on inside top right
 
 # Ploting!
 plot "inet4.data" using 2:3:4:xticlabels(1) with histogram title "inet4" ls 2, \
-	 "inet6.data" using 2:3:4:xticlabels(1) with histogram title "inet6" ls 1, \
+	 "inet6.data" using 2:3:4:xticlabels(1) with histogram title "inet6" ls 3, \
