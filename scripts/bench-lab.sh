@@ -14,9 +14,19 @@
 #      |                       |
 #    ---------admin network (ssh)------
 #
-#  Or using 3 devices (if sender not powerfull enough, standard care if more than 30Mpps)
+#  Using 3 devices (if sender not powerfull enough, standard care if more than 30Mpps)
 #  +----------+     +-------------------------+     +----------+
 #  | Sender   |---->| Device Under Test (DUT) |---->| Receiver |
+#  +----------+     +-------------------------+     +----------+
+#      |                       |                         |
+#    -----------------admin network (ssh)--------------------
+#
+#  Using 4 devices (if sender not powerfull enough, standard care if more than 30Mpps)
+#  +----------+     +-------------------------+
+#  | Sender 1 |---->| Device Under Test (DUT) |
+#  +----------+     |                         |
+#  +----------+     |                         |     +----------+
+#  | Sender 2 |---->|                         |---->| Receiver |
 #  +----------+     +-------------------------+     +----------+
 #      |                       |                         |
 #    -----------------admin network (ssh)--------------------
@@ -74,12 +84,17 @@ STATS=false
 # env CUSTOM_CMD="tcpdump -pni igb1 -c 10 -w /tmp/dump.pcap host 8.8.8.8 " ../scripts/bench-lab.sh
 : ${CUSTOM_CMD:=""}
 
-# Case when starting 2 pkt-gen, using 2 different NIC on the generator
+# Case when starting 2 pkt-gen on the same generator, using 2 different NIC on the generator
 # (like with DDoS bencch, one pkt-gen generating legitimate trafic, and the other
 # generating DDoS)
 : ${SENDER_START_CMD_2:=""}
 
 : ${SENDER_STOP_CMD:=""}
+
+# Case we are using 2 servers as generator
+: ${SENDER_ADMIN_2:=""}
+: ${SENDER_2_START_CMD:=""}
+: ${SENDER_2_START_CMD_2:=""}
 
 # An usefull function (from: http://code.google.com/p/sh-die/)
 die() { echo -n "EXIT: " >&2; echo "$@" >&2; exit 1; }
@@ -256,37 +271,41 @@ bench () {
 	rcmd ${SENDER_ADMIN} "${SENDER_START_CMD}" >> $1.sender 2>&1 &
 	JOB_SENDER=$!
 
-	# Case with 2 generators
+	# Case with 2 pkt-gen on the generator
 	if [ -n "${SENDER_START_CMD_2}" ]; then
 		echo "CMD on ${SENDER_ADMIN}: ${SENDER_START_CMD_2}" > $1.sender_2
 		rcmd ${SENDER_ADMIN} "${SENDER_START_CMD_2}" >> $1.sender_2 2>&1 &
 		JOB_SENDER_2=$!
 	fi
 
-	echo -n "Waiting for end of bench ${BENCH_RUNNING_COUNTER}/${BENCH_ITER_TOTAL}..."
-	if echo ${SENDER_START_CMD} | grep -q pkt-gen; then
-		# There is a bug with pkt-gen: It can sometime never end after finishing sending all packets,
-		# because stuck at "sender_body [1214] pending tx tail 511 head 2047 on ring 2"
-		# Then this simple wait command didn't works:
-		#wait ${JOB_SENDER}
-		# in place, will look every 2 second for "flush tail" in the sender log
-		while true; do
-			sleep 2
-			grep -q 'flush tail' $1.sender && break
-		done
-		# XXXXX Need to stop JOB_SENDER_2 too!!!
-	else
-		wait ${JOB_SENDER}
+	# Case with 2 generators
+	if [ -n "${SENDER_ADMIN_2}" ]; then
+		echo "CMD on ${SENDER_ADMIN_2}: ${SENDER_2_START_CMD}" > $1.sender_gen2
+		rcmd ${SENDER_ADMIN_2} "${SENDER_2_START_CMD}" >> $1.sender_gen2 2>&1 &
+		JOB_2_SENDER=$!
+
+		# Case with 2 pkt-gen on the second generator
+		if [ -n "${SENDER_2_START_CMD_2}" ]; then
+			echo "CMD on ${SENDER_ADMIN_2}: ${SENDER_2_START_CMD_2}" > $1.sender_gen2_2
+			rcmd ${SENDER_ADMIN_2} "${SENDER_2_START_CMD_2}" >> $1.sender_gen2_2 2>&1 &
+			JOB_2_SENDER_2=$!
+		fi
 	fi
+	echo -n "Waiting for end of bench ${BENCH_RUNNING_COUNTER}/${BENCH_ITER_TOTAL}..."
+
+	wait ${JOB_SENDER}
+
 	if [ -n "${RECEIVER_STOP_CMD}" ]; then
-		rcmd ${RECEIVER_ADMIN} "${RECEIVER_STOP_CMD}" || echo "DEBUG: Can't kill pkt-gen"
+		rcmd ${RECEIVER_ADMIN} "${RECEIVER_STOP_CMD}" || echo "DEBUG: Can't kill pkt-gen on ${RECEIVER_ADMIN}"
 	fi
 
 	if [ -n "${SENDER_STOP_CMD}" ]; then
-		rcmd ${SENDER_ADMIN} "${SENDER_STOP_CMD}" || echo "DEBUG: Can't kill pkt-gen"
+		rcmd ${SENDER_ADMIN} "${SENDER_STOP_CMD}" || echo "DEBUG: Can't kill pkt-gen on ${SENDER_ADMIN}"
 	fi
-
-	#scp ${RECEIVER_ADMIN}:/tmp/bench.log.receiver $1.receiver
+	if [ -n "${SENDER_ADMIN_2}" ]; then
+		rcmd ${SENDER_ADMIN_2} "${SENDER_STOP_CMD}" || echo "DEBUG: Can't kill pkt-gen on ${SENDER_ADMIN_2}"
+	fi
+#scp ${RECEIVER_ADMIN}:/tmp/bench.log.receiver $1.receiver
 	#kill ${JOB_RECEIVER}
 
 	if ($PMC); then
@@ -347,7 +366,7 @@ icmp_test_all () {
 	local PING_ACCESS_OK=true
 	echo "Testing ICMP connectivity to each devices:"
 	# TO DO: REF_ADMIN
-	for HOST in ${SENDER_ADMIN} ${RECEIVER_ADMIN} ${DUT_ADMIN} ${REF_ADMIN}; do
+	for HOST in ${SENDER_ADMIN} ${RECEIVER_ADMIN} ${DUT_ADMIN} ${REF_ADMIN} ${SENDER_ADMIN_2}; do
 		if [ -n "${HOST}" ]; then
 			echo -n "  ${HOST}..."
 			if ping -c 2 ${HOST} > /dev/null 2>&1; then
@@ -364,7 +383,7 @@ icmp_test_all () {
 ssh_push_key () {
 	# Pushing ssh key
 	echo "Testing SSH connectivity with key to each devices:"
-	for HOST in ${SENDER_ADMIN} ${RECEIVER_ADMIN} ${DUT_ADMIN} ${REF_ADMIN}; do
+	for HOST in ${SENDER_ADMIN} ${RECEIVER_ADMIN} ${DUT_ADMIN} ${REF_ADMIN} ${SENDER_ADMIN_2}; do
 		if [ -n "${HOST}" ]; then
 			echo -n "  ${HOST}..."
 			if ! rcmd ${HOST} "uname" > /dev/null 2>&1; then
@@ -427,66 +446,47 @@ usage () {
 
 ##### Main
 
-args=$(getopt c:d:f:i:hn:r:PSp: $*)
-
-set -- $args
-for i
-do
-	case "$i" in
-	-c)
-		CONFIG_SET_DIR="$2"
-		shift
-		shift
+while getopts "c:d:f:i:hn:r:PSp:" arg; do
+	case "${arg}" in
+	c)
+		CONFIG_SET_DIR=$OPTARG
 		;;
-	-d)
-		RESULTS_DIR="$2"
-		shift
-		shift
+	d)
+		RESULTS_DIR=$OPTARG
 		;;
-	-f)
-		CONFIG_FILE="$2"
-		shift
-		shift
+	f)
+		CONFIG_FILE=$OPTARG
 		;;
-        -i)
-		IMAGES_DIR="$2"
-		shift
-		shift
+	i)
+		IMAGES_DIR=$OPTARG
 		;;
-	-h)
+	h)
 		usage
-		shift
 		;;
-	-n)
-		(${PMC}) || BENCH_ITER=$2
-		shift
-		shift
+	n)
+		(${PMC}) || BENCH_ITER=$OPTARG
 		;;
-	-r)
-		MAIL="$2"
-		shift
-		shift
+	r)
+		MAIL=$OPTARG
 		;;
-	-p)
-		PKTGEN_DIR="$2"
-		shift
-		shift
+	p)
+		PKTGEN_DIR=$OPTARG
 		;;
-	-P)
+	P)
 		BENCH_ITER=1
 		PMC=true
-		shift
 		;;
-	-S)
+	S)
 		BENCH_ITER=1
 		STATS=true
-		shift
 		;;
---)
-		shift
-		break
-        esac
+	*)
+		echo "Unknown parameter: $OPTARG"
+		usage
+		;;
+	esac
 done
+shift $(( OPTIND - 1 ))
 
 if [ $# -gt 0 ] ; then
     echo "$0: Extraneous arguments supplied"
