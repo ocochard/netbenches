@@ -29,5 +29,5 @@ Difference at 95.0% confidence
 
 ![Impact of r364730 (D26162) on inet4 forwarding and firewalls](graph-inet4.png)
 ![Impact of r364730 (D26162) on inet6 forwarding and firewalls](graph-inet6.png)
-![Impact of firewalls on forwarding performance with r364730 (D26162)](graph-364730.png)
+![Impact of firewalls on forwarding performance with r364730 (D26162)](graph-r364730.png)
 
