@@ -17,6 +17,7 @@ Hardware benched are:
 Specific benches:
  - Wireguard kernel vs userland:
     - [PC Engines APU2C4 (4 cores AMD GX-412TC @ 1GHz) and 4 Intel i210AT Gigabit NIC](AMD_GX-412TC_4Cores-Intel_i210AT/wireguard/results/fbsd13-r364937.D26137/README.md)
+    - [Netgate RCC-VE 4860 (4 cores Intel Atom C2558 @ 2.40GHz) and quad port Intel i350](Atom_C2558_4Cores-Intel_i350/wireguard/results/fbsd13-r364937.D26137/README.md)
  - Impact of firewalls (ipfw/pf/ipf) on forwarding performance on:
     - [16 cores Xeon E5-2697A & 100G Mellanox ConnectX-4](Xeon_E5-2697Av4_16Cores-Mellanox_ConnectX-4/firewalls/results/fbsd12-stable.r354440.BSDRP.1.96/README.md)
     - [2x12 cores Xeon E5-2650 & Mellanox ConnectX-4](Xeon_E5-2650v4_2x12Cores-Mellanox_ConnectX-4/forwarding-pf-ipfw/results/fbsd12-stable.r354440.BSDRP.1.96/README.md)
