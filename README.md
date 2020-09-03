@@ -98,7 +98,7 @@ Specific benches:
 
  - IPSec performance:
     - [2 cores AMD G-T40E (PC Engines APU1D)](AMD_G-T40E_2Cores-RTL8111E/ipsec/results/fbsd11.0/README.md)
-    - [4 cores AMD GX-412TC (PC Engines APU2C4)](AMD_GX-412TC_4Cores-Intel_i210AT/ipsec/results/fbsd13-r364937/fbsd11.0/README.md)
+    - [4 cores AMD GX-412TC (PC Engines APU2C4)](AMD_GX-412TC_4Cores-Intel_i210AT/ipsec/results/fbsd13-r364937/README.md)
     - [4 cores Atom C2558 (Netgate RCC-VE 4860)](Atom_C2558_4Cores-Intel_i350/ipsec/results/fbsd11.0/README.md)
     - [4 cores Intel Xeon L5630 (IBM x3550-M3)](Xeon_L5630_4Cores-Intel_82599EB/ipsec/results/fbsd11.0/README.md)
 
