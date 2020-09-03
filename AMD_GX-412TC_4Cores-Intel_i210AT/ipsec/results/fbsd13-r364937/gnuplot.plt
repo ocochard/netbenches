@@ -57,8 +57,8 @@ set xtics 1
 set xtics font ", 20"
 
 set title noenhanced "Impact of cyphers on IPSec throughput\nPC Engines APU2 (4 cores AMD GX-412T and Gigabit Intel i210AT)"
-set xlabel "Note: AES-NI loaded, FreeBSD r364730"
-set ylabel "Equilibrium Ethernet throughput in Mb/s (500B UDP payload, 2000 flows)\n minimum,median,maximum values of 5 benches"
+set xlabel "FreeBSD r364730, 500 Bytes UDP payload\nMethodology for Benchmarking IPsec Gateways:\nhttp://www.mecs-press.org/ijcnis/ijcnis-v4-n9/IJCNIS-V4-N9-1.pdf"
+set ylabel "Equilibrium Ethernet throughput in Mb/s\n minimum,median,maximum values of 5 benches"
 
 # Put the label inside the graph
 set key on inside top right
