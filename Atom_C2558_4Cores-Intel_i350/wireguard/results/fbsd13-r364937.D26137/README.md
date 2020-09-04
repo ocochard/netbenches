@@ -24,3 +24,7 @@ Difference at 95.0% confidence
 	307.651% +/- 3.11843%
 	(Student's t, pooled s = 3.18591)
 ```
+
+Flame graph:
+  - [userland](userland.pmc.svg)
+  - [kernel](kernel.pmc.svg)
