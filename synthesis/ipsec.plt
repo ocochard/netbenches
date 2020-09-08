@@ -54,7 +54,7 @@ set grid mytics
 set mxtics 2
 set mytics 2
 
-set title "IPSec performance on FreeBSD 11.0 with different hardware"
+set title "IPsec performance on FreeBSD 11.0 with different hardware"
 set xlabel "AESNI used, UDP load of 500 Bytes\nMethodology for Benchmarking IPsec Gateways:\nhttp://www.mecs-press.org/ijcnis/ijcnis-v4-n9/IJCNIS-V4-N9-1.pdf"
 set ylabel "Ethernet throughput in Mb/s\n minimum,median,maximum values of 5 benchs"
 

@@ -1,4 +1,4 @@
-Impact of having IPSec option into the kernel:
+Impact of having IPsec option into the kernel:
 
 ```
 x r329155 GENERIC-NODEBUG: inet4 packets-per-second

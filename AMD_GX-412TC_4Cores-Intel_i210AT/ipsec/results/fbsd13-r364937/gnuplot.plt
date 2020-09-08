@@ -56,7 +56,7 @@ set xtics 1
 #set xtics rotate
 set xtics font ", 20"
 
-set title noenhanced "Impact of cyphers on IPSec throughput\nPC Engines APU2 (4 cores AMD GX-412T and Gigabit Intel i210AT)"
+set title noenhanced "Impact of cyphers on IPsec throughput\nPC Engines APU2 (4 cores AMD GX-412T and Gigabit Intel i210AT)"
 set xlabel "FreeBSD r364730, 5000 clear flows to encrypt, 500 Bytes UDP payload\nMethodology for Benchmarking IPsec Gateways:\nhttp://www.mecs-press.org/ijcnis/ijcnis-v4-n9/IJCNIS-V4-N9-1.pdf"
 set ylabel "Equilibrium Ethernet throughput in Mb/s\n minimum,median,maximum values of 5 benches"
 

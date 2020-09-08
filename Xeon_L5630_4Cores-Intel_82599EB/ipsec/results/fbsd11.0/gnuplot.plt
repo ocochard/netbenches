@@ -54,7 +54,7 @@ set grid mytics
 set mxtics 2
 set mytics 2
 
-set title "IPSec performance on IBM System x3550 M3 with quad cores (Intel Xeon L5630 2.13GHz, HT disabled)"
+set title "IPsec performance on IBM System x3550 M3 with quad cores (Intel Xeon L5630 2.13GHz, HT disabled)"
 set xlabel "AESNI used, UDP load of 500 Bytes\nMethodology for Benchmarking IPsec Gateways:\nhttp://www.mecs-press.org/ijcnis/ijcnis-v4-n9/IJCNIS-V4-N9-1.pdf"
 set ylabel "Ethernet throughput in Mb/s\n minimum,median,maximum values of 5 benchs"
 

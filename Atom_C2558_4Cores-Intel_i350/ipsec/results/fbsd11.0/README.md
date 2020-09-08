@@ -6,4 +6,4 @@ IPsec performance
   - 2000 flows of UDP packets
   - 500Bytes UDP load => packet size: 528B => Ethernet frame size:542B
 
-![IPSec performance on Netgate RCC-VE 4860](graph.png)
+![IPsec performance on Netgate RCC-VE 4860](graph.png)

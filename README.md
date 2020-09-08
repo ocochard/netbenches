@@ -96,7 +96,7 @@ Specific benches:
  - ipfw tuning:
     - [Impact of number of flows with maximum ipfw hash table on FreeBSD 11.1-yandex](Atom_C2558_4Cores-Intel_i350/ipfw-sessions/results/fbsd11.1-yandex/README.md)
 
- - IPSec performance:
+ - IPsec performance:
     - [4 cores AMD GX-412TC (PC Engines APU2C4)](AMD_GX-412TC_4Cores-Intel_i210AT/ipsec/results/fbsd13-r365248/README.md)
     - [4 cores Atom C2558 (Netgate RCC-VE 4860)](Atom_C2558_4Cores-Intel_i350/ipsec/results/fbsd11.0/README.md)
     - [8 cores Atom C2758 & Chelsio T540](Atom_C2758_8Cores-Chelsio_T540-CR/ipsec/results/fbsd13-r365415/README.md)
@@ -106,6 +106,7 @@ Specific benches:
  - OpenVPN performance:
     - [4 cores AMD GX-412TC (PC Engines APU2C4)](AMD_GX-412TC_4Cores-Intel_i210AT/openvpn/results/fbsd13-r365248/README.md)
     - [4 cores Atom C2558 (Netgate RCC-VE 4860)](Atom_C2558_4Cores-Intel_i350/openvpn/results/fbsd11.0/README.md)
+    - [8 cores Atom C2758 & Chelsio T540](Atom_C2758_8Cores-Chelsio_T540-CR/openvpn/results/fbsd13-r365415/README.md)
     - [4 cores Intel Xeon L5630 (IBM x3550-M3)](Xeon_L5630_4Cores-Intel_82599EB/openvpn/results/fbsd11.0/README.md)
     - [(old)2 cores AMD G-T40E (PC Engines APU1D)](AMD_G-T40E_2Cores-RTL8111E/openvpn/results/fbsd11.0/README.md)
     - [Impact of OpenVPN fast-io (PC Engines APU2C4)](AMD_GX-412TC_4Cores-Intel_i210AT/openvpn/results/fbsd13-r365328-fastio/README.md)
@@ -113,10 +114,11 @@ Specific benches:
   - Wireguard kernel vs userland:
     - [PC Engines APU2C4 (4 cores AMD GX-412TC @ 1GHz) and 4 Intel i210AT Gigabit NIC](AMD_GX-412TC_4Cores-Intel_i210AT/wireguard/results/fbsd13-r364937.D26137/README.md)
     - [Netgate RCC-VE 4860 (4 cores Intel Atom C2558 @ 2.40GHz) and quad port Intel i350](Atom_C2558_4Cores-Intel_i350/wireguard/results/fbsd13-r364937.D26137/README.md)
+    - [8 cores Atom C2758 & Chelsio T540](Atom_C2758_8Cores-Chelsio_T540-CR/wireguard/results/fbsd13-r365415/README.md)
 
 Synthesis:
   - ![ipfw/pf's impact on forwarding performance with differents hardware](synthesis/hardware.png)
-  - ![OpenVPN vs WireGuard kernel|userland vs IPSec on freebsd 13-head](synthesis/VPNs.png)
+  - ![OpenVPN vs WireGuard kernel|userland vs IPsec on APU2 with freebsd 13-head](synthesis/VPNs-APU2.png)
   - ![ipsec performance on freebsd 11.0 with differents hardware](synthesis/ipsec.png)
   - ![OpenVPN 2.40 performance on FreeBSD 11.0 with differents hardware](synthesis/openvpn.png)
 

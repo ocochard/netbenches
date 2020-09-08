@@ -50,7 +50,7 @@ set boxwidth 0.8
 # Only integer value for xtics
 set xtics 1
 
-set title "IPSec performance\nPC Engines APU1D: Dual core AMD G-T40E and Realtek RTL8111E NIC"
+set title "IPsec performance\nPC Engines APU1D: Dual core AMD G-T40E and Realtek RTL8111E NIC"
 set xlabel "UDP load of 500 Bytes\nMethodology for Benchmarking IPsec Gateways:\nhttp://www.mecs-press.org/ijcnis/ijcnis-v4-n9/IJCNIS-V4-N9-1.pdf"
 set ylabel "Ethernet throughput in Mb/s\n minimum,median,maximum values of 5 benchs"
 

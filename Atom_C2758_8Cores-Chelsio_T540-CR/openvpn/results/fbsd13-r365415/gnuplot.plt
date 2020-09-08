@@ -49,19 +49,24 @@ set style fill solid 1.0 border -1
 set style histogram errorbars gap 2 lw 2
 set boxwidth 0.9 relative
 # Replace long value by M (million), K (kilo) on ytics
-set ytics format '%.0s%c'
+#set ytics 1
+#set ytics format '%.1s%c'
+#set ytics format '%.1s'
 
 # Only integer value for xtics
-set xtics 1
+#set xtics 1
+#set xtics format '%.0s%c'
+#set grid mxtics
+#set mxtics 2
 #set xtics rotate
 set xtics font ", 20"
 
-set title noenhanced "VPN throughput, FreeBSD 13 r364937 with D26137\nPC Engines APU2 (4 cores AMD GX-412T and Gigabit Intel i210AT)"
-set xlabel noenhanced "iflib.tx_abdicate=1, 5000 clear flows to encrypt, 500 Bytes UDP payload\nMethodology for Benchmarking IPsec Gateways:\nhttp://www.mecs-press.org/ijcnis/ijcnis-v4-n9/IJCNIS-V4-N9-1.pdf"
+set title noenhanced "Impact on OpenVPN ciphers on throughput\nSuperMicro SuperServer 5018A-FTN4 (8 cores Atom C2758 and Chelsio T540-CR)"
+set xlabel "FreeBSD r365415, 5000 clear flows to encrypt, 500 Bytes UDP payload\nMethodology for Benchmarking IPsec Gateways:\nhttp://www.mecs-press.org/ijcnis/ijcnis-v4-n9/IJCNIS-V4-N9-1.pdf"
 set ylabel "Equilibrium Ethernet throughput in Mb/s\n minimum,median,maximum values of 5 benches"
 
 # Put the label inside the graph
 set key on inside top right
 
 # Ploting!
-plot "vpns.data" using 2:3:4:xticlabels(1) with histogram notitle ls 2
+plot "gnuplot.data.max" using 2:3:4:xticlabels(1) with histogram notitle ls 2

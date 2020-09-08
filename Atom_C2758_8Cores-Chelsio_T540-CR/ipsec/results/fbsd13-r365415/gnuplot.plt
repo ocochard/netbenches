@@ -61,7 +61,7 @@ set boxwidth 0.9 relative
 #set xtics rotate
 set xtics font ", 20"
 
-set title noenhanced "Impact of cyphers on IPSec throughput\nSuperMicro SuperServer 5018A-FTN4 (8 cores Atom C2758 and Chelsio T540-CR)"
+set title noenhanced "Impact of cyphers on IPsec throughput\nSuperMicro SuperServer 5018A-FTN4 (8 cores Atom C2758 and Chelsio T540-CR)"
 set xlabel "FreeBSD r365415, 5000 clear flows to encrypt, 500 Bytes UDP payload\nMethodology for Benchmarking IPsec Gateways:\nhttp://www.mecs-press.org/ijcnis/ijcnis-v4-n9/IJCNIS-V4-N9-1.pdf"
 set ylabel "Equilibrium Ethernet throughput in Gb/s\n minimum,median,maximum values of 5 benches"
 
