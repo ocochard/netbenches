@@ -11,21 +11,19 @@ WireGuard kernel vs userland
 x Wireguard userland: Equilibrium Ethernet throughput in Mb/s
 + Wireguard kernel: Equilibrium Ethernet throughput in Mb/s
 +--------------------------------------------------------------------------+
-|x                                                                        +|
-|x                                                                        +|
-|x                                                                        +|
-|x                                                                        +|
-|x                                                                        +|
+|x                                                                       ++|
+|x                                                                     + ++|
 |A                                                                         |
-|                                                                         A|
+|                                                                       |A||
 +--------------------------------------------------------------------------+
     N           Min           Max        Median           Avg        Stddev
-x   5          1640          1656          1655        1650.6     7.2663608
-+   5          7661          7661          7661          7661             0
+x   5           170           172           171         171.2    0.83666003
++   5           695           718           711           710     9.2195445
 Difference at 95.0% confidence
-	6010.4 +/- 7.49361
-	364.134% +/- 2.10714%
-	(Student's t, pooled s = 5.13809)
+	538.8 +/- 9.54695
+	314.72% +/- 5.93396%
+	(Student's t, pooled s = 6.54599)
 ```
 
 ![WireGuard kernel vs userland on SuperServer 5018A-FTN4](graph.png)
+

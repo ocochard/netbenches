@@ -52,7 +52,7 @@ set boxwidth 0.9 relative
 set mytics 2
 
 # Only integer value for xtics
-set xtics font ", 20"
+set xtics font ", 17"
 
 set title noenhanced "Impact of cyphers on VPN throughput\nSuperMicro SuperServer 5018A-FTN4 (8 cores Atom C2758 and Chelsio T540-CR)"
 set xlabel noenhanced "FreeBSD 13 r365415 with D26137, 5000 clear flows to encrypt, 500 Bytes UDP payload\nMethodology for Benchmarking IPsec Gateways:\nhttp://www.mecs-press.org/ijcnis/ijcnis-v4-n9/IJCNIS-V4-N9-1.pdf" offset 0,-1,0
@@ -61,8 +61,8 @@ set ylabel "Equilibrium Ethernet throughput in Gb/s\n minimum,median,maximum val
 # Put the label inside the graph
 set key on inside top right
 
-set label "Warning: Strange low OpenVPN and high WireGuard results under investigation" center\
-    at screen 0.5,0.6 tc rgb"#cccccc"
+#set label "Warning: Strange high WireGuard results under investigation" center\
+#    at screen 0.5,0.6 tc rgb"#cccccc"
 
 # Ploting!
 plot "VPNs-Atom_C2758.data" using 2:3:4:xticlabels(1) with histogram notitle ls 2,\
