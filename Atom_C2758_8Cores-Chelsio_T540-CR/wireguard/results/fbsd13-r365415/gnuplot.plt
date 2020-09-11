@@ -63,10 +63,10 @@ set xtics font ", 20"
 
 set title noenhanced "Impact on WireGuard kernel vs userland throughput\nSuperMicro SuperServer 5018A-FTN4 (8 cores Atom C2758 and Chelsio T540-CR)"
 set xlabel "FreeBSD r365415, 5000 clear flows to encrypt, 500 Bytes UDP payload\nMethodology for Benchmarking IPsec Gateways:\nhttp://www.mecs-press.org/ijcnis/ijcnis-v4-n9/IJCNIS-V4-N9-1.pdf"
-set ylabel "Equilibrium Ethernet throughput in Gb/s\n minimum,median,maximum values of 5 benches"
+set ylabel "Equilibrium Ethernet throughput in Mb/s\n minimum,median,maximum values of 5 benches"
 
 # Put the label inside the graph
 set key on inside top right
 
 # Ploting!
-plot "gnuplot.data.max" using ($2/1000):($3/1000):($4/1000):xticlabels(1) with histogram notitle ls 2
+plot "gnuplot.data.max" using 2:3:4:xticlabels(1) with histogram notitle ls 2
