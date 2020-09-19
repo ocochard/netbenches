@@ -60,7 +60,7 @@ for INFO in ${INFO_LIST}; do
 	# CFG="fastforwarding"
 	# PKTGEN=""
 	# UNAME="FreeBSD SM 10.3-RELEASE-p2 F..."
-	
+
 	MINISTAT_FILE=`echo ${INFO} | sed "s/.info//" | sed "s/bench.//"`
 
 	# Now need to generate ministat input file for each different REPORT
