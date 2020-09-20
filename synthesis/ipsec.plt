@@ -56,7 +56,7 @@ set xtics 1
 #set xtics rotate
 set xtics font ", 20"
 
-set title noenhanced "Impact of cyphers on IPSec VTI throughput"
+set title noenhanced "Impact of cyphers on IPsec VTI (if_ipsec) throughput"
 set xlabel "FreeBSD r365873, 500 Bytes UDP payload\nMethodology for Benchmarking IPsec Gateways:\nhttp://www.mecs-press.org/ijcnis/ijcnis-v4-n9/IJCNIS-V4-N9-1.pdf"
 set ylabel "Equilibrium Ethernet throughput in Mb/s\n minimum,median,maximum values of 5 benches"
 
@@ -64,11 +64,11 @@ set ylabel "Equilibrium Ethernet throughput in Mb/s\n minimum,median,maximum val
 set key on vert top left font ",18"
 
 # Ploting!
-plot "../AMD_GX-412TC_4Cores-Intel_i210AT/ipsec/results/fbsd13-r365873.vti/gnuplot.data" using 2:3:4:xticlabels(1) with histogram title "PC Engines APU2C4(4 cores GX-412TC at 1GHz)" ls 1, \
+plot "../APU2/ipsec.vti/gnuplot.data" using 2:3:4:xticlabels(1) with histogram title "PC Engines APU2C4(4 cores GX-412TC at 1GHz)" ls 1, \
      ''using ($0-0.25):( $2 + 80 ):2 with labels notitle, \
-	 "../Atom_C2558_4Cores-Intel_i350/ipsec/results/fbsd13-r365873.vti/gnuplot.data" using 2:3:4:xticlabels(1) with histogram title "Netgate RCC-VE 4860(4 cores Atom C2558E at 2.4GHz)" ls 4, \
+	 "../netgate/ipsec.vti/gnuplot.data" using 2:3:4:xticlabels(1) with histogram title "Netgate RCC-VE 4860(4 cores Atom C2558E at 2.4GHz)" ls 4, \
      ''using ($0-0.08):( $2 + 80 ):2 with labels notitle, \
-     "../Atom_C2758_8Cores-Chelsio_T540-CR/ipsec/results/fbsd13-r365873.vti/gnuplot.data" using 2:3:4:xticlabels(1) with histogram title "SuperMicro SuperServer 5018A-FTN4(8 cores Atom C2758 at 2.4GHz)" ls 3, \
+     "../SM-Atom/ipsec.vti/gnuplot.data" using 2:3:4:xticlabels(1) with histogram title "SuperMicro SuperServer 5018A-FTN4(8 cores Atom C2758 at 2.4GHz)" ls 3, \
      ''using ($0+0.07):( $2 + 80 ):2 with labels notitle, \
-     "../Xeon_E5-2650_8Cores-Chelsio_T540-CR/ipsec/results/fbsd13-r365873.vti/gnuplot.data" using 2:3:4:xticlabels(1) with histogram title "HP ProLiant DL360p Gen8(8 cores Xeon E5-2650 at 2.6GHz)" ls 2, \
+     "../hp/ipsec.vti/gnuplot.data" using 2:3:4:xticlabels(1) with histogram title "HP ProLiant DL360p Gen8(8 cores Xeon E5-2650 at 2.6GHz)" ls 2, \
      ''using ($0+0.25):( $2 + 80 ):2 with labels notitle
