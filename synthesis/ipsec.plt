@@ -7,7 +7,7 @@ set yrange [0:*]
 
 # output
 set terminal png truecolor size 1920,1080 font "Gill Sans,22"
-set output 'graph.png'
+set output 'ipsec.png'
 #set terminal svg size 1024,768 font "Gill Sans,12" rounded dashed
 #set output 'graph.svg'
 
@@ -44,31 +44,31 @@ set style line 3 lt rgb "#5060D0" lw 2 pt 5
 set style line 4 lt rgb "#F25900" lw 2 pt 13
 
 # Fill box and width
-set style fill solid
-set boxwidth 0.8
+#set bars fullwidth
+set style fill solid 1.0 border -1
+set style histogram errorbars gap 2 lw 2
+set boxwidth 0.9 relative
+# Replace long value by M (million), K (kilo) on ytics
+#set ytics format '%.0s%c'
 
 # Only integer value for xtics
 set xtics 1
-set grid mxtics
-set grid mytics
-set mxtics 2
-set mytics 2
+#set xtics rotate
+set xtics font ", 20"
 
-set title "IPsec performance on FreeBSD 11.0 with different hardware"
-set xlabel "AESNI used, UDP load of 500 Bytes\nMethodology for Benchmarking IPsec Gateways:\nhttp://www.mecs-press.org/ijcnis/ijcnis-v4-n9/IJCNIS-V4-N9-1.pdf"
-set ylabel "Ethernet throughput in Mb/s\n minimum,median,maximum values of 5 benchs"
+set title noenhanced "Impact of cyphers on IPSec VTI throughput"
+set xlabel "FreeBSD r365873, 500 Bytes UDP payload\nMethodology for Benchmarking IPsec Gateways:\nhttp://www.mecs-press.org/ijcnis/ijcnis-v4-n9/IJCNIS-V4-N9-1.pdf"
+set ylabel "Equilibrium Ethernet throughput in Mb/s\n minimum,median,maximum values of 5 benches"
 
 # Put the label inside the graph
-set key on inside top left
-
-# Label on x axsis are too long
-#set xtics rotate
-set xtics font "Gill Sans,16"
+set key on vert top left font ",18"
 
 # Ploting!
-plot "ibm.data.max" using 0:2:xtic(1) with boxes title "IBM System x3550 M3 with quad cores (Intel Xeon L5630 2.13GHz, HT disabled)" ls 2, \
-	 "ibm.data.max" using 0:2:3:4 with yerrorbars lc rgb 'black' pt 1 lw 2 notitle, \
-	 "netgate.data.max" using 0:2:xtic(1) with boxes title "Netgate RCC-VE 4860 (4 cores Intel Atom C2558E)" ls 1, \
-	 "netgate.data.max" using 0:2:3:4 with yerrorbars lc rgb 'black' pt 1 lw 2 notitle, \
-	 "apu2.data.max" using 0:2:xtic(1) with boxes title "PC Engines APU2C4(Quad cores AMD GX-412TC)" ls 3, \
-	 "apu2.data.max" using 0:2:3:4 with yerrorbars lc rgb 'black' pt 1 lw 2 notitle
+plot "../AMD_GX-412TC_4Cores-Intel_i210AT/ipsec/results/fbsd13-r365873.vti/gnuplot.data" using 2:3:4:xticlabels(1) with histogram title "PC Engines APU2C4(4 cores GX-412TC at 1GHz)" ls 1, \
+     ''using ($0-0.25):( $2 + 80 ):2 with labels notitle, \
+	 "../Atom_C2558_4Cores-Intel_i350/ipsec/results/fbsd13-r365873.vti/gnuplot.data" using 2:3:4:xticlabels(1) with histogram title "Netgate RCC-VE 4860(4 cores Atom C2558E at 2.4GHz)" ls 4, \
+     ''using ($0-0.08):( $2 + 80 ):2 with labels notitle, \
+     "../Atom_C2758_8Cores-Chelsio_T540-CR/ipsec/results/fbsd13-r365873.vti/gnuplot.data" using 2:3:4:xticlabels(1) with histogram title "SuperMicro SuperServer 5018A-FTN4(8 cores Atom C2758 at 2.4GHz)" ls 3, \
+     ''using ($0+0.07):( $2 + 80 ):2 with labels notitle, \
+     "../Xeon_E5-2650_8Cores-Chelsio_T540-CR/ipsec/results/fbsd13-r365873.vti/gnuplot.data" using 2:3:4:xticlabels(1) with histogram title "HP ProLiant DL360p Gen8(8 cores Xeon E5-2650 at 2.6GHz)" ls 2, \
+     ''using ($0+0.25):( $2 + 80 ):2 with labels notitle
