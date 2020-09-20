@@ -7,7 +7,7 @@ set yrange [0:*]
 
 # output
 set terminal png truecolor size 1920,1080 font "Gill Sans,22"
-set output 'graph.png'
+set output 'VPNs-APU2.png'
 #set terminal svg size 1024,768 font "Gill Sans,12" rounded dashed
 #set output 'graph.svg'
 
@@ -49,19 +49,20 @@ set style fill solid 1.0 border -1
 set style histogram errorbars gap 2 lw 2
 set boxwidth 0.9 relative
 # Replace long value by M (million), K (kilo) on ytics
-set ytics format '%.0s%c'
+#set ytics format '%.0s%c'
+set mytics 2
 
 # Only integer value for xtics
-set xtics 1
-#set xtics rotate
-set xtics font ", 20"
+#set xtics 1
+set xtics font ", 17"
 
 set title noenhanced "VPN throughput, FreeBSD 13 r364937 with D26137\nPC Engines APU2 (4 cores AMD GX-412T and Gigabit Intel i210AT)"
-set xlabel noenhanced "iflib.tx_abdicate=1, 5000 clear flows to encrypt, 500 Bytes UDP payload\nMethodology for Benchmarking IPsec Gateways:\nhttp://www.mecs-press.org/ijcnis/ijcnis-v4-n9/IJCNIS-V4-N9-1.pdf"
+set xlabel noenhanced "iflib.tx_abdicate=1, 5000 clear flows to encrypt, 500 Bytes UDP payload\nMethodology for Benchmarking IPsec Gateways:\nhttp://www.mecs-press.org/ijcnis/ijcnis-v4-n9/IJCNIS-V4-N9-1.pdf" offset 0,-1,0
 set ylabel "Equilibrium Ethernet throughput in Mb/s\n minimum,median,maximum values of 5 benches"
 
 # Put the label inside the graph
 set key on inside top right
 
 # Ploting!
-plot "VPNs-APU2.data" using 2:3:4:xticlabels(1) with histogram notitle ls 2
+plot "VPNs-APU2.data" using 2:3:4:xticlabels(1) with histogram notitle ls 2,\
+ ''using 0:( $2 + 20 ):2 with labels notitle

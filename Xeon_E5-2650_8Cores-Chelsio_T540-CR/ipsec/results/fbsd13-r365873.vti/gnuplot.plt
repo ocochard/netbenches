@@ -59,5 +59,5 @@ set ylabel "Equilibrium Ethernet throughput in Mb/s\n minimum,median,maximum val
 set key on inside top right
 
 # Ploting!
-plot "gnuplot.data" using 2:3:4:xticlabels(1) with histogram title "VTI" ls 2,\
- "../fbsd13-r365873/gnuplot.data" using 2:3:4:xticlabels(1) with histogram title "Standard" ls 3,\
+plot "gnuplot.data" using 2:3:4:xticlabels(1) with histogram notitle ls 2,\
+ ''using 0:( $2 + 80 ):2 with labels notitle

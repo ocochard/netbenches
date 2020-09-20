@@ -66,4 +66,4 @@ set key on inside top right
 
 # Ploting!
 plot "VPNs-Atom_C2758.data" using 2:3:4:xticlabels(1) with histogram notitle ls 2,\
- ''using 0:($2+0.25):2 with labels notitle
+ ''using 0:($2+0.10):2 with labels notitle

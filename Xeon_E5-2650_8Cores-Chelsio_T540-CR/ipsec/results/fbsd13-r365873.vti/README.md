@@ -9,24 +9,24 @@ Impact of cyphers on IPsec VTI performance
 
 ![Impact of cyphers on IPsec gateway performance on Xeon E5-2650](graph.png)
 
-Difference without VTI mode:
+Difference standard vs VTI:
 ```
 x null cypher, standard mode: Mb/s
 + null cypher, VTI mode: Mb/s
 +--------------------------------------------------------------------------+
-|+                                                                        x|
-|+                                                                        x|
-|+++                                                                     xx|
-|                                                                        |A|
-|MA                                                                        |
+|                                                                         +|
+|                                                                         +|
+|                                                                         +|
+| x                                                                       +|
+|xxxx                                                                     +|
+||A|                                                                       |
+|                                                                         A|
 +--------------------------------------------------------------------------+
     N           Min           Max        Median           Avg        Stddev
 x   5          7787          7838          7809        7811.6     18.433665
-+   5          2661          2763          2683        2695.8     39.512023
++   5          9049          9049          9049          9049             0
 Difference at 95.0% confidence
-	-5115.8 +/- 44.964
-	-65.4898% +/- 0.528349%
-	(Student's t, pooled s = 30.8302)
+	1237.4 +/- 19.0102
+	15.8405% +/- 0.281907%
+	(Student's t, pooled s = 13.0346)
 ```
-
-[FlameGraph with null cypher](flamegraph.svg)
