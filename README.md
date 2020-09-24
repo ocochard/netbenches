@@ -118,6 +118,9 @@ Specific benches:
     - [Netgate RCC-VE 4860 (4 cores Intel Atom C2558 @ 2.40GHz) and quad port Intel i350](Atom_C2558_4Cores-Intel_i350/wireguard/results/fbsd13-r364937.D26137/README.md)
     - [8 cores Atom C2758 & Chelsio T540](Atom_C2758_8Cores-Chelsio_T540-CR/wireguard/results/fbsd13-r365415/README.md)
 
+  - Tinc performance:
+    - [4 cores AMD GX-412TC (PC Engines APU2C4)](AMD_GX-412TC_4Cores-Intel_i210AT/tinc/results/fbsd13-r365873/README.md)
+
 Synthesis:
   - ![ipfw/pf's impact on forwarding performance with differents hardware](synthesis/hardware.png)
   - ![OpenVPN vs WireGuard kernel|userland vs IPsec on APU2 with freebsd 13-head](synthesis/VPNs-APU2.png)
