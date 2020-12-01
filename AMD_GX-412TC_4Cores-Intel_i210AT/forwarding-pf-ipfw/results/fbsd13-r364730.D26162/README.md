@@ -1,7 +1,7 @@
-Impact of r364730 (D26162) on forwarding and firewalls:
+Impact of r364730 "Remove RT_LOCK mutex from rte" on forwarding and firewalls:
   - PC Engines APU2C4 (quad core AMD GX-412T Processor 1 GHz)
   - 3 Intel i210AT Gigabit Ethernet ports
-  - FreeBSD 12-stable r345325 (BSDRP 1.92)
+  - FreeBSD head r364730
   - 2000 flows of smallest UDP packets
   - Traffic load at 1.448Mpps (Gigabit line-rate)
   - net.inet.ip.redirect=0

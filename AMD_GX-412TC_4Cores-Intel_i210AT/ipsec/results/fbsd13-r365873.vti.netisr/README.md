@@ -10,8 +10,8 @@ net.isr.dispatch=deferred
 Results:
 
 ```
-x null cypher:Mb/s
-+ null cypher, netisr deferred: Mb/s
+x null cypher, VTI: Mb/s
++ null cypher, VTI: (net.isr: numthreads=4, bindthreads=1, dispatch=deferred): Mb/s
 +--------------------------------------------------------------------------+
 | +                                                                        |
 |++                                                                     x x|

@@ -1,6 +1,6 @@
 ```
 x null cypher, VTI mode: Mb/s
-+ null cyphera, VTI mode, async_crypto: Mb/s
++ null cypher, VTI mode, async_crypto: Mb/s
 +--------------------------------------------------------------------------+
 |      +                                                                  x|
 |++ +  +                                                                 xx|
