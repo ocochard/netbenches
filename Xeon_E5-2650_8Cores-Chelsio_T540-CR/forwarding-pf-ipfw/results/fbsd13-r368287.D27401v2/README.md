@@ -3,7 +3,7 @@ Comparing D27401 (Diff 80345) impact on forwarding performance:
   - Quad port Chelsio 10-Gigabit T540-CR and OPT SFP (SFP-10G-LR).
   - FreeBSD 13-head r368287
   - 5000 flows of smallest UDP packets
-  - 2 firewall rules, 2 static routes
+  - 2 static routes
   - harvest.mask=351
   - ICMP redirect disabled
 
@@ -27,7 +27,7 @@ Difference at 95.0% confidence
 	(Student's t, pooled s = 81233.9)
 ```
 
-=> D27401(Diff 80345) brings a small improvement of 1.7% improvement to forward IPv4
+=> D27401(Diff 80345) brings a small improvement of 1.7% to forward IPv4
 
 IPv6:
 ```

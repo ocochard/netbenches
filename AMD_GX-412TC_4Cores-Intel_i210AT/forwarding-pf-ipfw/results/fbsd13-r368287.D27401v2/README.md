@@ -4,6 +4,7 @@ Comparing D27401 (Diff 80345) impact on forwarding performance:
   - FreeBSD 13-head r368287
   - 2000 flows of smallest UDP packets
   - Traffic load at 1.448Mpps (Gigabit line-rate)
+  - 2 static routes
   - net.inet.ip.redirect=0
   - net.inet6.ip6.redirect=0
   - txabdicate enabled
