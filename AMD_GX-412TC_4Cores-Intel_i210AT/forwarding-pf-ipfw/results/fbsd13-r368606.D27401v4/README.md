@@ -45,13 +45,15 @@ x   5        824195        838004        833084      832263.4      5003.562
 Difference at 95.0% confidence
 	-60270.2 +/- 5398.84
 	-7.24172% +/- 0.605924%
-	(Student's t, pooled s = 3701.78)```
+	(Student's t, pooled s = 3701.78)
+```
 
 => D27401(Diff 80677) brings a reduction of 7.2% to forward IPv6:
 
 Just for information, difference with IPv4 and IPv6 forwarding speed:
 
 Without D27401:
+
 ```
 x r368606: IPv4 packets-per-second forwarded
 + r368606: IPv6 packets-per-second forwarded
@@ -69,9 +71,11 @@ Difference at 95.0% confidence
 	19.4114% +/- 0.848102%
 	(Student's t, pooled s = 3906.29)
 ```
+
 => forwarding IPv6 is 19.4% faster than IPv4
 
 With D27401:
+
 ```
 x r368606 with D27401: IPv4 packets-per-second forwarded
 + r368606 with D27401: IPv6 packets-per-second forwarded
@@ -87,7 +91,8 @@ x   5        813395        825061      818114.5      818684.2     4337.6171
 Difference at 95.0% confidence
 	-46691 +/- 4746.74
 	-5.70318% +/- 0.550533%
-	(Student's t, pooled s = 3254.66)```
+	(Student's t, pooled s = 3254.66)
+```
 
 => With D27401, forwarding IPv6 is now 'only' 5.7% faster than than IPv4
    (inet4 speed improved and inet6 reduced)
