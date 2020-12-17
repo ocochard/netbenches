@@ -2,7 +2,7 @@ Comparing D27401 (Diff 80677) impact on forwarding performance:
   - HP ProLiant DL360p Gen8 with 8 cores (Intel Xeon E5-2650 @ 2.60GHz)
   - Quad port Chelsio 10-Gigabit T540-CR and OPT SFP (SFP-10G-LR)
   - FreeBSD 13-head r368606
-  - 5000 flows of smallest UDP packets
+  - BUG: 200 flows only of smallest UDP packets
   - 2 static routes
   - harvest.mask=351
   - ICMP redirect disabled

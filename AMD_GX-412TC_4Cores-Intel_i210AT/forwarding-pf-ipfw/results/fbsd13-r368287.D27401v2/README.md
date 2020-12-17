@@ -2,7 +2,7 @@ Comparing D27401 (Diff 80345) impact on forwarding performance:
   - PC Engines APU2C4 (quad core AMD GX-412T Processor 1 GHz)
   - 3 Intel i210AT Gigabit Ethernet ports
   - FreeBSD 13-head r368287
-  - 2000 flows of smallest UDP packets
+  - Bug: 200 flows only of smallest UDP packets
   - Traffic load at 1.448Mpps (Gigabit line-rate)
   - 2 static routes
   - net.inet.ip.redirect=0
