@@ -1,7 +1,6 @@
 Impact of enabling firewalls on BSDRP 1.90 (FreeBSD 11.2-BETA3) forwarding performance
   - SuperMicro SuperServer 5018A-FTN4 (8 cores Atom C2758 at 2.4GHz)
   - Quad port Chelsio 10-Gigabit T540-CR (10Giga DAC cable)
-  - FreeBSD 13-head r368606
   - 5000 flows of smallest UDP packets
   - 2 static routes
   - harvest.mask=351
@@ -80,7 +79,8 @@ Difference at 95.0% confidence
 %   5       3804216       3975640       3887207     3881016.4     65287.857
 No difference proven at 95.0% confidence
 #   5       3762679       3971463       3825888     3855442.8     90646.992
-No difference proven at 95.0% confidence```
+No difference proven at 95.0% confidence
+```
 
 Flamegraphs:
 - [r368287: inet4](bench.r368287.inet4.svg)
