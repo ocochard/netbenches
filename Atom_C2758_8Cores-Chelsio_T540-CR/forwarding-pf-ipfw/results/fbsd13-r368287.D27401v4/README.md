@@ -2,7 +2,7 @@ Impact of enabling firewalls on BSDRP 1.90 (FreeBSD 11.2-BETA3) forwarding perfo
   - SuperMicro SuperServer 5018A-FTN4 (8 cores Atom C2758 at 2.4GHz)
   - Quad port Chelsio 10-Gigabit T540-CR (10Giga DAC cable)
   - FreeBSD 13-head r368606
-  - 5000 flows of smallest UDP packets
+  - BUG: 200 flows only of smallest UDP packets
   - 2 static routes
   - harvest.mask=351
   - ICMP redirect disabled

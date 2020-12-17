@@ -6,6 +6,7 @@ Comparing D27401 impact on forwarding performance:
   - 2 static routes
   - harvest.mask=351
   - ICMP redirect disabled
+  - Traffic load at 14.88 Mpps
 
 ![Impact of D27401 on forwarding performance](graph.png)
 
