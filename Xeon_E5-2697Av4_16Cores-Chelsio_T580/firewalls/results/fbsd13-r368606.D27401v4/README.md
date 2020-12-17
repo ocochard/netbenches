@@ -4,7 +4,7 @@ Comparing D27401 (Diff 80654) impact on forwarding performance:
   - TX NIC: Mellanox_ConnectX-4
   - Increase number of Chelsio RX & TX queues to 32
   - FreeBSD 13-head r368606
-  - 5000 flows of smallest UDP packets
+  - BUG: 200 flows only of smallest UDP packets
   - Traffic load at 42.49Mpps
   - 2 static routes
   - LRO/TSO disabled
