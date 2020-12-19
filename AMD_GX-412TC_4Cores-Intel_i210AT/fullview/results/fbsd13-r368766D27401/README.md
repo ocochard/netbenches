@@ -8,7 +8,7 @@ Impact of D27401 on forwarding performance with a full-view
   - net.inet6.ip6.redirect=0
   - txabdicate enabled
   - FreeBSD r368766
-  - [script used to generate full-view](https://github.com/ocochard/BSDRP/blob/master/BSDRP/Files/usr/local/bin/bgptabledump2bird|script used to generate full-view)
+  - [script used to generate full-view](https://github.com/ocochard/BSDRP/blob/master/BSDRP/Files/usr/local/bin/bgptabledump2bird)
   - netstat -rn4 | wc -l : 712793
   - netstat -rn6 | wc -l : 104034
 
