@@ -7,11 +7,15 @@ Impact of D27401 on forwarding performance with a full-view
   - ICMP redirect disabled
   - Traffic load at 14.88 Mpps
   - FreeBSD r368766
-  - [script used to generate full-view](https://github.com/ocochard/BSDRP/blob/master/BSDRP/Files/usr/local/bin/bgptabledump2bird|script used to generate full-view)
+  - [script used to generate full-view](https://github.com/ocochard/BSDRP/blob/master/BSDRP/Files/usr/local/bin/bgptabledump2bird)
   - netstat -rn4 | wc -l : 712793
   - netstat -rn6 | wc -l : 104034
 
-![Impact of D27401 on a fullview forwarding performance](graph.png)
+System displaying this message during route table loading:
+```
+[rt_algo] inet6.0 (radix6_lockless) rebuild_callout: switching algo to radix6
+[rt_algo] inet.0 (bsearch4) rebuild_callout: switching algo to radix4
+```
 
 IPv4:
 ```
