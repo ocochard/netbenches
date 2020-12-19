@@ -29,6 +29,7 @@ x r368766: inet packets-per-second forwarded
     N           Min           Max        Median           Avg        Stddev
 x   5       2616815       2699557       2655672       2660459     30502.708
 +   5       2535157       2692514       2626806     2617476.4     59238.452
+No difference proven at 95.0% confidence
 ```
 
 IPv6:
