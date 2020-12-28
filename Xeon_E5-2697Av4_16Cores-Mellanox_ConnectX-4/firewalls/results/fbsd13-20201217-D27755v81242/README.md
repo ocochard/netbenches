@@ -1,6 +1,7 @@
 Impact of D27755 (revision 81242) on forwarding performance
   - Intel Xeon E5-2697Av4 (16Cores, 32 threads)
-  - Mellanox ConnectX-4 MCX416A-CCAT (100GBase-SR4)
+  - Input NIC: Mellanox ConnectX-4 MCX416A-CCAT (100GBase-SR4)
+  - Output NIC: Chelsio T580 (QSFP+ 40GBASE-SR4 (MPO 1x12 Parallel Optic))
   - 2 static routes
   - HyperThreading and LRO/TSO disabled
   - harvest.mask=351
