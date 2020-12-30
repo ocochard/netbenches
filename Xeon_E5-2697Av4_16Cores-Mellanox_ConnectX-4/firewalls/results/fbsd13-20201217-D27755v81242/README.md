@@ -5,6 +5,7 @@ Impact of D27755 (revision 81242) on forwarding performance
   - 2 static routes
   - HyperThreading and LRO/TSO disabled
   - harvest.mask=351
+  - Generator rate: 43.68Mpps
 
 ```
 x 7f4e724829e (2020/12/27): inet packets-per-second forwarded
