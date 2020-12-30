@@ -27,3 +27,7 @@ Difference at 95.0% confidence
 	108.584% +/- 2.9359%
 	(Student's t, pooled s = 112967)
 ```
+
+Flamegraphs
+- [Before](nflx.20201223.svg)
+- [After](nflx.20201223PFpatch.svg)
