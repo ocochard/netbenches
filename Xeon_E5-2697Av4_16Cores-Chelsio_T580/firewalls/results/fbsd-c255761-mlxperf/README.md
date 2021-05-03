@@ -16,14 +16,19 @@ Regression
  - After:  11.83 Mpps
 
 Bisec difficulties because regressions:
+
   - c255749 (9a47ae044b48): Good performance
     'Bump driver versions for mlx5en(4) and mlx4en(4)'
   - c255755 (6815909abda) : Unknown (Mellanox drivers bug)
     'Move the PMC overflow count to make it per-CPU'
   - c255751 (f8f5b459d21) : Unknown (Melllanox drivers bug)
     'Update user access region, UAR, APIs in the core in mlx5core'
-  - c255761 (431980466ff0): Bad performance (and fixed Mellanox drivers)
+  - c255761 (431980466ff0): Bad performance (but fixed Mellanox drivers)
     'Don't offset the UAR map twice in mlx5en(4)'
+
+Need to build custom FreeBSD that includes 431980466ff0:
+  - c255751 (f8f5b459d21e) + patch from c255761 (431980466ff0) to be able to bench it: Bad performance
+    Culprid commit: https://cgit.freebsd.org/src/commit/?id=f8f5b459d21ec9dd1ca5d9de319d8b440fef84a8
 
 Results:
 
