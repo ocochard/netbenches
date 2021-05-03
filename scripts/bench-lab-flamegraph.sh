@@ -7,6 +7,9 @@ dir=""
 filter=""
 found=false
 
+# An usefull function (from: http://code.google.com/p/sh-die/)
+die() { echo -n "EXIT: " >&2; echo "$@" >&2; exit 1; }
+
 usage () {
 	echo "$0 result-directory filter"
 	echo "example:"
