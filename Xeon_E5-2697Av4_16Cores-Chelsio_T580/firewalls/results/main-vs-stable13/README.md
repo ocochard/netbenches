@@ -10,4 +10,4 @@ Comparing MAIN vs STABLE-13 on firewalling performance:
   - harvest.mask=351
   - ICMP redirect disabled
 
-[Impact of firewalling: MAIN vs STABLE-13](graph.png)
+![Impact of firewalling: MAIN vs STABLE-13](graph.png)
