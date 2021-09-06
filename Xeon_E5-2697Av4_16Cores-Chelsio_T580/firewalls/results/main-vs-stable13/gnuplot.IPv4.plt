@@ -7,7 +7,7 @@ set yrange [0:*]
 
 # output
 set terminal png truecolor size 1920,1080 font "Gill Sans,22"
-set output 'graph.png'
+set output 'graph.IPv4.png'
 #set terminal svg size 1024,768 font "Gill Sans,12" rounded dashed
 #set output 'graph.svg'
 
@@ -61,9 +61,9 @@ set y2tics format '%.1s%cb/s'
 set xtics 1
 #set xtics rotate
 
-set title noenhanced "STABLE-13 vs MAIN on firewalling performance\n16 cores Intel Xeon E5-2697A v4 2.60GHz with Chelsio T580 (40Gbase-SR4)"
+set title noenhanced "STABLE vs MAIN on IPv4 firewalling performance\n16 cores Intel Xeon E5-2697A v4 2.60GHz with Chelsio T580 (40Gbase-SR4)"
 set y2label "Theorical equity using simple IMIX distribution (Ethernet throughput)"
-set xlabel "Note: 2 static routes, minimum firewall rules, ICMP redirect disabled, TSO/LRO disabled\n STABLE n265892 and MAIN n268154 (04/09/2021)"
+set xlabel "Note: 2 static routes, minimum firewall rules, ICMP redirect disabled, TSO/LRO disabled\n STABLE-13 n265892, STABLE-12 n244468 and MAIN n268154 (04/09/2021)"
 set ylabel "Packets per second (UDP, minimum size, 5000 flows)\n minimum,median,maximum values of 5 benches"
 
 # Put the label inside the graph
@@ -73,11 +73,13 @@ f(x)=14880000
 h(x)=7000000
 g(x)=28000000
 # Ploting!
-plot "MAIN.inet4.data" using 2:3:4:xticlabels(1) with histogram title "MAIN inet" ls 2, \
-	"STABLE13.inet4.data" using 2:3:4:xticlabels(1) with histogram title "STABLE-13 inet" ls 3, \
-	 "MAIN.inet6.data" using 2:3:4:xticlabels(1) with histogram title "MAIN inet6" ls 4, \
-	"STABLE13.inet6.data" using 2:3:4:xticlabels(1) with histogram title "STABLE-13 inet6" ls 5, \
+plot "STABLE12.inet4.data" using 2:3:4:xticlabels(1) with histogram title "STABLE-12" ls 3, \
+	 "STABLE13.inet4.data" using 2:3:4:xticlabels(1) with histogram title "STABLE-13" ls 2, \
+     "MAIN.inet4.data" using 2:3:4:xticlabels(1) with histogram title "MAIN" ls 1, \
 	g(x) with lines title "Min req. to 40Gb/s bidir with simple IMIX dist." ls 1 lw 4, \
 	h(x) with lines title "Min req. to 10Gb/s bidir with simple IMIX dist." ls 4 lw 4
+	 #"STABLE12.inet6.data" using 2:3:4:xticlabels(1) with histogram title "STABLE-12 inet6" ls 7, \
+	 #"STABLE13.inet6.data" using 2:3:4:xticlabels(1) with histogram title "STABLE-13 inet6" ls 6, \
+     # "MAIN.inet6.data" using 2:3:4:xticlabels(1) with histogram title "MAIN inet6" ls 5, \
 
 #	f(x) with lines title "10 Gigabit line-rate" ls 1 lw 4
