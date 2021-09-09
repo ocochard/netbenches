@@ -19,6 +19,8 @@ Setup:
 
 ## Forwarding
 
+### IPv4
+
 ```
 x RELEASE 12.2: inet4 packets-per-second forwarded
 + STABLE 12 n244468: inet4 packets-per-second forwarded
@@ -57,6 +59,7 @@ Difference at 95.0% confidence
 	-6.16343% +/- 0.44563%
 	(Student's t, pooled s = 99611.3)
 ```
+### IPv6
 
 ```
 x RELEASE 12.2: inet6 packets-per-second forwarded
@@ -101,6 +104,8 @@ Difference at 95.0% confidence
 
 ### stateful
 
+#### IPv4
+
 ```
 x RELEASE 12.2: inet4 packets-per-second forwarded
 + STABLE 12 n244468: inet4 packets-per-second forwarded
@@ -135,6 +140,8 @@ Difference at 95.0% confidence
 	3.50809% +/- 2.27058%
 	(Student's t, pooled s = 330108)
 ```
+
+#### IPv6
 
 ```
 x RELEASE 12.2: inet6 packets-per-second forwarded
@@ -174,6 +181,8 @@ Difference at 95.0% confidence
 
 ### stateless
 
+#### IPv4
+
 ```
 x RELEASE 12.2: inet4 packets-per-second forwarded
 + STABLE 12 n244468: inet4 packets-per-second forwarded
@@ -207,6 +216,8 @@ Difference at 95.0% confidence
 	8.1716% +/- 0.59372%
 	(Student's t, pooled s = 94219.2)
 ```
+
+#### IPv6
 
 ```
 x RELEASE 12.2: inet6 packets-per-second forwarded
@@ -248,6 +259,7 @@ Difference at 95.0% confidence
 
 ## PF
 ### stateful
+#### IPv4
 
 ```
 x RELEASE 12.2: inet4 packets-per-second forwarded
@@ -288,6 +300,7 @@ Difference at 95.0% confidence
 	109.089% +/- 4.92573%
 	(Student's t, pooled s = 151688)
 ```
+#### IPv6
 
 ```
 x RELEASE 12.2: inet6 packets-per-second forwarded
@@ -330,6 +343,7 @@ Difference at 95.0% confidence
 ```
 
 ### stateless
+#### IPv4
 
 ```
 x RELEASE 12.2: inet4 packets-per-second forwarded
@@ -370,6 +384,7 @@ Difference at 95.0% confidence
 	154.672% +/- 15.9164%
 	(Student's t, pooled s = 298215)
 ```
+#### IPv6
 
 ```
 x RELEASE 12.2: inet6 packets-per-second forwarded
