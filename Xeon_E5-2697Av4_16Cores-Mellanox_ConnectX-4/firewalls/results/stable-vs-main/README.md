@@ -1,4 +1,4 @@
-#Comparing releases vs stable vs main on firewalls performance (in term of packets-per-second only)
+# Comparing releases vs stable vs main on firewalls performance (in term of packets-per-second only)
 
 Setup:
   - Intel Xeon E5-2697Av4 (16Cores, 32 threads)
@@ -20,11 +20,11 @@ Setup:
 ## Forwarding
 
 ```
-x RELEASE12_n244468.forwarding.inet4.pps
-+ STABLE12_n244468.forwarding.inet4.pps
-* RELEASE13_n244468.forwarding.inet4.pps
-% STABLE13_n265892.forwarding.inet4.pps
-# MAIN_n268154.forwarding.inet4.pps
+x RELEASE 12.2: inet4 packets-per-second forwarded
++ STABLE 12 n244468: inet4 packets-per-second forwarded
+* RELEASE 13.0: inet4 packets-per-second forwarded
+% STABLE 13 n265892: inet4 packets-per-second forwarded
+# MAIN 268154: inet4 packets-per-second forwarded
 +--------------------------------------------------------------------------+
 |                                  #                                       |
 |* *     %%  %%*  %            #  *# #O                  +   + ++       xxx|
@@ -59,11 +59,11 @@ Difference at 95.0% confidence
 ```
 
 ```
-x RELEASE12_n244468.forwarding.inet6.pps
-+ STABLE12_n244468.forwarding.inet6.pps
-* RELEASE13_n244468.forwarding.inet6.pps
-% STABLE13_n265892.forwarding.inet6.pps
-# MAIN_n268154.forwarding.inet6.pps
+x RELEASE 12.2: inet6 packets-per-second forwarded
++ STABLE 12 n244468: inet6 packets-per-second forwarded
+* RELEASE 13.0: inet6 packets-per-second forwarded
+% STABLE 13 n265892: inet6 packets-per-second forwarded
+# MAIN 268154: inet6 packets-per-second forwarded
 +--------------------------------------------------------------------------+
 |                           *                #  %                          |
 |+ ++++                * *  *  *    %  %  # ### %        x         x   xx  |
@@ -102,11 +102,11 @@ Difference at 95.0% confidence
 ### stateful
 
 ```
-x RELEASE12_n244468.ipfw-stateful.inet4.pps
-+ STABLE12_n244468.ipfw-stateful.inet4.pps
-* RELEASE13_n244468.ipfw-stateful.inet4.pps
-% STABLE13_n265892.ipfw-stateful.inet4.pps
-# MAIN_n268154.ipfw-stateful.inet4.pps
+x RELEASE 12.2: inet4 packets-per-second forwarded
++ STABLE 12 n244468: inet4 packets-per-second forwarded
+* RELEASE 13.0: inet4 packets-per-second forwarded
+% STABLE 13 n265892: inet4 packets-per-second forwarded
+# MAIN 268154: inet4 packets-per-second forwarded
 +--------------------------------------------------------------------------+
 |**    **  *   %% %%%                     x  **++# xx         #     ##    #|
 |                                          |__MA____|                      |
@@ -137,11 +137,11 @@ Difference at 95.0% confidence
 ```
 
 ```
-x RELEASE12_n244468.ipfw-stateful.inet6.pps
-+ STABLE12_n244468.ipfw-stateful.inet6.pps
-* RELEASE13_n244468.ipfw-stateful.inet6.pps
-% STABLE13_n265892.ipfw-stateful.inet6.pps
-# MAIN_n268154.ipfw-stateful.inet6.pps
+x RELEASE 12.2: inet6 packets-per-second forwarded
++ STABLE 12 n244468: inet6 packets-per-second forwarded
+* RELEASE 13.0: inet6 packets-per-second forwarded
+% STABLE 13 n265892: inet6 packets-per-second forwarded
+# MAIN 268154: inet6 packets-per-second forwarded
 +--------------------------------------------------------------------------+
 |  *            #%                                              +          |
 |*%* * *% % #   ##     #                                   +x  ++x+xx     x|
@@ -175,11 +175,11 @@ Difference at 95.0% confidence
 ### stateless
 
 ```
-x RELEASE12_n244468.ipfw-stateless.inet4.pps
-+ STABLE12_n244468.ipfw-stateless.inet4.pps
-* RELEASE13_n244468.ipfw-stateless.inet4.pps
-% STABLE13_n265892.ipfw-stateless.inet4.pps
-# MAIN_n268154.ipfw-stateless.inet4.pps
+x RELEASE 12.2: inet4 packets-per-second forwarded
++ STABLE 12 n244468: inet4 packets-per-second forwarded
+* RELEASE 13.0: inet4 packets-per-second forwarded
+% STABLE 13 n265892: inet4 packets-per-second forwarded
+# MAIN 268154: inet4 packets-per-second forwarded
 +--------------------------------------------------------------------------+
 |                                                                        # |
 |                    * *                %%                               # |
@@ -209,11 +209,11 @@ Difference at 95.0% confidence
 ```
 
 ```
-x RELEASE12_n244468.ipfw-stateless.inet6.pps
-+ STABLE12_n244468.ipfw-stateless.inet6.pps
-* RELEASE13_n244468.ipfw-stateless.inet6.pps
-% STABLE13_n265892.ipfw-stateless.inet6.pps
-# MAIN_n268154.ipfw-stateless.inet6.pps
+x RELEASE 12.2: inet6 packets-per-second forwarded
++ STABLE 12 n244468: inet6 packets-per-second forwarded
+* RELEASE 13.0: inet6 packets-per-second forwarded
+% STABLE 13 n265892: inet6 packets-per-second forwarded
+# MAIN 268154: inet6 packets-per-second forwarded
 +--------------------------------------------------------------------------+
 |#   ** *O  #%#%          #                              + ++   x*x       x|
 |                                                             |__M_A___|   |
@@ -250,11 +250,11 @@ Difference at 95.0% confidence
 ### stateful
 
 ```
-x RELEASE12_n244468.pf-stateful.inet4.pps
-+ STABLE12_n244468.pf-stateful.inet4.pps
-* RELEASE13_n244468.pf-stateful.inet4.pps
-% STABLE13_n265892.pf-stateful.inet4.pps
-# MAIN_n268154.pf-stateful.inet4.pps
+x RELEASE 12.2: inet4 packets-per-second forwarded
++ STABLE 12 n244468: inet4 packets-per-second forwarded
+* RELEASE 13.0: inet4 packets-per-second forwarded
+% STABLE 13 n265892: inet4 packets-per-second forwarded
+# MAIN 268154: inet4 packets-per-second forwarded
 +--------------------------------------------------------------------------+
 |                                                                     %  # |
 |   x                                                            **  +%% ##|
@@ -290,11 +290,11 @@ Difference at 95.0% confidence
 ```
 
 ```
-x RELEASE12_n244468.pf-stateful.inet6.pps
-+ STABLE12_n244468.pf-stateful.inet6.pps
-* RELEASE13_n244468.pf-stateful.inet6.pps
-% STABLE13_n265892.pf-stateful.inet6.pps
-# MAIN_n268154.pf-stateful.inet6.pps
+x RELEASE 12.2: inet6 packets-per-second forwarded
++ STABLE 12 n244468: inet6 packets-per-second forwarded
+* RELEASE 13.0: inet6 packets-per-second forwarded
+% STABLE 13 n265892: inet6 packets-per-second forwarded
+# MAIN 268154: inet6 packets-per-second forwarded
 +--------------------------------------------------------------------------+
 |                                                                       #% |
 |x x                                                              *     #O |
@@ -332,11 +332,11 @@ Difference at 95.0% confidence
 ### stateless
 
 ```
-x RELEASE12_n244468.pf-stateless.inet4.pps
-+ STABLE12_n244468.pf-stateless.inet4.pps
-* RELEASE13_n244468.pf-stateless.inet4.pps
-% STABLE13_n265892.pf-stateless.inet4.pps
-# MAIN_n268154.pf-stateless.inet4.pps
+x RELEASE 12.2: inet4 packets-per-second forwarded
++ STABLE 12 n244468: inet4 packets-per-second forwarded
+* RELEASE 13.0: inet4 packets-per-second forwarded
+% STABLE 13 n265892: inet4 packets-per-second forwarded
+# MAIN 268154: inet4 packets-per-second forwarded
 +--------------------------------------------------------------------------+
 |                                                                      % # |
 |      x                                                            +  O ##|
@@ -372,11 +372,11 @@ Difference at 95.0% confidence
 ```
 
 ```
-x RELEASE12_n244468.pf-stateless.inet6.pps
-+ STABLE12_n244468.pf-stateless.inet6.pps
-* RELEASE13_n244468.pf-stateless.inet6.pps
-% STABLE13_n265892.pf-stateless.inet6.pps
-# MAIN_n268154.pf-stateless.inet6.pps
+x RELEASE 12.2: inet6 packets-per-second forwarded
++ STABLE 12 n244468: inet6 packets-per-second forwarded
+* RELEASE 13.0: inet6 packets-per-second forwarded
+% STABLE 13 n265892: inet6 packets-per-second forwarded
+# MAIN 268154: inet6 packets-per-second forwarded
 +--------------------------------------------------------------------------+
 |                                                                       #% |
 |                                                                       ## |
