@@ -29,3 +29,7 @@ Difference at 95.0% confidence
 	1.34205% +/- 1.03249%
 	(Student's t, pooled s = 219637)
 ```
+# flamegraph
+
+  - [main n268373](bench.n268373.svg)
+  - [main n268373 "nooptions KDTRACE_HOOKS"](bench.n268373_NO_KDTRACE_HOOKS.svg)
