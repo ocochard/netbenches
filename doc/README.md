@@ -14,7 +14,7 @@ It allows to add multiple flows paterns (number of unidirectionnal flows, packet
 
 List of prerequisit:
 * One server with netmap compliant NIC as packet generator/receiver under FreeBSD with netmap pkt-gen compiled (found under /usr/src/tools/tools/netmap)
-* One server as Device under Test (DUT). For using multiple DUT configuration set or multiple firmware image, it need to run nanobsd based system (like BSDRP).
+* One server as Device under Test (DUT). For using multiple DUT configuration set or multiple firmware image, it needs to run nanobsd based system (like BSDRP).
 * One server for running theses script (it can be the same as the packet generator/receiver)
 
 [More details for seting-up a physical network lab here](http://bsdrp.net/documentation/examples/setting_up_a_forwarding_performance_benchmark_lab).
@@ -25,7 +25,7 @@ There are two shell scripts:
 * [bench-lab.sh](../scripts/bench-lab.sh): Main script that start sequentially all benches
 * [bench-lab-ministat.sh](../scripts/bench-lab-ministat.sh): Extract mathematically data from pkt-gen raw text output and generate gnuplot data file
 
-The main script needs one parameters and allow multiples other:
+The main script needs one parameter and allows multiple others:
 ```
 bench-lab.sh [-h] [-f bench-lab-config] [-c configuration-sets-dir] [-i nanobsd-images-dir]
              [-n iteration] [-p pktgen cfg dir ] [-d benchs-results-dir] -r e@mail
