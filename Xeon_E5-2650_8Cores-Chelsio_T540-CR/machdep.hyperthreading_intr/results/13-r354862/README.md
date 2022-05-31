@@ -1,3 +1,4 @@
+```
 x no-HT-8q.pps
 + disabled-default-16q.pps
 * enabled-16q.pps
@@ -23,3 +24,4 @@ Difference at 95.0% confidence
 	105111 +/- 16504.9
 	0.890758% +/- 0.141116%
 	(Student's t, pooled s = 11316.8)
+```
