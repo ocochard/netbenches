@@ -72,3 +72,8 @@ Here are some script configuration files:
 * [A bench-lab configuration file using one generator/receiver and one DUT](../AMD_G-T40E_2Cores_RTL8111E/bench-lab-2nodes.config)
 * [A configuration sets folder](../AMD_G-T40E_2Cores_RTL8111E/fastforwarding-pf-ipfw/configs)
 * [A pkt-gen configurations sets folder](../pktgen.configs/RFC2544/)
+
+## TO DO
+
+* Doing IPv4 and IPv6 in one shot without reboot?
+
