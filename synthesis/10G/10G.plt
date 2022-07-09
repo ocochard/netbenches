@@ -60,8 +60,9 @@ set y2tics format '%.1s%cb/s'
 # Only integer value for xtics
 set xtics 1
 
-set title noenhanced "BSDRP 1.96 (FreeBSD 12-STABLE r354440) forwarding performance on 10Gigabit hardware"
-set xlabel "SM 5018A-FTN4 (8 core Atom and Chelsio T540), HP DL360 (8 cores Xeon E5-2650 and Chelsio T540),\nDell R630(2x12 cores Xeon E5-2650 v4 and Chelsio T520)"
+set title noenhanced "BSDRP 1.991 (FreeBSD 14-head c276570) forwarding performance on 10Gigabit hardware"
+# Dirty trick to expand xlabel size
+set xlabel "  \n "
 set ylabel "Packets per second (minimum size, 5000 flows)\n minimum,median,maximum values of 5 benchs"
 set y2label "Theorical equity using simple IMIX distribution (Ethernet throughput)"
 
@@ -74,5 +75,7 @@ h(x)=7000000
 plot h(x) with lines title "Min. req. for 10G FDX with simple IMIX" ls 5 lw 4, \
 	f(x) with lines title "10 Gigabit line-rate" ls 1 lw 4, \
 	"forwarding.data" using 2:3:4:xticlabels(1) with histogram title "forwarding" ls 2, \
+	 "ipfw-stateless.data" using 2:3:4:xticlabels(1) with histogram title "IPFW stateless" ls 5, \
+	 "pf-stateless.data" using 2:3:4:xticlabels(1) with histogram title "PF stateless" ls 6, \
 	 "ipfw-stateful.data" using 2:3:4:xticlabels(1) with histogram title "IPFW stateful" ls 3, \
 	  "pf-stateful.data" using 2:3:4:xticlabels(1) with histogram title "PF stateful" ls 4
