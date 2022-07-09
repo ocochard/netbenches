@@ -123,7 +123,8 @@ Specific benches:
     - [4 cores AMD GX-412TC (PC Engines APU2C4)](AMD_GX-412TC_4Cores-Intel_i210AT/tinc/results/fbsd13-r365873/README.md)
 
 Synthesis:
-  - ![firewalls impact on forwarding performance with differents hardware](synthesis/10G/hardware.png)
+  - ![firewalls impact on forwarding performance with differents 10Gb/s hardware](synthesis/10G/hardware.png)
+  - ![firewalls impact on forwarding performance with differents 40Gb/s hardware](synthesis/40G/hardware.png)
   - ![OpenVPN vs WireGuard kernel|userland vs IPsec on APU2 with freebsd 13-head](synthesis/VPNs-APU2.png)
   - ![OpenVPN vs WireGuard kernel|userland vs IPsec on 8 cores Atom C2758 with freebsd 13-head](synthesis/VPNs-Atom_C2758.png)
   - ![ipsec performance on freebsd 11.0 with differents hardware](synthesis/ipsec.png)
