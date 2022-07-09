@@ -59,9 +59,8 @@ set y2tics format '%.1s%cb/s'
 
 # Only integer value for xtics
 set xtics 1
-#set xtics rotate
 
-set title noenhanced "Impact of firewalls on BSDRP 1.991 (FreeBSD 14-head c276570) forwarding performance\nXeon E5-2697A v4 16cores and 2.60GHz with Chelsio T580"
+set title noenhanced "Impact of enabling firewalls on BSDRP 1.991 (FreeBSD 14-head 14-c276570) forwarding performance\nXeon E5-2697A v4 16cores and Mellanox ConnectX-4 100GBase-SR4"
 set xlabel "Note: Minimum firewall rules, ICMP redirect disabled, TSO/LRO disabled"
 set ylabel "Packets per second (minimum size, 5000 flows)\n minimum,median,maximum values of 5 benches"
 set y2label "Theorical equity using simple IMIX distribution (Ethernet throughput)"
@@ -73,8 +72,7 @@ f(x)=14880000
 h(x)=7000000
 g(x)=28000000
 # Ploting!
-plot "inet4.data" using 2:3:4:xticlabels(1) with histogram title "inet" ls 2, \
+plot "inet4.data" using 2:3:4:xticlabels(1) with histogram title "inet4" ls 2, \
 	 "inet6.data" using 2:3:4:xticlabels(1) with histogram title "inet6" ls 3, \
-	g(x) with lines title "Min req for 40G bidir with simple IMIX dist" ls 1 lw 4
-	#h(x) with lines title "Min req for 10G bidir with simple IMIX dist" ls 4 lw 4,\
-	#f(x) with lines title "10 Gigabit line-rate" ls 1 lw 4
+	g(x) with lines title "Min req for 40G bidir with simple IMIX dist" ls 1 lw 4, \
+	h(x) with lines title "Min req for 10G bidir with simple IMIX dist" ls 4 lw 4
