@@ -59,8 +59,9 @@ set y2tics format '%.1s%cb/s'
 
 # Only integer value for xtics
 set xtics 1
-set title noenhanced "Impact of enabling firewalls on BSDRP 1.991 (FreeBSD 14-head c276570) forwarding performance\nDell R630 (Intel E5-2650 v4 2.2Ghz 2x12 cores with Chelsio T520-CR)"
-set xlabel "Note: 2 static routes, minimum firewall rules, ICMP redirect disabled, TSO/LRO disabled"
+
+set title noenhanced "Impact of enabling firewalls on BSDRP 1.991 (FreeBSD 14-head c276570) forwarding performance\nDell R630 with 2x12 cores Intel Xeon E5 2650 and 10G Chelsio T540-CR"
+set xlabel "Note: Minimum firewall rules, ICMP redirect disabled, 16rxq"
 set ylabel "Packets per second (minimum size, 5000 flows)\n minimum,median,maximum values of 5 benches"
 set y2label "Theorical equity using simple IMIX distribution (Ethernet throughput)"
 
@@ -72,5 +73,5 @@ h(x)=7000000
 # Ploting!
 plot "inet4.data" using 2:3:4:xticlabels(1) with histogram title "inet4" ls 2, \
 	 "inet6.data" using 2:3:4:xticlabels(1) with histogram title "inet6" ls 3, \
-	f(x) with lines title "10Gb/s line rate" ls 5 lw 5,\
-	h(x) with lines title "Min req. for 10Gb/s bidir with simple IMIX dist." ls 4 lw 4
+     f(x) with lines title "10 Gigabit line-rate" ls 1 lw 4, \
+	h(x) with lines title "Min req for 10G FDX with simple IMIX" ls 5 lw 4
