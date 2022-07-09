@@ -60,7 +60,7 @@ set y2tics format '%.1s%cb/s'
 # Only integer value for xtics
 set xtics 1
 
-set title noenhanced "BSDRP 1.991 (FreeBSD 14-head c276570) forwarding performance on 10Gigabit hardware"
+set title noenhanced "BSDRP 1.991 (FreeBSD 14-head c276570) forwarding performance on 40Gigabit hardware"
 # Dirty trick to expand xlabel size
 set xlabel "  \n "
 set ylabel "Packets per second (minimum size, 5000 flows)\n minimum,median,maximum values of 5 benchs"
