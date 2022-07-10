@@ -1,0 +1,1444 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" width="1200" height="342" onload="init(evt)" viewBox="0 0 1200 342" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<!-- Flame graph stack visualization. See https://github.com/brendangregg/FlameGraph for latest version, and http://www.brendangregg.com/flamegraphs.html for examples. -->
+<!-- NOTES:  -->
+<defs>
+	<linearGradient id="background" y1="0" y2="1" x1="0" x2="0" >
+		<stop stop-color="#eeeeee" offset="5%" />
+		<stop stop-color="#eeeeb0" offset="95%" />
+	</linearGradient>
+</defs>
+<style type="text/css">
+	text { font-family:Verdana; font-size:12px; fill:rgb(0,0,0); }
+	#search, #ignorecase { opacity:0.1; cursor:pointer; }
+	#search:hover, #search.show, #ignorecase:hover, #ignorecase.show { opacity:1; }
+	#subtitle { text-anchor:middle; font-color:rgb(160,160,160); }
+	#title { text-anchor:middle; font-size:17px}
+	#unzoom { cursor:pointer; }
+	#frames > *:hover { stroke:black; stroke-width:0.5; cursor:pointer; }
+	.hide { display:none; }
+	.parent { opacity:0.5; }
+</style>
+<script type="text/ecmascript">
+<![CDATA[
+	"use strict";
+	var details, searchbtn, unzoombtn, matchedtxt, svg, searching, currentSearchTerm, ignorecase, ignorecaseBtn;
+	function init(evt) {
+		details = document.getElementById("details").firstChild;
+		searchbtn = document.getElementById("search");
+		ignorecaseBtn = document.getElementById("ignorecase");
+		unzoombtn = document.getElementById("unzoom");
+		matchedtxt = document.getElementById("matched");
+		svg = document.getElementsByTagName("svg")[0];
+		searching = 0;
+		currentSearchTerm = null;
+
+		// use GET parameters to restore a flamegraphs state.
+		var params = get_params();
+		if (params.x && params.y)
+			zoom(find_group(document.querySelector('[x="' + params.x + '"][y="' + params.y + '"]')));
+                if (params.s) search(params.s);
+	}
+
+	// event listeners
+	window.addEventListener("click", function(e) {
+		var target = find_group(e.target);
+		if (target) {
+			if (target.nodeName == "a") {
+				if (e.ctrlKey === false) return;
+				e.preventDefault();
+			}
+			if (target.classList.contains("parent")) unzoom();
+			zoom(target);
+			if (!document.querySelector('.parent')) {
+				clearzoom();
+				return;
+			}
+
+			// set parameters for zoom state
+			var el = target.querySelector("rect");
+			if (el && el.attributes && el.attributes.y && el.attributes._orig_x) {
+				var params = get_params()
+				params.x = el.attributes._orig_x.value;
+				params.y = el.attributes.y.value;
+				history.replaceState(null, null, parse_params(params));
+			}
+		}
+		else if (e.target.id == "unzoom") clearzoom();
+		else if (e.target.id == "search") search_prompt();
+		else if (e.target.id == "ignorecase") toggle_ignorecase();
+	}, false)
+
+	// mouse-over for info
+	// show
+	window.addEventListener("mouseover", function(e) {
+		var target = find_group(e.target);
+		if (target) details.nodeValue = "Function: " + g_to_text(target);
+	}, false)
+
+	// clear
+	window.addEventListener("mouseout", function(e) {
+		var target = find_group(e.target);
+		if (target) details.nodeValue = ' ';
+	}, false)
+
+	// ctrl-F for search
+	// ctrl-I to toggle case-sensitive search
+	window.addEventListener("keydown",function (e) {
+		if (e.keyCode === 114 || (e.ctrlKey && e.keyCode === 70)) {
+			e.preventDefault();
+			search_prompt();
+		}
+		else if (e.ctrlKey && e.keyCode === 73) {
+			e.preventDefault();
+			toggle_ignorecase();
+		}
+	}, false)
+
+	// functions
+	function get_params() {
+		var params = {};
+		var paramsarr = window.location.search.substr(1).split('&');
+		for (var i = 0; i < paramsarr.length; ++i) {
+			var tmp = paramsarr[i].split("=");
+			if (!tmp[0] || !tmp[1]) continue;
+			params[tmp[0]]  = decodeURIComponent(tmp[1]);
+		}
+		return params;
+	}
+	function parse_params(params) {
+		var uri = "?";
+		for (var key in params) {
+			uri += key + '=' + encodeURIComponent(params[key]) + '&';
+		}
+		if (uri.slice(-1) == "&")
+			uri = uri.substring(0, uri.length - 1);
+		if (uri == '?')
+			uri = window.location.href.split('?')[0];
+		return uri;
+	}
+	function find_child(node, selector) {
+		var children = node.querySelectorAll(selector);
+		if (children.length) return children[0];
+	}
+	function find_group(node) {
+		var parent = node.parentElement;
+		if (!parent) return;
+		if (parent.id == "frames") return node;
+		return find_group(parent);
+	}
+	function orig_save(e, attr, val) {
+		if (e.attributes["_orig_" + attr] != undefined) return;
+		if (e.attributes[attr] == undefined) return;
+		if (val == undefined) val = e.attributes[attr].value;
+		e.setAttribute("_orig_" + attr, val);
+	}
+	function orig_load(e, attr) {
+		if (e.attributes["_orig_"+attr] == undefined) return;
+		e.attributes[attr].value = e.attributes["_orig_" + attr].value;
+		e.removeAttribute("_orig_"+attr);
+	}
+	function g_to_text(e) {
+		var text = find_child(e, "title").firstChild.nodeValue;
+		return (text)
+	}
+	function g_to_func(e) {
+		var func = g_to_text(e);
+		// if there's any manipulation we want to do to the function
+		// name before it's searched, do it here before returning.
+		return (func);
+	}
+	function update_text(e) {
+		var r = find_child(e, "rect");
+		var t = find_child(e, "text");
+		var w = parseFloat(r.attributes.width.value) -3;
+		var txt = find_child(e, "title").textContent.replace(/\([^(]*\)$/,"");
+		t.attributes.x.value = parseFloat(r.attributes.x.value) + 3;
+
+		// Smaller than this size won't fit anything
+		if (w < 2 * 12 * 0.59) {
+			t.textContent = "";
+			return;
+		}
+
+		t.textContent = txt;
+		// Fit in full text width
+		if (/^ *$/.test(txt) || t.getSubStringLength(0, txt.length) < w)
+			return;
+
+		for (var x = txt.length - 2; x > 0; x--) {
+			if (t.getSubStringLength(0, x + 2) <= w) {
+				t.textContent = txt.substring(0, x) + "..";
+				return;
+			}
+		}
+		t.textContent = "";
+	}
+
+	// zoom
+	function zoom_reset(e) {
+		if (e.attributes != undefined) {
+			orig_load(e, "x");
+			orig_load(e, "width");
+		}
+		if (e.childNodes == undefined) return;
+		for (var i = 0, c = e.childNodes; i < c.length; i++) {
+			zoom_reset(c[i]);
+		}
+	}
+	function zoom_child(e, x, ratio) {
+		if (e.attributes != undefined) {
+			if (e.attributes.x != undefined) {
+				orig_save(e, "x");
+				e.attributes.x.value = (parseFloat(e.attributes.x.value) - x - 10) * ratio + 10;
+				if (e.tagName == "text")
+					e.attributes.x.value = find_child(e.parentNode, "rect[x]").attributes.x.value + 3;
+			}
+			if (e.attributes.width != undefined) {
+				orig_save(e, "width");
+				e.attributes.width.value = parseFloat(e.attributes.width.value) * ratio;
+			}
+		}
+
+		if (e.childNodes == undefined) return;
+		for (var i = 0, c = e.childNodes; i < c.length; i++) {
+			zoom_child(c[i], x - 10, ratio);
+		}
+	}
+	function zoom_parent(e) {
+		if (e.attributes) {
+			if (e.attributes.x != undefined) {
+				orig_save(e, "x");
+				e.attributes.x.value = 10;
+			}
+			if (e.attributes.width != undefined) {
+				orig_save(e, "width");
+				e.attributes.width.value = parseInt(svg.width.baseVal.value) - (10 * 2);
+			}
+		}
+		if (e.childNodes == undefined) return;
+		for (var i = 0, c = e.childNodes; i < c.length; i++) {
+			zoom_parent(c[i]);
+		}
+	}
+	function zoom(node) {
+		var attr = find_child(node, "rect").attributes;
+		var width = parseFloat(attr.width.value);
+		var xmin = parseFloat(attr.x.value);
+		var xmax = parseFloat(xmin + width);
+		var ymin = parseFloat(attr.y.value);
+		var ratio = (svg.width.baseVal.value - 2 * 10) / width;
+
+		// XXX: Workaround for JavaScript float issues (fix me)
+		var fudge = 0.0001;
+
+		unzoombtn.classList.remove("hide");
+
+		var el = document.getElementById("frames").children;
+		for (var i = 0; i < el.length; i++) {
+			var e = el[i];
+			var a = find_child(e, "rect").attributes;
+			var ex = parseFloat(a.x.value);
+			var ew = parseFloat(a.width.value);
+			var upstack;
+			// Is it an ancestor
+			if (0 == 0) {
+				upstack = parseFloat(a.y.value) > ymin;
+			} else {
+				upstack = parseFloat(a.y.value) < ymin;
+			}
+			if (upstack) {
+				// Direct ancestor
+				if (ex <= xmin && (ex+ew+fudge) >= xmax) {
+					e.classList.add("parent");
+					zoom_parent(e);
+					update_text(e);
+				}
+				// not in current path
+				else
+					e.classList.add("hide");
+			}
+			// Children maybe
+			else {
+				// no common path
+				if (ex < xmin || ex + fudge >= xmax) {
+					e.classList.add("hide");
+				}
+				else {
+					zoom_child(e, xmin, ratio);
+					update_text(e);
+				}
+			}
+		}
+		search();
+	}
+	function unzoom() {
+		unzoombtn.classList.add("hide");
+		var el = document.getElementById("frames").children;
+		for(var i = 0; i < el.length; i++) {
+			el[i].classList.remove("parent");
+			el[i].classList.remove("hide");
+			zoom_reset(el[i]);
+			update_text(el[i]);
+		}
+		search();
+	}
+	function clearzoom() {
+		unzoom();
+
+		// remove zoom state
+		var params = get_params();
+		if (params.x) delete params.x;
+		if (params.y) delete params.y;
+		history.replaceState(null, null, parse_params(params));
+	}
+
+	// search
+	function toggle_ignorecase() {
+		ignorecase = !ignorecase;
+		if (ignorecase) {
+			ignorecaseBtn.classList.add("show");
+		} else {
+			ignorecaseBtn.classList.remove("show");
+		}
+		reset_search();
+		search();
+	}
+	function reset_search() {
+		var el = document.querySelectorAll("#frames rect");
+		for (var i = 0; i < el.length; i++) {
+			orig_load(el[i], "fill")
+		}
+		var params = get_params();
+		delete params.s;
+		history.replaceState(null, null, parse_params(params));
+	}
+	function search_prompt() {
+		if (!searching) {
+			var term = prompt("Enter a search term (regexp " +
+			    "allowed, eg: ^ext4_)"
+			    + (ignorecase ? ", ignoring case" : "")
+			    + "\nPress Ctrl-i to toggle case sensitivity", "");
+			if (term != null) search(term);
+		} else {
+			reset_search();
+			searching = 0;
+			currentSearchTerm = null;
+			searchbtn.classList.remove("show");
+			searchbtn.firstChild.nodeValue = "Search"
+			matchedtxt.classList.add("hide");
+			matchedtxt.firstChild.nodeValue = ""
+		}
+	}
+	function search(term) {
+		if (term) currentSearchTerm = term;
+
+		var re = new RegExp(currentSearchTerm, ignorecase ? 'i' : '');
+		var el = document.getElementById("frames").children;
+		var matches = new Object();
+		var maxwidth = 0;
+		for (var i = 0; i < el.length; i++) {
+			var e = el[i];
+			var func = g_to_func(e);
+			var rect = find_child(e, "rect");
+			if (func == null || rect == null)
+				continue;
+
+			// Save max width. Only works as we have a root frame
+			var w = parseFloat(rect.attributes.width.value);
+			if (w > maxwidth)
+				maxwidth = w;
+
+			if (func.match(re)) {
+				// highlight
+				var x = parseFloat(rect.attributes.x.value);
+				orig_save(rect, "fill");
+				rect.attributes.fill.value = "rgb(230,0,230)";
+
+				// remember matches
+				if (matches[x] == undefined) {
+					matches[x] = w;
+				} else {
+					if (w > matches[x]) {
+						// overwrite with parent
+						matches[x] = w;
+					}
+				}
+				searching = 1;
+			}
+		}
+		if (!searching)
+			return;
+		var params = get_params();
+		params.s = currentSearchTerm;
+		history.replaceState(null, null, parse_params(params));
+
+		searchbtn.classList.add("show");
+		searchbtn.firstChild.nodeValue = "Reset Search";
+
+		// calculate percent matched, excluding vertical overlap
+		var count = 0;
+		var lastx = -1;
+		var lastw = 0;
+		var keys = Array();
+		for (k in matches) {
+			if (matches.hasOwnProperty(k))
+				keys.push(k);
+		}
+		// sort the matched frames by their x location
+		// ascending, then width descending
+		keys.sort(function(a, b){
+			return a - b;
+		});
+		// Step through frames saving only the biggest bottom-up frames
+		// thanks to the sort order. This relies on the tree property
+		// where children are always smaller than their parents.
+		var fudge = 0.0001;	// JavaScript floating point
+		for (var k in keys) {
+			var x = parseFloat(keys[k]);
+			var w = matches[keys[k]];
+			if (x >= lastx + lastw - fudge) {
+				count += w;
+				lastx = x;
+				lastw = w;
+			}
+		}
+		// display matched percent
+		matchedtxt.classList.remove("hide");
+		var pct = 100 * count / maxwidth;
+		if (pct != 100) pct = pct.toFixed(1)
+		matchedtxt.firstChild.nodeValue = "Matched: " + pct + "%";
+	}
+]]>
+</script>
+<rect x="0.0" y="0" width="1200.0" height="342.0" fill="url(#background)"  />
+<text id="title" x="600.00" y="24" >Flame Graph</text>
+<text id="details" x="10.00" y="325" > </text>
+<text id="unzoom" x="10.00" y="24" class="hide">Reset Zoom</text>
+<text id="search" x="1090.00" y="24" >Search</text>
+<text id="ignorecase" x="1174.00" y="24" >ic</text>
+<text id="matched" x="1090.00" y="325" > </text>
+<g id="frames">
+<g >
+<title>ipf_derefrule (7,699 samples, 1.93%)</title><rect x="334.8" y="37" width="22.8" height="15.0" fill="rgb(233,174,33)" rx="2" ry="2" />
+<text  x="337.79" y="47.5" >i..</text>
+</g>
+<g >
+<title>intr_event_schedule_thread (1,752 samples, 0.44%)</title><rect x="202.4" y="245" width="5.2" height="15.0" fill="rgb(211,156,8)" rx="2" ry="2" />
+<text  x="205.42" y="255.5" ></text>
+</g>
+<g >
+<title>_rw_runlock_cookie_int (1,759 samples, 0.44%)</title><rect x="688.3" y="37" width="5.2" height="15.0" fill="rgb(207,52,49)" rx="2" ry="2" />
+<text  x="691.26" y="47.5" ></text>
+</g>
+<g >
+<title>ip6_tryforward (121,625 samples, 30.55%)</title><rect x="828.8" y="117" width="360.5" height="15.0" fill="rgb(236,130,23)" rx="2" ry="2" />
+<text  x="831.83" y="127.5" >ip6_tryforward</text>
+</g>
+<g >
+<title>pfil_run_hooks (131 samples, 0.03%)</title><rect x="393.8" y="133" width="0.4" height="15.0" fill="rgb(212,173,26)" rx="2" ry="2" />
+<text  x="396.76" y="143.5" ></text>
+</g>
+<g >
+<title>ithread_loop (11,519 samples, 2.89%)</title><rect x="11.7" y="261" width="34.1" height="15.0" fill="rgb(209,146,41)" rx="2" ry="2" />
+<text  x="14.68" y="271.5" >it..</text>
+</g>
+<g >
+<title>_thread_lock (100 samples, 0.03%)</title><rect x="195.3" y="245" width="0.3" height="15.0" fill="rgb(219,128,4)" rx="2" ry="2" />
+<text  x="198.26" y="255.5" ></text>
+</g>
+<g >
+<title>netisr_dispatch_src (121,625 samples, 30.55%)</title><rect x="828.8" y="149" width="360.5" height="15.0" fill="rgb(219,142,52)" rx="2" ry="2" />
+<text  x="831.83" y="159.5" >netisr_dispatch_src</text>
+</g>
+<g >
+<title>ipf_state_insert (61 samples, 0.02%)</title><rect x="393.9" y="69" width="0.2" height="15.0" fill="rgb(230,2,47)" rx="2" ry="2" />
+<text  x="396.92" y="79.5" ></text>
+</g>
+<g >
+<title>lapic_et_start (48 samples, 0.01%)</title><rect x="263.2" y="229" width="0.1" height="15.0" fill="rgb(210,228,25)" rx="2" ry="2" />
+<text  x="266.16" y="239.5" ></text>
+</g>
+<g >
+<title>ipf_check (16,193 samples, 4.07%)</title><rect x="213.6" y="37" width="48.0" height="15.0" fill="rgb(247,181,53)" rx="2" ry="2" />
+<text  x="216.60" y="47.5" >ipf_..</text>
+</g>
+<g >
+<title>bus_dmamap_load_mbuf_sg (276 samples, 0.07%)</title><rect x="394.2" y="53" width="0.8" height="15.0" fill="rgb(237,157,38)" rx="2" ry="2" />
+<text  x="397.15" y="63.5" ></text>
+</g>
+<g >
+<title>rsb_flush (36 samples, 0.01%)</title><rect x="200.0" y="229" width="0.1" height="15.0" fill="rgb(242,102,31)" rx="2" ry="2" />
+<text  x="203.03" y="239.5" ></text>
+</g>
+<g >
+<title>m_freem (773 samples, 0.19%)</title><rect x="40.3" y="165" width="2.3" height="15.0" fill="rgb(248,43,20)" rx="2" ry="2" />
+<text  x="43.31" y="175.5" ></text>
+</g>
+<g >
+<title>bus_dmamap_load_mbuf_sg (127 samples, 0.03%)</title><rect x="828.8" y="37" width="0.4" height="15.0" fill="rgb(240,28,25)" rx="2" ry="2" />
+<text  x="831.84" y="47.5" ></text>
+</g>
+<g >
+<title>netisr_dispatch_src (121,625 samples, 30.55%)</title><rect x="828.8" y="197" width="360.5" height="15.0" fill="rgb(215,3,26)" rx="2" ry="2" />
+<text  x="831.83" y="207.5" >netisr_dispatch_src</text>
+</g>
+<g >
+<title>spinlock_exit (77 samples, 0.02%)</title><rect x="45.4" y="213" width="0.2" height="15.0" fill="rgb(208,26,0)" rx="2" ry="2" />
+<text  x="48.39" y="223.5" ></text>
+</g>
+<g >
+<title>ipf_state_lookup (50,724 samples, 12.74%)</title><rect x="678.3" y="53" width="150.3" height="15.0" fill="rgb(205,48,25)" rx="2" ry="2" />
+<text  x="681.29" y="63.5" >ipf_state_lookup</text>
+</g>
+<g >
+<title>ipf_check (43,015 samples, 10.81%)</title><rect x="266.2" y="53" width="127.5" height="15.0" fill="rgb(206,61,29)" rx="2" ry="2" />
+<text  x="269.21" y="63.5" >ipf_check</text>
+</g>
+<g >
+<title>ipf_nat6_checkout (77 samples, 0.02%)</title><rect x="359.6" y="37" width="0.2" height="15.0" fill="rgb(237,16,24)" rx="2" ry="2" />
+<text  x="362.59" y="47.5" ></text>
+</g>
+<g >
+<title>all (398,091 samples, 100%)</title><rect x="10.0" y="293" width="1180.0" height="15.0" fill="rgb(246,123,46)" rx="2" ry="2" />
+<text  x="13.00" y="303.5" ></text>
+</g>
+<g >
+<title>ether_input (220 samples, 0.06%)</title><rect x="1189.3" y="261" width="0.7" height="15.0" fill="rgb(233,47,46)" rx="2" ry="2" />
+<text  x="1192.35" y="271.5" ></text>
+</g>
+<g >
+<title>pmc_hook_handler (194 samples, 0.05%)</title><rect x="262.6" y="213" width="0.5" height="15.0" fill="rgb(225,86,4)" rx="2" ry="2" />
+<text  x="265.55" y="223.5" ></text>
+</g>
+<g >
+<title>fr_cksum (219 samples, 0.06%)</title><rect x="1189.4" y="53" width="0.6" height="15.0" fill="rgb(214,91,19)" rx="2" ry="2" />
+<text  x="1192.35" y="63.5" ></text>
+</g>
+<g >
+<title>spinlock_enter (34 samples, 0.01%)</title><rect x="201.4" y="213" width="0.1" height="15.0" fill="rgb(241,145,17)" rx="2" ry="2" />
+<text  x="204.44" y="223.5" ></text>
+</g>
+<g >
+<title>mi_switch (864 samples, 0.22%)</title><rect x="199.0" y="245" width="2.6" height="15.0" fill="rgb(238,213,24)" rx="2" ry="2" />
+<text  x="201.99" y="255.5" ></text>
+</g>
+<g >
+<title>__mtx_lock_sleep (12,942 samples, 3.25%)</title><rect x="266.2" y="37" width="38.4" height="15.0" fill="rgb(243,219,21)" rx="2" ry="2" />
+<text  x="269.21" y="47.5" >__m..</text>
+</g>
+<g >
+<title>lock_delay (26,322 samples, 6.61%)</title><rect x="600.2" y="37" width="78.1" height="15.0" fill="rgb(247,39,7)" rx="2" ry="2" />
+<text  x="603.25" y="47.5" >lock_delay</text>
+</g>
+<g >
+<title>pfil_run_hooks (121,383 samples, 30.49%)</title><rect x="829.6" y="101" width="359.7" height="15.0" fill="rgb(210,167,3)" rx="2" ry="2" />
+<text  x="832.55" y="111.5" >pfil_run_hooks</text>
+</g>
+<g >
+<title>m_copydata (52 samples, 0.01%)</title><rect x="829.3" y="37" width="0.1" height="15.0" fill="rgb(251,39,48)" rx="2" ry="2" />
+<text  x="832.29" y="47.5" ></text>
+</g>
+<g >
+<title>lkpi_irq_handler (43,952 samples, 11.04%)</title><rect x="263.4" y="277" width="130.3" height="15.0" fill="rgb(231,37,21)" rx="2" ry="2" />
+<text  x="266.43" y="287.5" >lkpi_irq_handler</text>
+</g>
+<g >
+<title>ipf_checkl4sum (219 samples, 0.06%)</title><rect x="1189.4" y="69" width="0.6" height="15.0" fill="rgb(241,159,49)" rx="2" ry="2" />
+<text  x="1192.35" y="79.5" ></text>
+</g>
+<g >
+<title>_thread_lock (298 samples, 0.07%)</title><rect x="202.5" y="229" width="0.8" height="15.0" fill="rgb(245,55,8)" rx="2" ry="2" />
+<text  x="205.45" y="239.5" ></text>
+</g>
+<g >
+<title>in6_cksum_partial (197 samples, 0.05%)</title><rect x="1189.4" y="37" width="0.6" height="15.0" fill="rgb(228,30,8)" rx="2" ry="2" />
+<text  x="1192.39" y="47.5" ></text>
+</g>
+<g >
+<title>ipf_state_add (62 samples, 0.02%)</title><rect x="393.9" y="85" width="0.2" height="15.0" fill="rgb(234,84,23)" rx="2" ry="2" />
+<text  x="396.92" y="95.5" ></text>
+</g>
+<g >
+<title>timercb (500 samples, 0.13%)</title><rect x="262.0" y="261" width="1.4" height="15.0" fill="rgb(217,79,18)" rx="2" ry="2" />
+<text  x="264.95" y="271.5" ></text>
+</g>
+<g >
+<title>ether_demux (43,952 samples, 11.04%)</title><rect x="263.4" y="149" width="130.3" height="15.0" fill="rgb(250,131,4)" rx="2" ry="2" />
+<text  x="266.43" y="159.5" >ether_demux</text>
+</g>
+<g >
+<title>ipf_check_wrapper6 (394 samples, 0.10%)</title><rect x="28.9" y="37" width="1.1" height="15.0" fill="rgb(235,26,27)" rx="2" ry="2" />
+<text  x="31.88" y="47.5" ></text>
+</g>
+<g >
+<title>sched_pickcpu (605 samples, 0.15%)</title><rect x="203.8" y="213" width="1.8" height="15.0" fill="rgb(205,41,50)" rx="2" ry="2" />
+<text  x="206.80" y="223.5" ></text>
+</g>
+<g >
+<title>fork_exit (64,141 samples, 16.11%)</title><rect x="11.7" y="277" width="190.1" height="15.0" fill="rgb(241,134,26)" rx="2" ry="2" />
+<text  x="14.67" y="287.5" >fork_exit</text>
+</g>
+<g >
+<title>netisr_dispatch_src (146,647 samples, 36.84%)</title><rect x="394.2" y="213" width="434.6" height="15.0" fill="rgb(232,127,22)" rx="2" ry="2" />
+<text  x="397.15" y="223.5" >netisr_dispatch_src</text>
+</g>
+<g >
+<title>ipf_checkv6sum (53 samples, 0.01%)</title><rect x="393.8" y="69" width="0.1" height="15.0" fill="rgb(227,161,29)" rx="2" ry="2" />
+<text  x="396.76" y="79.5" ></text>
+</g>
+<g >
+<title>in6_lltable_lookup (489 samples, 0.12%)</title><rect x="212.0" y="37" width="1.4" height="15.0" fill="rgb(231,38,20)" rx="2" ry="2" />
+<text  x="214.97" y="47.5" ></text>
+</g>
+<g >
+<title>ether_input (121,625 samples, 30.55%)</title><rect x="828.8" y="213" width="360.5" height="15.0" fill="rgb(242,50,51)" rx="2" ry="2" />
+<text  x="831.83" y="223.5" >ether_input</text>
+</g>
+<g >
+<title>_rm_rlock (84 samples, 0.02%)</title><rect x="27.5" y="37" width="0.3" height="15.0" fill="rgb(216,141,52)" rx="2" ry="2" />
+<text  x="30.55" y="47.5" ></text>
+</g>
+<g >
+<title>strncpy (381 samples, 0.10%)</title><rect x="1188.1" y="37" width="1.2" height="15.0" fill="rgb(254,15,1)" rx="2" ry="2" />
+<text  x="1191.14" y="47.5" ></text>
+</g>
+<g >
+<title>ether_output_frame (542 samples, 0.14%)</title><rect x="263.4" y="69" width="1.6" height="15.0" fill="rgb(240,71,26)" rx="2" ry="2" />
+<text  x="266.43" y="79.5" ></text>
+</g>
+<g >
+<title>uma_zalloc_arg (659 samples, 0.17%)</title><rect x="36.6" y="165" width="1.9" height="15.0" fill="rgb(207,100,16)" rx="2" ry="2" />
+<text  x="39.58" y="175.5" ></text>
+</g>
+<g >
+<title>mlx5_eq_int (10,038 samples, 2.52%)</title><rect x="13.4" y="213" width="29.7" height="15.0" fill="rgb(213,24,3)" rx="2" ry="2" />
+<text  x="16.39" y="223.5" >ml..</text>
+</g>
+<g >
+<title>mlx5e_sq_xmit (242 samples, 0.06%)</title><rect x="828.8" y="53" width="0.8" height="15.0" fill="rgb(252,223,43)" rx="2" ry="2" />
+<text  x="831.83" y="63.5" ></text>
+</g>
+<g >
+<title>ip6_findroute (378 samples, 0.09%)</title><rect x="265.1" y="85" width="1.1" height="15.0" fill="rgb(222,88,38)" rx="2" ry="2" />
+<text  x="268.09" y="95.5" ></text>
+</g>
+<g >
+<title>Xtimerint_pti (144 samples, 0.04%)</title><rect x="11.1" y="277" width="0.4" height="15.0" fill="rgb(227,143,20)" rx="2" ry="2" />
+<text  x="14.11" y="287.5" ></text>
+</g>
+<g >
+<title>ether_demux (147 samples, 0.04%)</title><rect x="393.7" y="197" width="0.5" height="15.0" fill="rgb(250,76,24)" rx="2" ry="2" />
+<text  x="396.71" y="207.5" ></text>
+</g>
+<g >
+<title>rn_match (378 samples, 0.09%)</title><rect x="265.1" y="37" width="1.1" height="15.0" fill="rgb(232,119,2)" rx="2" ry="2" />
+<text  x="268.09" y="47.5" ></text>
+</g>
+<g >
+<title>netisr_dispatch_src (18,214 samples, 4.58%)</title><rect x="207.6" y="165" width="54.0" height="15.0" fill="rgb(238,18,34)" rx="2" ry="2" />
+<text  x="210.61" y="175.5" >netis..</text>
+</g>
+<g >
+<title>runq_choose (129 samples, 0.03%)</title><rect x="201.0" y="181" width="0.4" height="15.0" fill="rgb(239,126,6)" rx="2" ry="2" />
+<text  x="204.00" y="191.5" ></text>
+</g>
+<g >
+<title>ipf_scanlist (26,322 samples, 6.61%)</title><rect x="600.2" y="69" width="78.1" height="15.0" fill="rgb(233,33,9)" rx="2" ry="2" />
+<text  x="603.25" y="79.5" >ipf_scanl..</text>
+</g>
+<g >
+<title>uma_zfree_arg (65 samples, 0.02%)</title><rect x="828.6" y="37" width="0.2" height="15.0" fill="rgb(221,5,6)" rx="2" ry="2" />
+<text  x="831.64" y="47.5" ></text>
+</g>
+<g >
+<title>uma_zfree_arg (123 samples, 0.03%)</title><rect x="42.2" y="133" width="0.4" height="15.0" fill="rgb(244,13,3)" rx="2" ry="2" />
+<text  x="45.24" y="143.5" ></text>
+</g>
+<g >
+<title>cpu_switch (301 samples, 0.08%)</title><rect x="199.1" y="229" width="0.9" height="15.0" fill="rgb(245,125,22)" rx="2" ry="2" />
+<text  x="202.10" y="239.5" ></text>
+</g>
+<g >
+<title>ether_output (293 samples, 0.07%)</title><rect x="394.2" y="117" width="0.8" height="15.0" fill="rgb(224,95,19)" rx="2" ry="2" />
+<text  x="397.15" y="127.5" ></text>
+</g>
+<g >
+<title>lkpi_irq_handler (10,045 samples, 2.52%)</title><rect x="13.4" y="245" width="29.7" height="15.0" fill="rgb(252,149,45)" rx="2" ry="2" />
+<text  x="16.36" y="255.5" >lk..</text>
+</g>
+<g >
+<title>mlx5e_rx_cq_comp (18,214 samples, 4.58%)</title><rect x="207.6" y="197" width="54.0" height="15.0" fill="rgb(221,220,11)" rx="2" ry="2" />
+<text  x="210.61" y="207.5" >mlx5e..</text>
+</g>
+<g >
+<title>fpu_activate_sw (164 samples, 0.04%)</title><rect x="199.4" y="213" width="0.5" height="15.0" fill="rgb(209,188,9)" rx="2" ry="2" />
+<text  x="202.43" y="223.5" ></text>
+</g>
+<g >
+<title>mlx5e_rx_cq_comp (147 samples, 0.04%)</title><rect x="393.7" y="261" width="0.5" height="15.0" fill="rgb(217,161,54)" rx="2" ry="2" />
+<text  x="396.71" y="271.5" ></text>
+</g>
+<g >
+<title>m_pkthdr_init (134 samples, 0.03%)</title><rect x="38.1" y="133" width="0.4" height="15.0" fill="rgb(247,132,17)" rx="2" ry="2" />
+<text  x="41.13" y="143.5" ></text>
+</g>
+<g >
+<title>netisr_dispatch_src (220 samples, 0.06%)</title><rect x="1189.3" y="197" width="0.7" height="15.0" fill="rgb(236,4,49)" rx="2" ry="2" />
+<text  x="1192.35" y="207.5" ></text>
+</g>
+<g >
+<title>ipf_makefrip (53 samples, 0.01%)</title><rect x="393.8" y="85" width="0.1" height="15.0" fill="rgb(236,174,14)" rx="2" ry="2" />
+<text  x="396.76" y="95.5" ></text>
+</g>
+<g >
+<title>mlx5e_xmit (542 samples, 0.14%)</title><rect x="263.4" y="53" width="1.6" height="15.0" fill="rgb(252,56,39)" rx="2" ry="2" />
+<text  x="266.43" y="63.5" ></text>
+</g>
+<g >
+<title>ipf_check_wrapper6 (43,015 samples, 10.81%)</title><rect x="266.2" y="69" width="127.5" height="15.0" fill="rgb(254,140,44)" rx="2" ry="2" />
+<text  x="269.21" y="79.5" >ipf_check_wrapper6</text>
+</g>
+<g >
+<title>ether_output (242 samples, 0.06%)</title><rect x="828.8" y="101" width="0.8" height="15.0" fill="rgb(242,34,34)" rx="2" ry="2" />
+<text  x="831.83" y="111.5" ></text>
+</g>
+<g >
+<title>nd6_resolve (130 samples, 0.03%)</title><rect x="26.9" y="37" width="0.4" height="15.0" fill="rgb(227,49,52)" rx="2" ry="2" />
+<text  x="29.91" y="47.5" ></text>
+</g>
+<g >
+<title>_rw_wowned (1,669 samples, 0.42%)</title><rect x="329.2" y="37" width="4.9" height="15.0" fill="rgb(233,81,24)" rx="2" ry="2" />
+<text  x="332.16" y="47.5" ></text>
+</g>
+<g >
+<title>ether_demux (121,625 samples, 30.55%)</title><rect x="828.8" y="165" width="360.5" height="15.0" fill="rgb(219,222,11)" rx="2" ry="2" />
+<text  x="831.83" y="175.5" >ether_demux</text>
+</g>
+<g >
+<title>spinlock_exit (64 samples, 0.02%)</title><rect x="45.6" y="245" width="0.2" height="15.0" fill="rgb(252,43,30)" rx="2" ry="2" />
+<text  x="48.62" y="255.5" ></text>
+</g>
+<g >
+<title>ether_nh_input (43,952 samples, 11.04%)</title><rect x="263.4" y="165" width="130.3" height="15.0" fill="rgb(232,190,47)" rx="2" ry="2" />
+<text  x="266.43" y="175.5" >ether_nh_input</text>
+</g>
+<g >
+<title>ithread_loop (18,214 samples, 4.58%)</title><rect x="207.6" y="277" width="54.0" height="15.0" fill="rgb(208,108,53)" rx="2" ry="2" />
+<text  x="210.61" y="287.5" >ithre..</text>
+</g>
+<g >
+<title>ipf_state_check (5,229 samples, 1.31%)</title><rect x="377.4" y="37" width="15.5" height="15.0" fill="rgb(225,68,19)" rx="2" ry="2" />
+<text  x="380.40" y="47.5" ></text>
+</g>
+<g >
+<title>ipf_checkl4sum (275 samples, 0.07%)</title><rect x="599.4" y="37" width="0.8" height="15.0" fill="rgb(224,118,13)" rx="2" ry="2" />
+<text  x="602.43" y="47.5" ></text>
+</g>
+<g >
+<title>m_free (758 samples, 0.19%)</title><rect x="40.4" y="149" width="2.2" height="15.0" fill="rgb(236,104,47)" rx="2" ry="2" />
+<text  x="43.36" y="159.5" ></text>
+</g>
+<g >
+<title>ether_input (4,552 samples, 1.14%)</title><rect x="16.6" y="165" width="13.5" height="15.0" fill="rgb(252,90,29)" rx="2" ry="2" />
+<text  x="19.64" y="175.5" ></text>
+</g>
+<g >
+<title>ipf_checkl4sum (53 samples, 0.01%)</title><rect x="393.8" y="53" width="0.1" height="15.0" fill="rgb(222,27,38)" rx="2" ry="2" />
+<text  x="396.76" y="63.5" ></text>
+</g>
+<g >
+<title>ipf_check_wrapper6 (146,354 samples, 36.76%)</title><rect x="395.0" y="101" width="433.8" height="15.0" fill="rgb(242,70,6)" rx="2" ry="2" />
+<text  x="398.02" y="111.5" >ipf_check_wrapper6</text>
+</g>
+<g >
+<title>ether_nh_input (146,647 samples, 36.84%)</title><rect x="394.2" y="197" width="434.6" height="15.0" fill="rgb(218,220,53)" rx="2" ry="2" />
+<text  x="397.15" y="207.5" >ether_nh_input</text>
+</g>
+<g >
+<title>mlx5_cq_completion (147 samples, 0.04%)</title><rect x="393.7" y="277" width="0.5" height="15.0" fill="rgb(227,53,30)" rx="2" ry="2" />
+<text  x="396.71" y="287.5" ></text>
+</g>
+<g >
+<title>ipf_check (220 samples, 0.06%)</title><rect x="1189.3" y="117" width="0.7" height="15.0" fill="rgb(208,176,27)" rx="2" ry="2" />
+<text  x="1192.35" y="127.5" ></text>
+</g>
+<g >
+<title>netisr_dispatch_src (43,952 samples, 11.04%)</title><rect x="263.4" y="181" width="130.3" height="15.0" fill="rgb(243,54,2)" rx="2" ry="2" />
+<text  x="266.43" y="191.5" >netisr_dispatch_..</text>
+</g>
+<g >
+<title>ip6_tryforward (146,647 samples, 36.84%)</title><rect x="394.2" y="133" width="434.6" height="15.0" fill="rgb(219,58,20)" rx="2" ry="2" />
+<text  x="397.15" y="143.5" >ip6_tryforward</text>
+</g>
+<g >
+<title>ip6_tryforward (220 samples, 0.06%)</title><rect x="1189.3" y="165" width="0.7" height="15.0" fill="rgb(224,138,12)" rx="2" ry="2" />
+<text  x="1192.35" y="175.5" ></text>
+</g>
+<g >
+<title>mlx5_cq_completion (121,625 samples, 30.55%)</title><rect x="828.8" y="245" width="360.5" height="15.0" fill="rgb(248,48,4)" rx="2" ry="2" />
+<text  x="831.83" y="255.5" >mlx5_cq_completion</text>
+</g>
+<g >
+<title>__rw_rlock_int (4,672 samples, 1.17%)</title><rect x="304.6" y="37" width="13.8" height="15.0" fill="rgb(250,128,21)" rx="2" ry="2" />
+<text  x="307.57" y="47.5" ></text>
+</g>
+<g >
+<title>__mtx_lock_sleep (10,391 samples, 2.61%)</title><rect x="1114.1" y="37" width="30.8" height="15.0" fill="rgb(216,215,49)" rx="2" ry="2" />
+<text  x="1117.10" y="47.5" >__..</text>
+</g>
+<g >
+<title>ipf_scanlist (4,411 samples, 1.11%)</title><rect x="359.8" y="37" width="13.1" height="15.0" fill="rgb(251,16,9)" rx="2" ry="2" />
+<text  x="362.82" y="47.5" ></text>
+</g>
+<g >
+<title>mlx5_cq_completion (9,791 samples, 2.46%)</title><rect x="14.1" y="197" width="29.0" height="15.0" fill="rgb(231,177,37)" rx="2" ry="2" />
+<text  x="17.12" y="207.5" >ml..</text>
+</g>
+<g >
+<title>ipf_makefrip (219 samples, 0.06%)</title><rect x="1189.4" y="101" width="0.6" height="15.0" fill="rgb(225,148,41)" rx="2" ry="2" />
+<text  x="1192.35" y="111.5" ></text>
+</g>
+<g >
+<title>ether_demux (18,214 samples, 4.58%)</title><rect x="207.6" y="133" width="54.0" height="15.0" fill="rgb(254,40,28)" rx="2" ry="2" />
+<text  x="210.61" y="143.5" >ether..</text>
+</g>
+<g >
+<title>ether_nh_input (147 samples, 0.04%)</title><rect x="393.7" y="213" width="0.5" height="15.0" fill="rgb(223,89,7)" rx="2" ry="2" />
+<text  x="396.71" y="223.5" ></text>
+</g>
+<g >
+<title>lradix6_lookup (378 samples, 0.09%)</title><rect x="265.1" y="53" width="1.1" height="15.0" fill="rgb(220,62,3)" rx="2" ry="2" />
+<text  x="268.09" y="63.5" ></text>
+</g>
+<g >
+<title>mlx5e_sq_xmit (293 samples, 0.07%)</title><rect x="394.2" y="69" width="0.8" height="15.0" fill="rgb(212,15,17)" rx="2" ry="2" />
+<text  x="397.15" y="79.5" ></text>
+</g>
+<g >
+<title>ip6_input (146,647 samples, 36.84%)</title><rect x="394.2" y="149" width="434.6" height="15.0" fill="rgb(233,216,52)" rx="2" ry="2" />
+<text  x="397.15" y="159.5" >ip6_input</text>
+</g>
+<g >
+<title>mlx5_eq_int (121,625 samples, 30.55%)</title><rect x="828.8" y="261" width="360.5" height="15.0" fill="rgb(209,168,51)" rx="2" ry="2" />
+<text  x="831.83" y="271.5" >mlx5_eq_int</text>
+</g>
+<g >
+<title>ip6_input (121,625 samples, 30.55%)</title><rect x="828.8" y="133" width="360.5" height="15.0" fill="rgb(234,192,21)" rx="2" ry="2" />
+<text  x="831.83" y="143.5" >ip6_input</text>
+</g>
+<g >
+<title>cpu_search_highest (136 samples, 0.03%)</title><rect x="198.6" y="245" width="0.4" height="15.0" fill="rgb(213,140,49)" rx="2" ry="2" />
+<text  x="201.59" y="255.5" ></text>
+</g>
+<g >
+<title>ip6_input (220 samples, 0.06%)</title><rect x="1189.3" y="181" width="0.7" height="15.0" fill="rgb(209,192,37)" rx="2" ry="2" />
+<text  x="1192.35" y="191.5" ></text>
+</g>
+<g >
+<title>ip6_input (2,221 samples, 0.56%)</title><rect x="23.5" y="85" width="6.5" height="15.0" fill="rgb(214,16,32)" rx="2" ry="2" />
+<text  x="26.47" y="95.5" ></text>
+</g>
+<g >
+<title>ether_nh_input (220 samples, 0.06%)</title><rect x="1189.3" y="229" width="0.7" height="15.0" fill="rgb(211,18,6)" rx="2" ry="2" />
+<text  x="1192.35" y="239.5" ></text>
+</g>
+<g >
+<title>netisr_dispatch_src (43,952 samples, 11.04%)</title><rect x="263.4" y="133" width="130.3" height="15.0" fill="rgb(240,180,37)" rx="2" ry="2" />
+<text  x="266.43" y="143.5" >netisr_dispatch_..</text>
+</g>
+<g >
+<title>ipf_state_lookup (4,545 samples, 1.14%)</title><rect x="1174.7" y="37" width="13.4" height="15.0" fill="rgb(233,93,26)" rx="2" ry="2" />
+<text  x="1177.67" y="47.5" ></text>
+</g>
+<g >
+<title>cpu_search_lowest (454 samples, 0.11%)</title><rect x="204.2" y="181" width="1.4" height="15.0" fill="rgb(248,213,6)" rx="2" ry="2" />
+<text  x="207.25" y="191.5" ></text>
+</g>
+<g >
+<title>ether_nh_input (2,958 samples, 0.74%)</title><rect x="21.4" y="133" width="8.7" height="15.0" fill="rgb(212,168,42)" rx="2" ry="2" />
+<text  x="24.37" y="143.5" ></text>
+</g>
+<g >
+<title>ip6_input (18,214 samples, 4.58%)</title><rect x="207.6" y="101" width="54.0" height="15.0" fill="rgb(248,155,31)" rx="2" ry="2" />
+<text  x="210.61" y="111.5" >ip6_i..</text>
+</g>
+<g >
+<title>netisr_dispatch_src (146,647 samples, 36.84%)</title><rect x="394.2" y="165" width="434.6" height="15.0" fill="rgb(249,109,22)" rx="2" ry="2" />
+<text  x="397.15" y="175.5" >netisr_dispatch_src</text>
+</g>
+<g >
+<title>netisr_dispatch_src (2,320 samples, 0.58%)</title><rect x="23.2" y="101" width="6.8" height="15.0" fill="rgb(205,29,40)" rx="2" ry="2" />
+<text  x="26.17" y="111.5" ></text>
+</g>
+<g >
+<title>netisr_dispatch_src (147 samples, 0.04%)</title><rect x="393.7" y="229" width="0.5" height="15.0" fill="rgb(219,68,47)" rx="2" ry="2" />
+<text  x="396.71" y="239.5" ></text>
+</g>
+<g >
+<title>ether_demux (146,647 samples, 36.84%)</title><rect x="394.2" y="181" width="434.6" height="15.0" fill="rgb(219,123,1)" rx="2" ry="2" />
+<text  x="397.15" y="191.5" >ether_demux</text>
+</g>
+<g >
+<title>cpu_search_lowest (583 samples, 0.15%)</title><rect x="203.9" y="197" width="1.7" height="15.0" fill="rgb(221,64,19)" rx="2" ry="2" />
+<text  x="206.86" y="207.5" ></text>
+</g>
+<g >
+<title>ipf_check_wrapper6 (121,383 samples, 30.49%)</title><rect x="829.6" y="85" width="359.7" height="15.0" fill="rgb(235,159,44)" rx="2" ry="2" />
+<text  x="832.55" y="95.5" >ipf_check_wrapper6</text>
+</g>
+<g >
+<title>handleevents (424 samples, 0.11%)</title><rect x="262.2" y="245" width="1.2" height="15.0" fill="rgb(209,90,36)" rx="2" ry="2" />
+<text  x="265.18" y="255.5" ></text>
+</g>
+<g >
+<title>__mtx_lock_sleep (68,962 samples, 17.32%)</title><rect x="395.0" y="53" width="204.4" height="15.0" fill="rgb(242,213,34)" rx="2" ry="2" />
+<text  x="398.02" y="63.5" >__mtx_lock_sleep</text>
+</g>
+<g >
+<title>fr_cksum (52 samples, 0.01%)</title><rect x="393.8" y="37" width="0.1" height="15.0" fill="rgb(220,94,44)" rx="2" ry="2" />
+<text  x="396.76" y="47.5" ></text>
+</g>
+<g >
+<title>memmove_erms (1,783 samples, 0.45%)</title><rect x="30.1" y="165" width="5.3" height="15.0" fill="rgb(244,139,2)" rx="2" ry="2" />
+<text  x="33.14" y="175.5" ></text>
+</g>
+<g >
+<title>fib6_lookup (378 samples, 0.09%)</title><rect x="265.1" y="69" width="1.1" height="15.0" fill="rgb(251,45,36)" rx="2" ry="2" />
+<text  x="268.09" y="79.5" ></text>
+</g>
+<g >
+<title>cpu_search_highest (175 samples, 0.04%)</title><rect x="44.7" y="213" width="0.5" height="15.0" fill="rgb(247,181,11)" rx="2" ry="2" />
+<text  x="47.72" y="223.5" ></text>
+</g>
+<g >
+<title>intr_execute_handlers (1,961 samples, 0.49%)</title><rect x="201.8" y="277" width="5.8" height="15.0" fill="rgb(212,53,48)" rx="2" ry="2" />
+<text  x="204.80" y="287.5" ></text>
+</g>
+<g >
+<title>Xapic_isr1 (57 samples, 0.01%)</title><rect x="10.0" y="277" width="0.2" height="15.0" fill="rgb(249,85,11)" rx="2" ry="2" />
+<text  x="13.00" y="287.5" ></text>
+</g>
+<g >
+<title>__mtx_lock_sleep (3,182 samples, 0.80%)</title><rect x="1148.7" y="37" width="9.4" height="15.0" fill="rgb(239,220,18)" rx="2" ry="2" />
+<text  x="1151.65" y="47.5" ></text>
+</g>
+<g >
+<title>sched_idletd (52,563 samples, 13.20%)</title><rect x="45.9" y="261" width="155.8" height="15.0" fill="rgb(231,85,40)" rx="2" ry="2" />
+<text  x="48.92" y="271.5" >sched_idletd</text>
+</g>
+<g >
+<title>fib6_lookup (100 samples, 0.03%)</title><rect x="28.0" y="37" width="0.3" height="15.0" fill="rgb(233,177,30)" rx="2" ry="2" />
+<text  x="31.02" y="47.5" ></text>
+</g>
+<g >
+<title>ether_input (43,952 samples, 11.04%)</title><rect x="263.4" y="197" width="130.3" height="15.0" fill="rgb(250,90,5)" rx="2" ry="2" />
+<text  x="266.43" y="207.5" >ether_input</text>
+</g>
+<g >
+<title>__mtx_lock_sleep (61 samples, 0.02%)</title><rect x="393.9" y="53" width="0.2" height="15.0" fill="rgb(212,12,49)" rx="2" ry="2" />
+<text  x="396.92" y="63.5" ></text>
+</g>
+<g >
+<title>pfil_run_hooks (16,193 samples, 4.07%)</title><rect x="213.6" y="69" width="48.0" height="15.0" fill="rgb(253,136,21)" rx="2" ry="2" />
+<text  x="216.60" y="79.5" >pfil..</text>
+</g>
+<g >
+<title>Xapic_isr1_pti (277 samples, 0.07%)</title><rect x="10.2" y="277" width="0.8" height="15.0" fill="rgb(207,36,1)" rx="2" ry="2" />
+<text  x="13.17" y="287.5" ></text>
+</g>
+<g >
+<title>mlx5_eq_int (146,647 samples, 36.84%)</title><rect x="394.2" y="277" width="434.6" height="15.0" fill="rgb(228,56,13)" rx="2" ry="2" />
+<text  x="397.15" y="287.5" >mlx5_eq_int</text>
+</g>
+<g >
+<title>mlx5_cq_completion (18,214 samples, 4.58%)</title><rect x="207.6" y="213" width="54.0" height="15.0" fill="rgb(228,217,44)" rx="2" ry="2" />
+<text  x="210.61" y="223.5" >mlx5_..</text>
+</g>
+<g >
+<title>ether_demux (220 samples, 0.06%)</title><rect x="1189.3" y="213" width="0.7" height="15.0" fill="rgb(227,85,33)" rx="2" ry="2" />
+<text  x="1192.35" y="223.5" ></text>
+</g>
+<g >
+<title>__mtx_lock_sleep (26,322 samples, 6.61%)</title><rect x="600.2" y="53" width="78.1" height="15.0" fill="rgb(205,31,32)" rx="2" ry="2" />
+<text  x="603.25" y="63.5" >__mtx_loc..</text>
+</g>
+<g >
+<title>cpu_idle (1,023 samples, 0.26%)</title><rect x="195.6" y="245" width="3.0" height="15.0" fill="rgb(244,202,13)" rx="2" ry="2" />
+<text  x="198.56" y="255.5" ></text>
+</g>
+<g >
+<title>mlx5_eq_int (18,214 samples, 4.58%)</title><rect x="207.6" y="229" width="54.0" height="15.0" fill="rgb(242,200,1)" rx="2" ry="2" />
+<text  x="210.61" y="239.5" >mlx5_..</text>
+</g>
+<g >
+<title>ether_output_frame (1,469 samples, 0.37%)</title><rect x="207.6" y="53" width="4.4" height="15.0" fill="rgb(208,8,21)" rx="2" ry="2" />
+<text  x="210.61" y="63.5" ></text>
+</g>
+<g >
+<title>ether_nh_input (121,625 samples, 30.55%)</title><rect x="828.8" y="181" width="360.5" height="15.0" fill="rgb(235,38,20)" rx="2" ry="2" />
+<text  x="831.83" y="191.5" >ether_nh_input</text>
+</g>
+<g >
+<title>ipf_check (131 samples, 0.03%)</title><rect x="393.8" y="101" width="0.4" height="15.0" fill="rgb(206,126,21)" rx="2" ry="2" />
+<text  x="396.76" y="111.5" ></text>
+</g>
+<g >
+<title>sched_add (1,418 samples, 0.36%)</title><rect x="203.3" y="229" width="4.2" height="15.0" fill="rgb(230,94,52)" rx="2" ry="2" />
+<text  x="206.34" y="239.5" ></text>
+</g>
+<g >
+<title>pfil_run_hooks (220 samples, 0.06%)</title><rect x="1189.3" y="149" width="0.7" height="15.0" fill="rgb(254,89,13)" rx="2" ry="2" />
+<text  x="1192.35" y="159.5" ></text>
+</g>
+<g >
+<title>mlx5e_get_cqe (308 samples, 0.08%)</title><rect x="35.4" y="165" width="0.9" height="15.0" fill="rgb(254,62,52)" rx="2" ry="2" />
+<text  x="38.42" y="175.5" ></text>
+</g>
+<g >
+<title>lock_delay (95,996 samples, 24.11%)</title><rect x="829.6" y="37" width="284.5" height="15.0" fill="rgb(209,102,54)" rx="2" ry="2" />
+<text  x="832.55" y="47.5" >lock_delay</text>
+</g>
+<g >
+<title>ip6_tryforward (1,973 samples, 0.50%)</title><rect x="24.2" y="69" width="5.8" height="15.0" fill="rgb(210,19,22)" rx="2" ry="2" />
+<text  x="27.20" y="79.5" ></text>
+</g>
+<g >
+<title>m_freem (65 samples, 0.02%)</title><rect x="828.6" y="69" width="0.2" height="15.0" fill="rgb(212,84,2)" rx="2" ry="2" />
+<text  x="831.64" y="79.5" ></text>
+</g>
+<g >
+<title>ether_input (147 samples, 0.04%)</title><rect x="393.7" y="245" width="0.5" height="15.0" fill="rgb(217,197,35)" rx="2" ry="2" />
+<text  x="396.71" y="255.5" ></text>
+</g>
+<g >
+<title>ipf_check (146,354 samples, 36.76%)</title><rect x="395.0" y="85" width="433.8" height="15.0" fill="rgb(208,33,35)" rx="2" ry="2" />
+<text  x="398.02" y="95.5" >ipf_check</text>
+</g>
+<g >
+<title>_rw_wowned (1,167 samples, 0.29%)</title><rect x="1170.9" y="37" width="3.5" height="15.0" fill="rgb(251,107,42)" rx="2" ry="2" />
+<text  x="1173.94" y="47.5" ></text>
+</g>
+<g >
+<title>in6_localip (216 samples, 0.05%)</title><rect x="27.3" y="53" width="0.6" height="15.0" fill="rgb(227,208,45)" rx="2" ry="2" />
+<text  x="30.30" y="63.5" ></text>
+</g>
+<g >
+<title>ipf_makefrip (275 samples, 0.07%)</title><rect x="599.4" y="69" width="0.8" height="15.0" fill="rgb(221,0,6)" rx="2" ry="2" />
+<text  x="602.43" y="79.5" ></text>
+</g>
+<g >
+<title>tdq_notify (530 samples, 0.13%)</title><rect x="206.0" y="213" width="1.5" height="15.0" fill="rgb(216,129,50)" rx="2" ry="2" />
+<text  x="208.97" y="223.5" ></text>
+</g>
+<g >
+<title>lradix6_lookup (46 samples, 0.01%)</title><rect x="213.5" y="37" width="0.1" height="15.0" fill="rgb(218,125,40)" rx="2" ry="2" />
+<text  x="216.47" y="47.5" ></text>
+</g>
+<g >
+<title>ip6_input (147 samples, 0.04%)</title><rect x="393.7" y="165" width="0.5" height="15.0" fill="rgb(210,164,6)" rx="2" ry="2" />
+<text  x="396.71" y="175.5" ></text>
+</g>
+<g >
+<title>_epoch_enter_preempt (249 samples, 0.06%)</title><rect x="12.5" y="245" width="0.8" height="15.0" fill="rgb(238,17,9)" rx="2" ry="2" />
+<text  x="15.53" y="255.5" ></text>
+</g>
+<g >
+<title>mlx5e_get_cqe (170 samples, 0.04%)</title><rect x="42.6" y="165" width="0.5" height="15.0" fill="rgb(214,78,40)" rx="2" ry="2" />
+<text  x="45.60" y="175.5" ></text>
+</g>
+<g >
+<title>intr_event_handle (1,908 samples, 0.48%)</title><rect x="202.0" y="261" width="5.6" height="15.0" fill="rgb(222,132,43)" rx="2" ry="2" />
+<text  x="204.96" y="271.5" ></text>
+</g>
+<g >
+<title>tdq_add (115 samples, 0.03%)</title><rect x="205.6" y="213" width="0.4" height="15.0" fill="rgb(241,42,19)" rx="2" ry="2" />
+<text  x="208.62" y="223.5" ></text>
+</g>
+<g >
+<title>ipf_makefrip (415 samples, 0.10%)</title><rect x="357.6" y="37" width="1.2" height="15.0" fill="rgb(239,144,18)" rx="2" ry="2" />
+<text  x="360.61" y="47.5" ></text>
+</g>
+<g >
+<title>_rw_runlock_cookie_int (3,623 samples, 0.91%)</title><rect x="318.4" y="37" width="10.8" height="15.0" fill="rgb(242,118,20)" rx="2" ry="2" />
+<text  x="321.42" y="47.5" ></text>
+</g>
+<g >
+<title>ipf_check (121,383 samples, 30.49%)</title><rect x="829.6" y="69" width="359.7" height="15.0" fill="rgb(205,80,22)" rx="2" ry="2" />
+<text  x="832.55" y="79.5" >ipf_check</text>
+</g>
+<g >
+<title>ip6_input (43,952 samples, 11.04%)</title><rect x="263.4" y="117" width="130.3" height="15.0" fill="rgb(237,31,21)" rx="2" ry="2" />
+<text  x="266.43" y="127.5" >ip6_input</text>
+</g>
+<g >
+<title>ipf_checkv6sum (219 samples, 0.06%)</title><rect x="1189.4" y="85" width="0.6" height="15.0" fill="rgb(234,159,14)" rx="2" ry="2" />
+<text  x="1192.35" y="95.5" ></text>
+</g>
+<g >
+<title>pmclog_process_callchain (41 samples, 0.01%)</title><rect x="262.9" y="181" width="0.1" height="15.0" fill="rgb(227,25,52)" rx="2" ry="2" />
+<text  x="265.87" y="191.5" ></text>
+</g>
+<g >
+<title>ether_demux (2,674 samples, 0.67%)</title><rect x="22.1" y="117" width="7.9" height="15.0" fill="rgb(212,165,10)" rx="2" ry="2" />
+<text  x="25.12" y="127.5" ></text>
+</g>
+<g >
+<title>cpu_switch (248 samples, 0.06%)</title><rect x="43.3" y="229" width="0.8" height="15.0" fill="rgb(225,228,33)" rx="2" ry="2" />
+<text  x="46.33" y="239.5" ></text>
+</g>
+<g >
+<title>ipf_state_check (50,727 samples, 12.74%)</title><rect x="678.3" y="69" width="150.3" height="15.0" fill="rgb(228,178,49)" rx="2" ry="2" />
+<text  x="681.28" y="79.5" >ipf_state_check</text>
+</g>
+<g >
+<title>ip6_findroute (129 samples, 0.03%)</title><rect x="27.9" y="53" width="0.4" height="15.0" fill="rgb(248,138,34)" rx="2" ry="2" />
+<text  x="30.94" y="63.5" ></text>
+</g>
+<g >
+<title>netisr_dispatch_src (220 samples, 0.06%)</title><rect x="1189.3" y="245" width="0.7" height="15.0" fill="rgb(218,218,24)" rx="2" ry="2" />
+<text  x="1192.35" y="255.5" ></text>
+</g>
+<g >
+<title>ipf_auth_check (229 samples, 0.06%)</title><rect x="334.1" y="37" width="0.7" height="15.0" fill="rgb(219,94,43)" rx="2" ry="2" />
+<text  x="337.11" y="47.5" ></text>
+</g>
+<g >
+<title>lkpi_irq_handler (18,214 samples, 4.58%)</title><rect x="207.6" y="261" width="54.0" height="15.0" fill="rgb(236,27,37)" rx="2" ry="2" />
+<text  x="210.61" y="271.5" >lkpi_..</text>
+</g>
+<g >
+<title>mlx5e_rx_cq_comp (43,952 samples, 11.04%)</title><rect x="263.4" y="213" width="130.3" height="15.0" fill="rgb(232,187,38)" rx="2" ry="2" />
+<text  x="266.43" y="223.5" >mlx5e_rx_cq_comp</text>
+</g>
+<g >
+<title>runq_add (60 samples, 0.02%)</title><rect x="205.8" y="197" width="0.2" height="15.0" fill="rgb(225,172,13)" rx="2" ry="2" />
+<text  x="208.79" y="207.5" ></text>
+</g>
+<g >
+<title>mlx5_msix_handler (18,214 samples, 4.58%)</title><rect x="207.6" y="245" width="54.0" height="15.0" fill="rgb(234,37,20)" rx="2" ry="2" />
+<text  x="210.61" y="255.5" >mlx5_..</text>
+</g>
+<g >
+<title>mlx5e_xmit (242 samples, 0.06%)</title><rect x="828.8" y="69" width="0.8" height="15.0" fill="rgb(222,130,37)" rx="2" ry="2" />
+<text  x="831.83" y="79.5" ></text>
+</g>
+<g >
+<title>ipf_checkv6sum (275 samples, 0.07%)</title><rect x="599.4" y="53" width="0.8" height="15.0" fill="rgb(250,92,9)" rx="2" ry="2" />
+<text  x="602.43" y="63.5" ></text>
+</g>
+<g >
+<title>ether_output_frame (463 samples, 0.12%)</title><rect x="25.5" y="37" width="1.3" height="15.0" fill="rgb(205,61,13)" rx="2" ry="2" />
+<text  x="28.48" y="47.5" ></text>
+</g>
+<g >
+<title>ipf_derefrule (68,962 samples, 17.32%)</title><rect x="395.0" y="69" width="204.4" height="15.0" fill="rgb(207,171,32)" rx="2" ry="2" />
+<text  x="398.02" y="79.5" >ipf_derefrule</text>
+</g>
+<g >
+<title>pmc_process_samples (190 samples, 0.05%)</title><rect x="262.6" y="197" width="0.5" height="15.0" fill="rgb(207,37,51)" rx="2" ry="2" />
+<text  x="265.57" y="207.5" ></text>
+</g>
+<g >
+<title>ip6_tryforward (18,214 samples, 4.58%)</title><rect x="207.6" y="85" width="54.0" height="15.0" fill="rgb(222,149,41)" rx="2" ry="2" />
+<text  x="210.61" y="95.5" >ip6_t..</text>
+</g>
+<g >
+<title>_rm_runlock (42 samples, 0.01%)</title><rect x="27.8" y="37" width="0.1" height="15.0" fill="rgb(213,48,7)" rx="2" ry="2" />
+<text  x="30.80" y="47.5" ></text>
+</g>
+<g >
+<title>spinlock_enter (51 samples, 0.01%)</title><rect x="45.2" y="213" width="0.2" height="15.0" fill="rgb(238,58,18)" rx="2" ry="2" />
+<text  x="48.24" y="223.5" ></text>
+</g>
+<g >
+<title>mlx5e_xmit (1,469 samples, 0.37%)</title><rect x="207.6" y="37" width="4.4" height="15.0" fill="rgb(221,59,46)" rx="2" ry="2" />
+<text  x="210.61" y="47.5" ></text>
+</g>
+<g >
+<title>pfil_run_hooks (569 samples, 0.14%)</title><rect x="28.4" y="53" width="1.6" height="15.0" fill="rgb(246,195,6)" rx="2" ry="2" />
+<text  x="31.36" y="63.5" ></text>
+</g>
+<g >
+<title>thread_lock_flags_ (43 samples, 0.01%)</title><rect x="201.6" y="245" width="0.1" height="15.0" fill="rgb(236,185,38)" rx="2" ry="2" />
+<text  x="204.60" y="255.5" ></text>
+</g>
+<g >
+<title>ether_nh_input (18,214 samples, 4.58%)</title><rect x="207.6" y="149" width="54.0" height="15.0" fill="rgb(230,35,51)" rx="2" ry="2" />
+<text  x="210.61" y="159.5" >ether..</text>
+</g>
+<g >
+<title>ipf_derefrule (10,391 samples, 2.61%)</title><rect x="1114.1" y="53" width="30.8" height="15.0" fill="rgb(213,170,27)" rx="2" ry="2" />
+<text  x="1117.10" y="63.5" >ip..</text>
+</g>
+<g >
+<title>mlx5_msix_handler (10,043 samples, 2.52%)</title><rect x="13.4" y="229" width="29.7" height="15.0" fill="rgb(217,75,40)" rx="2" ry="2" />
+<text  x="16.37" y="239.5" >ml..</text>
+</g>
+<g >
+<title>memset_erms (263 samples, 0.07%)</title><rect x="392.9" y="37" width="0.8" height="15.0" fill="rgb(209,37,53)" rx="2" ry="2" />
+<text  x="395.94" y="47.5" ></text>
+</g>
+<g >
+<title>binuptime (70 samples, 0.02%)</title><rect x="262.0" y="245" width="0.2" height="15.0" fill="rgb(235,66,52)" rx="2" ry="2" />
+<text  x="264.97" y="255.5" ></text>
+</g>
+<g >
+<title>__mtx_lock_sleep (95,996 samples, 24.11%)</title><rect x="829.6" y="53" width="284.5" height="15.0" fill="rgb(235,37,20)" rx="2" ry="2" />
+<text  x="832.55" y="63.5" >__mtx_lock_sleep</text>
+</g>
+<g >
+<title>netisr_dispatch_src (147 samples, 0.04%)</title><rect x="393.7" y="181" width="0.5" height="15.0" fill="rgb(242,21,25)" rx="2" ry="2" />
+<text  x="396.71" y="191.5" ></text>
+</g>
+<g >
+<title>mlx5e_rx_cq_comp (220 samples, 0.06%)</title><rect x="1189.3" y="277" width="0.7" height="15.0" fill="rgb(222,17,45)" rx="2" ry="2" />
+<text  x="1192.35" y="287.5" ></text>
+</g>
+<g >
+<title>ip6_tryforward (147 samples, 0.04%)</title><rect x="393.7" y="149" width="0.5" height="15.0" fill="rgb(206,8,37)" rx="2" ry="2" />
+<text  x="396.71" y="159.5" ></text>
+</g>
+<g >
+<title>lock_delay (68,962 samples, 17.32%)</title><rect x="395.0" y="37" width="204.4" height="15.0" fill="rgb(228,138,18)" rx="2" ry="2" />
+<text  x="398.02" y="47.5" >lock_delay</text>
+</g>
+<g >
+<title>_rw_wowned (809 samples, 0.20%)</title><rect x="693.5" y="37" width="2.4" height="15.0" fill="rgb(218,17,37)" rx="2" ry="2" />
+<text  x="696.47" y="47.5" ></text>
+</g>
+<g >
+<title>mi_switch (837 samples, 0.21%)</title><rect x="43.1" y="245" width="2.5" height="15.0" fill="rgb(217,187,1)" rx="2" ry="2" />
+<text  x="46.14" y="255.5" ></text>
+</g>
+<g >
+<title>sched_switch (480 samples, 0.12%)</title><rect x="200.1" y="229" width="1.5" height="15.0" fill="rgb(234,200,26)" rx="2" ry="2" />
+<text  x="203.13" y="239.5" ></text>
+</g>
+<g >
+<title>ether_output (1,975 samples, 0.50%)</title><rect x="207.6" y="69" width="5.9" height="15.0" fill="rgb(211,121,3)" rx="2" ry="2" />
+<text  x="210.61" y="79.5" ></text>
+</g>
+<g >
+<title>ipf_pr_pullup (79 samples, 0.02%)</title><rect x="1148.4" y="37" width="0.3" height="15.0" fill="rgb(250,165,37)" rx="2" ry="2" />
+<text  x="1151.42" y="47.5" ></text>
+</g>
+<g >
+<title>mb_ctor_mbuf (460 samples, 0.12%)</title><rect x="37.2" y="149" width="1.3" height="15.0" fill="rgb(247,34,45)" rx="2" ry="2" />
+<text  x="40.17" y="159.5" ></text>
+</g>
+<g >
+<title>ipf_state_add (1,522 samples, 0.38%)</title><rect x="372.9" y="37" width="4.5" height="15.0" fill="rgb(225,205,34)" rx="2" ry="2" />
+<text  x="375.89" y="47.5" ></text>
+</g>
+<g >
+<title>ether_output_frame (293 samples, 0.07%)</title><rect x="394.2" y="101" width="0.8" height="15.0" fill="rgb(249,172,24)" rx="2" ry="2" />
+<text  x="397.15" y="111.5" ></text>
+</g>
+<g >
+<title>netisr_dispatch_src (18,214 samples, 4.58%)</title><rect x="207.6" y="117" width="54.0" height="15.0" fill="rgb(220,163,7)" rx="2" ry="2" />
+<text  x="210.61" y="127.5" >netis..</text>
+</g>
+<g >
+<title>nd6_resolve (506 samples, 0.13%)</title><rect x="212.0" y="53" width="1.5" height="15.0" fill="rgb(210,38,0)" rx="2" ry="2" />
+<text  x="214.97" y="63.5" ></text>
+</g>
+<g >
+<title>fib6_lookup (46 samples, 0.01%)</title><rect x="213.5" y="53" width="0.1" height="15.0" fill="rgb(231,129,26)" rx="2" ry="2" />
+<text  x="216.47" y="63.5" ></text>
+</g>
+<g >
+<title>ipf_check_wrapper6 (220 samples, 0.06%)</title><rect x="1189.3" y="133" width="0.7" height="15.0" fill="rgb(218,127,25)" rx="2" ry="2" />
+<text  x="1192.35" y="143.5" ></text>
+</g>
+<g >
+<title>ether_output_frame (242 samples, 0.06%)</title><rect x="828.8" y="85" width="0.8" height="15.0" fill="rgb(236,134,43)" rx="2" ry="2" />
+<text  x="831.83" y="95.5" ></text>
+</g>
+<g >
+<title>ether_output (559 samples, 0.14%)</title><rect x="263.4" y="85" width="1.7" height="15.0" fill="rgb(236,168,51)" rx="2" ry="2" />
+<text  x="266.43" y="95.5" ></text>
+</g>
+<g >
+<title>hardclock (297 samples, 0.07%)</title><rect x="262.3" y="229" width="0.9" height="15.0" fill="rgb(241,220,9)" rx="2" ry="2" />
+<text  x="265.28" y="239.5" ></text>
+</g>
+<g >
+<title>ether_input (146,647 samples, 36.84%)</title><rect x="394.2" y="229" width="434.6" height="15.0" fill="rgb(208,133,28)" rx="2" ry="2" />
+<text  x="397.15" y="239.5" >ether_input</text>
+</g>
+<g >
+<title>memcmp (733 samples, 0.18%)</title><rect x="1158.1" y="37" width="2.2" height="15.0" fill="rgb(240,162,44)" rx="2" ry="2" />
+<text  x="1161.12" y="47.5" ></text>
+</g>
+<g >
+<title>ipf_scanlist (3,190 samples, 0.80%)</title><rect x="1148.7" y="53" width="9.4" height="15.0" fill="rgb(232,79,29)" rx="2" ry="2" />
+<text  x="1151.65" y="63.5" ></text>
+</g>
+<g >
+<title>fpu_activate_sw (213 samples, 0.05%)</title><rect x="43.4" y="213" width="0.7" height="15.0" fill="rgb(214,180,6)" rx="2" ry="2" />
+<text  x="46.44" y="223.5" ></text>
+</g>
+<g >
+<title>ipf_matchsrcdst (44,792 samples, 11.25%)</title><rect x="695.9" y="37" width="132.7" height="15.0" fill="rgb(247,30,16)" rx="2" ry="2" />
+<text  x="698.87" y="47.5" >ipf_matchsrcdst</text>
+</g>
+<g >
+<title>mlx5e_rx_cq_comp (121,625 samples, 30.55%)</title><rect x="828.8" y="229" width="360.5" height="15.0" fill="rgb(230,121,10)" rx="2" ry="2" />
+<text  x="831.83" y="239.5" >mlx5e_rx_cq_comp</text>
+</g>
+<g >
+<title>pfil_run_hooks (43,015 samples, 10.81%)</title><rect x="266.2" y="85" width="127.5" height="15.0" fill="rgb(244,158,53)" rx="2" ry="2" />
+<text  x="269.21" y="95.5" >pfil_run_hooks</text>
+</g>
+<g >
+<title>ipf_state_check (9,654 samples, 2.43%)</title><rect x="1160.7" y="53" width="28.6" height="15.0" fill="rgb(212,170,5)" rx="2" ry="2" />
+<text  x="1163.66" y="63.5" >ip..</text>
+</g>
+<g >
+<title>lock_delay (61 samples, 0.02%)</title><rect x="393.9" y="37" width="0.2" height="15.0" fill="rgb(244,0,38)" rx="2" ry="2" />
+<text  x="396.92" y="47.5" ></text>
+</g>
+<g >
+<title>pfil_run_hooks (146,354 samples, 36.76%)</title><rect x="395.0" y="117" width="433.8" height="15.0" fill="rgb(250,13,31)" rx="2" ry="2" />
+<text  x="398.02" y="127.5" >pfil_run_hooks</text>
+</g>
+<g >
+<title>mlx5_msix_handler (121,625 samples, 30.55%)</title><rect x="828.8" y="277" width="360.5" height="15.0" fill="rgb(213,192,25)" rx="2" ry="2" />
+<text  x="831.83" y="287.5" >mlx5_msix_handler</text>
+</g>
+<g >
+<title>mlx5e_post_rx_wqes (56 samples, 0.01%)</title><rect x="36.3" y="165" width="0.2" height="15.0" fill="rgb(216,219,43)" rx="2" ry="2" />
+<text  x="39.33" y="175.5" ></text>
+</g>
+<g >
+<title>mlx5_msix_handler (43,952 samples, 11.04%)</title><rect x="263.4" y="261" width="130.3" height="15.0" fill="rgb(205,39,29)" rx="2" ry="2" />
+<text  x="266.43" y="271.5" >mlx5_msix_handler</text>
+</g>
+<g >
+<title>choosethread (332 samples, 0.08%)</title><rect x="200.5" y="213" width="0.9" height="15.0" fill="rgb(238,75,16)" rx="2" ry="2" />
+<text  x="203.45" y="223.5" ></text>
+</g>
+<g >
+<title>ether_output (757 samples, 0.19%)</title><rect x="25.1" y="53" width="2.2" height="15.0" fill="rgb(241,200,53)" rx="2" ry="2" />
+<text  x="28.05" y="63.5" ></text>
+</g>
+<g >
+<title>ipf_check_wrapper6 (16,193 samples, 4.07%)</title><rect x="213.6" y="53" width="48.0" height="15.0" fill="rgb(243,82,47)" rx="2" ry="2" />
+<text  x="216.60" y="63.5" >ipf_..</text>
+</g>
+<g >
+<title>ip6_findroute (46 samples, 0.01%)</title><rect x="213.5" y="69" width="0.1" height="15.0" fill="rgb(239,182,16)" rx="2" ry="2" />
+<text  x="216.47" y="79.5" ></text>
+</g>
+<g >
+<title>ipf_state_add (861 samples, 0.22%)</title><rect x="1158.1" y="53" width="2.6" height="15.0" fill="rgb(250,121,31)" rx="2" ry="2" />
+<text  x="1161.11" y="63.5" ></text>
+</g>
+<g >
+<title>__rw_rlock_int (3,363 samples, 0.84%)</title><rect x="678.3" y="37" width="10.0" height="15.0" fill="rgb(244,139,49)" rx="2" ry="2" />
+<text  x="681.29" y="47.5" ></text>
+</g>
+<g >
+<title>netisr_dispatch_src (3,720 samples, 0.93%)</title><rect x="19.1" y="149" width="11.0" height="15.0" fill="rgb(209,199,7)" rx="2" ry="2" />
+<text  x="22.11" y="159.5" ></text>
+</g>
+<g >
+<title>m_adj (56 samples, 0.01%)</title><rect x="23.0" y="101" width="0.1" height="15.0" fill="rgb(214,100,22)" rx="2" ry="2" />
+<text  x="25.97" y="111.5" ></text>
+</g>
+<g >
+<title>mlx5e_xmit (293 samples, 0.07%)</title><rect x="394.2" y="85" width="0.8" height="15.0" fill="rgb(236,168,43)" rx="2" ry="2" />
+<text  x="397.15" y="95.5" ></text>
+</g>
+<g >
+<title>ipf_nat6_checkin (253 samples, 0.06%)</title><rect x="358.8" y="37" width="0.8" height="15.0" fill="rgb(242,173,4)" rx="2" ry="2" />
+<text  x="361.84" y="47.5" ></text>
+</g>
+<g >
+<title>mlx5e_sq_xmit (542 samples, 0.14%)</title><rect x="263.4" y="37" width="1.6" height="15.0" fill="rgb(210,142,25)" rx="2" ry="2" />
+<text  x="266.43" y="47.5" ></text>
+</g>
+<g >
+<title>ipf_check_wrapper6 (131 samples, 0.03%)</title><rect x="393.8" y="117" width="0.4" height="15.0" fill="rgb(254,99,39)" rx="2" ry="2" />
+<text  x="396.76" y="127.5" ></text>
+</g>
+<g >
+<title>ipf_makefrip (1,266 samples, 0.32%)</title><rect x="1144.9" y="53" width="3.8" height="15.0" fill="rgb(235,24,21)" rx="2" ry="2" />
+<text  x="1147.90" y="63.5" ></text>
+</g>
+<g >
+<title>mlx5e_rx_cq_comp (146,647 samples, 36.84%)</title><rect x="394.2" y="245" width="434.6" height="15.0" fill="rgb(240,155,28)" rx="2" ry="2" />
+<text  x="397.15" y="255.5" >mlx5e_rx_cq_comp</text>
+</g>
+<g >
+<title>mlx5_eq_int (43,952 samples, 11.04%)</title><rect x="263.4" y="245" width="130.3" height="15.0" fill="rgb(218,176,25)" rx="2" ry="2" />
+<text  x="266.43" y="255.5" >mlx5_eq_int</text>
+</g>
+<g >
+<title>sched_choose (328 samples, 0.08%)</title><rect x="200.5" y="197" width="0.9" height="15.0" fill="rgb(233,184,5)" rx="2" ry="2" />
+<text  x="203.46" y="207.5" ></text>
+</g>
+<g >
+<title>mlx5e_tx_cq_comp (1,544 samples, 0.39%)</title><rect x="38.5" y="181" width="4.6" height="15.0" fill="rgb(219,1,50)" rx="2" ry="2" />
+<text  x="41.53" y="191.5" ></text>
+</g>
+<g >
+<title>mlx5_cq_completion (146,647 samples, 36.84%)</title><rect x="394.2" y="261" width="434.6" height="15.0" fill="rgb(223,107,30)" rx="2" ry="2" />
+<text  x="397.15" y="271.5" >mlx5_cq_completion</text>
+</g>
+<g >
+<title>m_free (65 samples, 0.02%)</title><rect x="828.6" y="53" width="0.2" height="15.0" fill="rgb(227,154,36)" rx="2" ry="2" />
+<text  x="831.64" y="63.5" ></text>
+</g>
+<g >
+<title>_rw_runlock_cookie_int (3,469 samples, 0.87%)</title><rect x="1160.7" y="37" width="10.2" height="15.0" fill="rgb(212,58,39)" rx="2" ry="2" />
+<text  x="1163.66" y="47.5" ></text>
+</g>
+<g >
+<title>rsb_flush (45 samples, 0.01%)</title><rect x="44.1" y="229" width="0.1" height="15.0" fill="rgb(244,176,37)" rx="2" ry="2" />
+<text  x="47.08" y="239.5" ></text>
+</g>
+<g >
+<title>memset_erms (122 samples, 0.03%)</title><rect x="1160.3" y="37" width="0.4" height="15.0" fill="rgb(247,176,50)" rx="2" ry="2" />
+<text  x="1163.30" y="47.5" ></text>
+</g>
+<g >
+<title>sched_switch (475 samples, 0.12%)</title><rect x="44.2" y="229" width="1.4" height="15.0" fill="rgb(210,173,35)" rx="2" ry="2" />
+<text  x="47.21" y="239.5" ></text>
+</g>
+<g >
+<title>mlx5_cq_completion (43,952 samples, 11.04%)</title><rect x="263.4" y="229" width="130.3" height="15.0" fill="rgb(230,126,54)" rx="2" ry="2" />
+<text  x="266.43" y="239.5" >mlx5_cq_completion</text>
+</g>
+<g >
+<title>ipf_checkv6sum (1,187 samples, 0.30%)</title><rect x="1144.9" y="37" width="3.5" height="15.0" fill="rgb(249,51,13)" rx="2" ry="2" />
+<text  x="1147.90" y="47.5" ></text>
+</g>
+<g >
+<title>mlx5e_rx_cq_comp (8,153 samples, 2.05%)</title><rect x="14.4" y="181" width="24.1" height="15.0" fill="rgb(234,163,13)" rx="2" ry="2" />
+<text  x="17.36" y="191.5" >m..</text>
+</g>
+<g >
+<title>ip6_tryforward (43,952 samples, 11.04%)</title><rect x="263.4" y="101" width="130.3" height="15.0" fill="rgb(206,17,38)" rx="2" ry="2" />
+<text  x="266.43" y="111.5" >ip6_tryforward</text>
+</g>
+<g >
+<title>bounce_bus_dmamap_load_buffer (276 samples, 0.07%)</title><rect x="394.2" y="37" width="0.8" height="15.0" fill="rgb(231,107,32)" rx="2" ry="2" />
+<text  x="397.15" y="47.5" ></text>
+</g>
+<g >
+<title>ipf_movequeue (92 samples, 0.02%)</title><rect x="1174.4" y="37" width="0.3" height="15.0" fill="rgb(215,50,40)" rx="2" ry="2" />
+<text  x="1177.40" y="47.5" ></text>
+</g>
+<g >
+<title>ether_input (18,214 samples, 4.58%)</title><rect x="207.6" y="181" width="54.0" height="15.0" fill="rgb(253,92,39)" rx="2" ry="2" />
+<text  x="210.61" y="191.5" >ether..</text>
+</g>
+<g >
+<title>lapic_handle_timer (600 samples, 0.15%)</title><rect x="261.7" y="277" width="1.7" height="15.0" fill="rgb(208,129,29)" rx="2" ry="2" />
+<text  x="264.66" y="287.5" ></text>
+</g>
+</g>
+</svg>
