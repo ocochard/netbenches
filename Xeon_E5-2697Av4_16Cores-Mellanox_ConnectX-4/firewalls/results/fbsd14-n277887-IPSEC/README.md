@@ -9,15 +9,15 @@ Lab:
 
 # Results
 
-Slight reduction with inet6
+Slight reduction with inet6 (shouldn't be related).
 
 ## ministat
 
 ### inet
 
 ```
-x n277887IPSEC_SUPPORT.inet4.pps
-+ n277887IPSEC.inet4.pps
+x n277887 with IPSEC_SUPPORT: inet packets-per-second forwarded
++ n277887 with IPSEC: inet packets-per-second forwarded
 +--------------------------------------------------------------------------+
 |  x         x x             +                      +    +    x   +    +  x|
 ||_____________M_________________A________________________________|        |
