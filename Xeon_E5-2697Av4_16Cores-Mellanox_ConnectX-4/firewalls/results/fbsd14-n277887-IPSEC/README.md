@@ -1,11 +1,13 @@
 # Impact of IPSEC_SUPPORT vs IPSEC in kernel config
 Lab:
   - Intel Xeon E5-2697Av4 (16Cores, 32 threads)
-  - Mellanox ConnectX-4 MCX416A-CCAT (100GBase-SR4)
+  - Input NIC: Mellanox ConnectX-4 MCX416A-CCAT (100GBase-SR4)
+  - Output NIC: Chelsio T580 (QSFP+ 40GBASE-SR4)
   - FreeBSD 14-head n277887
   - Minimum firewall rules
   - HyperThreading and LRO/TSO disabled
   - harvest.mask=351
+  - Traffic generator: 42Mpps of smallest UDP packet size
 
 # Results
 
