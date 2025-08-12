@@ -354,6 +354,12 @@ upload_cfg () {
 	if ! scp -r -2 -o "PreferredAuthentications publickey" -o "StrictHostKeyChecking no" $1/* root@$2:/ > /dev/null 2>&1; then
 		return 1
 	fi
+	# Switching back to RO mode
+	# If not: The reboot will wrote an /entropy file, and during next reboot
+	# dd will panic system when trying to read it
+	if ! rcmd $2 "mount -ur /" > /dev/null 2>&1; then
+		return 1
+	fi
 	if rcmd $2 "config save" > /dev/null 2>&1; then
 		return 0
 	else
