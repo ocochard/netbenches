@@ -20,7 +20,7 @@ Specific benches:
     - 16 cores Xeon E5-2697A
       - [100G Mellanox ConnectX-4 MCX416A-CCAT](Xeon_E5-2697Av4_16Cores/Mellanox_ConnectX-4/firewalls/results/fbsd14-c276570-BSDRP1.991/README.md)
       - [40G Chelsio T580](Xeon_E5-2697Av4_16Cores/Chelsio_T580/firewalls/results/fbsd14-c276570-BSDRP1.991/README.md)
-    - [2x12 cores Xeon E5-2650
+    - 2x12 cores Xeon E5-2650
       - [10G Mellanox ConnectX-4 Lx](Xeon_E5-2650v4_2x12Cores/Mellanox_ConnectX-4/firewalls/results/fbsd14-c276570-BSDRP1.991/README.md)
       - [10G Chelsio T520-CR](Xeon_E5-2650v4_2x12Cores/Chelsio_T520-CR/firewalls/results/fbsd14-c276570-BSDRP1.991/README.md)
       - [10G Intel 82599ES](Xeon_E5-2650v4_2x12Cores/Intel_82599ES/firewalls/results/fbsd14-c276570-BSDRP1.991/README.md)
@@ -51,8 +51,8 @@ Specific benches:
     - [8 cores Xeon E5-2650 & Chelsio T540](Xeon_E5-2650_8Cores/Chelsio_T540-CR/machdep.hyperthreading_allowed/results/fbsd11.1/README.md)
  - IPFW-at-NIC-level (DDoS protection)
     - 16 cores Xeon E5-2697A
-      - [100G Mellanox ConnectX-4](Xeon_E5-2697Av4_16Cores/Mellanox_ConnectX-4/ipfw/results/fbsd13-r356316-pfil_cxgbe-20-30/README.md)
-      - [100G Chelsio T580](Xeon_E5-2697Av4_16Cores/Chelsio_T580/ipfw/results/fbsd13-r357572-20-30/README.md)
+      - [100G Mellanox ConnectX-4](Xeon_E5-2697Av4_16Cores/Mellanox_ConnectX-4/ipfw/results/fbsd13-r357572-20M_leg-0to40M_dos/README.md)
+      - [100G Chelsio T580](Xeon_E5-2697Av4_16Cores/Chelsio_T580/ipfw/results/fbsd13-r357572-20M_leg-0to40M_dos/README.md)
     - [10 cores Xeon E5-2650L & Chelsio T540](Xeon_E5-2650Lv2_10Cores/Chelsio_T540-CR/ipfw/results/fbsd13-r355538/README.md)
   - comparing 12-head and 11-stable:
     - [fbsd12-head vs 11-stable r318516 with 4 cores AMD GX-412TC](AMD_GX-412TC_4Cores/Intel_i210AT/firewalls/results/fbsd12-head-vs-11-stable.r318516/README.md)
