@@ -13,6 +13,7 @@ Lab:
   - iflib.tx_abdicate=1
   - iflib.override_ntxds=1024 (was 2048 by default)
   - iflib.override_nrxds=1024 (was 2048 by default)
+  - iflib.disable_prefetch=1
 
 dev.ix.X.iflib.tx_reclaim_thresh: Number of TX descs outstanding before reclaim is called
 
