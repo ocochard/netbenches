@@ -1,5 +1,5 @@
 #!/bin/sh
-# Generate all IPSec configurations from the aes-cbc-128
+# Generate all firewalls configurations from the forwarding
 set -eu
 if [ ! -d forwarding ]; then
 	echo "No folder forwarding"
