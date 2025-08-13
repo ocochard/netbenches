@@ -13,15 +13,18 @@ Lab:
 
 # Results
 
-For this use case, reducing descriptors is improving performance.
+Flamegraphs:
+  - [1024](bench.1024.pmc.svg)
+  - [2048](bench.2048_default.pmc.svg)
+  - [4096](bench.4096.pmc.svg)
 
-### inet
+For this use case, reducing descriptors is improving performance.
 
 Value of dev.ix.X.iflib.override_n(t|r)xd
 ```
-x 1024: IPv4 packet-per-seconds forwarded
-+ 2046 (default): IPv4 packet-per-seconds forwarded
-* 4096: IPv4 packet-per-seconds forwarded
+x 1024: IPv4 packets-per-seconds forwarded
++ 2048 (default): IPv4 packets-per-seconds forwarded
+* 4096: IPv4 packets-per-seconds forwarded
 +--------------------------------------------------------------------------+
 |* *+*     **    +  +        +    +                          x      xx  x x|
 |                                                               |____A____||
