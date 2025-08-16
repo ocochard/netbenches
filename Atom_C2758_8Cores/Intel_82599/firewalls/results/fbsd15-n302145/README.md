@@ -24,8 +24,8 @@ Lab:
   - [forwarding: inet](bench.forwarding.inet4.svg)
   - [ipfw-stateless: inet](bench.ipfw-stateless.inet4.svg)
   - [ipfw-stateful: inet](bench.ipfw-stateful.inet4.svg)
-  - [pf-stateless: inet](bench.pf-stateful.inet4.svg)
-  - [pf-stateful: inet](bench.pf-stateless.inet4.svg)
+  - [pf-stateful: inet](bench.pf-stateful.inet4.svg)
+  - [pf-stateless: inet](bench.pf-stateless.inet4.svg)
   - [ipf-stateless: inet](bench.ipf-stateless.inet4.svg)
   - [ipf-stateful: inet](bench.ipf-stateful.inet4.svg)
 

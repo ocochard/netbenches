@@ -52,8 +52,7 @@ set -eu
 
 ##### User modifiable variables section #####
 # SSH Command line
-SSH_USER="root"
-SSH_CMD="/usr/bin/ssh -x -a -q -2 -o \"ConnectTimeout=120\" -o \"PreferredAuthentications publickey\" -o \"StrictHostKeyChecking no\" -l ${SSH_USER}"
+SSH_CMD='/usr/bin/ssh -x -a -q -2 -o "ConnectTimeout=120" -o "PreferredAuthentications publickey" -o "StrictHostKeyChecking no"'
 
 ###### End of user modifiable variable section #####
 
@@ -99,10 +98,9 @@ STATS=false
 # An usefull function (from: http://code.google.com/p/sh-die/)
 die() { echo -n "EXIT: " >&2; echo "$@" >&2; exit 1; }
 
-
 rcmd () {
 	# Send remote command
-	# $1: hostname
+	# $1: hostname (customize your .ssh/config for specific username/keys)
 	# $2: command to send
 	# return 0 if OK, 1 if not
 	# Need to echap with '', because pkt-gen argument includes ""
@@ -312,15 +310,15 @@ bench () {
 		wait ${JOB_PMC}
 		rcmd ${DUT_ADMIN} "pgrep -q pmcstat" && die "pmcstat is still running"
 		rcmd ${DUT_ADMIN} "pmcstat -R /data/pmc.out -z16 -G /data/pmc.graph" >> $1.pmc.log || die "can't convert pmc.out to pmc.graph"
-		scp ${SSH_USER}@${DUT_ADMIN}:/data/pmc.out $1.pmc.out >> $1.pmc.log 2>&1 || die "can't download pmc.out"
-		scp ${SSH_USER}@${DUT_ADMIN}:/data/pmc.graph $1.pmc.graph >> $1.pmc.log 2>&1 || die "can't download pmc.graph"
+		scp ${DUT_ADMIN}:/data/pmc.out $1.pmc.out >> $1.pmc.log 2>&1 || die "can't download pmc.out"
+		scp ${DUT_ADMIN}:/data/pmc.graph $1.pmc.graph >> $1.pmc.log 2>&1 || die "can't download pmc.graph"
 		rcmd ${DUT_ADMIN} "rm /data/pmc.out && rm /data/pmc.graph && umount /data" >> $1.pmc.log || echo "Can't delete old data files"
 	fi
 
 	if ($STATS); then
 		wait ${JOB_STATS}
 		rcmd ${DUT_ADMIN} "pgrep -q collect_stats" && die "collect_stats is still running"
-		scp ${SSH_USER}@${DUT_ADMIN}:/data/stats.data $1.stats.data >> $1.stats.log 2>&1 || die "can't download stats.data"
+		scp ${DUT_ADMIN}:/data/stats.data $1.stats.data >> $1.stats.log 2>&1 || die "can't download stats.data"
 		# XXX If PMC mode enabled, it will umount /data
 		rcmd ${DUT_ADMIN} "rm /data/stats.data && umount /data" >> $1.stats.log || echo "Can't delete old data files"
 	fi
