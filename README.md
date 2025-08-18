@@ -12,6 +12,7 @@ Hardware benched are:
  - SuperMicro 5018A-FTN4 (8 cores Atom C2758 @ 2.40GHz) with:
    - [10-Gigabit Chelsio T540-CR](Atom_C2758_8Cores/Chelsio_T540-CR)
    - [10-Gigabit Intel 82599](Atom_C2758_8Cores/Intel_82599)
+ - [Aoostar WRT MAX (AMD_Ryzen7-Pro-8845HS_8Cores with 10G Intel X710)](AMD_Ryzen7-Pro-8845HS_8Cores/Intel_X710)
  - [Netgate RCC-VE 4860 (4 cores Intel Atom C2558 @ 2.40GHz) and quad port Intel i350 (the dual port Intel i211 are not benched)](Atom_C2558_4Cores/Intel_i350)
  - [PC Engines APU2C4 (4 cores AMD GX-412TC @ 1GHz) and 4 Intel i210AT Gigabit NIC](AMD_GX-412TC_4Cores/Intel_i210AT)
 
@@ -26,6 +27,8 @@ Specific benches:
       - [10G Intel 82599ES](Xeon_E5-2650v4_2x12Cores/Intel_82599ES/firewalls/results/fbsd14-c276570-BSDRP1.991/README.md)
     - 10 cores Xeon E5-2650L
       - [10G Chelsio T540](Xeon_E5-2650Lv2_10Cores/Chelsio_T540-CR/firewalls/results/fbsd12-stable.r354440.BSDRP.1.96/README.md)
+    - 8 cores AMD Ryzen7 Pro 8845HS
+      - [10G Intel X710](AMD_Ryzen7-Pro-8845HS_8Cores/Intel_X710/firewalls/results/fbsd15-n302145/README.md)
     - 8 cores Xeon E5-2650
       - [10G Chelsio T540](Xeon_E5-2650_8Cores/Chelsio_T540-CR/firewalls/results/fbsd14-c276570-BSDRP1.991/README.md)
     - 8 cores Atom C2758
@@ -49,6 +52,7 @@ Specific benches:
     - [16 cores Xeon E5-2697A & 100G Mellanox ConnectX-4](Xeon_E5-2697Av4_16Cores/Mellanox_ConnectX-4/machdep.hyperthreading_allowed/results/fbsd12-stable.r354440.BSDRP.1.96/README.md)
     - [10 cores Xeon E5-2650L & Chelsio T540](Xeon_E5-2650Lv2_10Cores/Chelsio_T540-CR/machdep.hyperthreading_intr/results/fbsd12-stable.r354440.BSDRP.1.96/README.md)
     - [8 cores Xeon E5-2650 & Chelsio T540](Xeon_E5-2650_8Cores/Chelsio_T540-CR/machdep.hyperthreading_allowed/results/fbsd11.1/README.md)
+    - [8 cores AMD Ryzen7 Pro 8845HS & Intel X710](AMD_Ryzen7-Pro-8845HS_8Cores/Intel_X710/hyperthreading/results/fbsd15-n302145/README.md)
  - IPFW-at-NIC-level (DDoS protection)
     - 16 cores Xeon E5-2697A
       - [100G Mellanox ConnectX-4](Xeon_E5-2697Av4_16Cores/Mellanox_ConnectX-4/ipfw/results/fbsd13-r357572-20M_leg-0to40M_dos/README.md)
