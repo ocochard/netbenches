@@ -1,6 +1,6 @@
 # Impact of firewalls on forwarding performance
 Lab:
-  - Aoostar WTR MAX (8 cores x 2 threads AMD Ryzen 7 PRO 8845HS at 3.8GHz)
+  - [Aoostar WTR MAX (8 cores x 2 threads AMD Ryzen 7 PRO 8845HS at 3.8GHz)](https://aoostar.com/products/aoostar-wtr-max-amd-r7-pro-8845hs-11-bays-mini-pc)
   - Intel X710
   - FreeBSD 15-head n302145 (e69573bc2be)
   - 5000 flows of smallest UDP packets
