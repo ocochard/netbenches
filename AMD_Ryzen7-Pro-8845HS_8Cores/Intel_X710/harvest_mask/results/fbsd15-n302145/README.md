@@ -1,7 +1,7 @@
 # Impact of kern.random.harvest.mask on forwarding performance
 
 Lab:
-  - Aoostar WTR MAX (8 cores x 2 threads AMD Ryzen 7 PRO 8845HS at 3.8GHz)
+  - [Aoostar WTR MAX (8 cores x 2 threads AMD Ryzen 7 PRO 8845HS at 3.8GHz)](https://aoostar.com/products/aoostar-wtr-max-amd-r7-pro-8845hs-11-bays-mini-pc)
   - Intel X710
   - FreeBSD 15-head n302145 (e69573bc2be)
   - 2000 flows of smallest UDP packets
@@ -52,6 +52,7 @@ x kern.random.harvest.mask=4607 (default)
 x   5      11896556      11966731      11950128      11937531     31938.248
 +   5      11881892      12401105      11947549      12025676     212005.59
 No difference proven at 95.0% confidence
+```
 
 ### IPv6
 
