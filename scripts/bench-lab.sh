@@ -345,8 +345,11 @@ upload_cfg () {
 	echo "Uploading cfg $1 to $2"
 	if [ -d $1/boot ]; then
 		# Before putting file in /boot, we need to remount in RW mode
-		if ! rcmd $2 "mount -uw /" > /dev/null 2>&1; then
-			return 1
+		# only if in nanobsd mode
+		if [ -r /etc/nanobsd.conf ];then
+			if ! rcmd $2 "mount -uw /" > /dev/null 2>&1; then
+				return 1
+			fi
 		fi
 	fi
 	if ! scp -r -2 -o "PreferredAuthentications publickey" -o "StrictHostKeyChecking no" $1/* root@$2:/ > /dev/null 2>&1; then
@@ -355,13 +358,15 @@ upload_cfg () {
 	# Switching back to RO mode
 	# If not: The reboot will wrote an /entropy file, and during next reboot
 	# dd will panic system when trying to read it
-	if ! rcmd $2 "mount -ur /" > /dev/null 2>&1; then
-		return 1
-	fi
-	if rcmd $2 "config save" > /dev/null 2>&1; then
-		return 0
-	else
-		return 1
+	if [ -r /etc/nanobsd.conf ];then
+		if ! rcmd $2 "mount -ur /" > /dev/null 2>&1; then
+			return 1
+		fi
+		if rcmd $2 "config save" > /dev/null 2>&1; then
+			return 0
+		else
+			return 1
+		fi
 	fi
 }
 
