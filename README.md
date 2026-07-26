@@ -109,6 +109,8 @@ Specific benches:
  - Intel i350 tuning:
     - [Impact of Intel i350 number of queues(1 queue per core) on forwarding performance with 4 cores Atom C2558](Atom_C2558_4Cores/Intel_i350/hw.igb.num_queues/results/fbsd11.1/README.md)
     - [Impact of AIM on Intel i350](Atom_C2558_4Cores/Intel_i350/hw.igb.enable_aim/results/fbsd11.1/README.md)
+ - Intel i210 tuning:
+    - [Impact of iflib tx_abdicate on forwarding performance with 4 cores AMD GX-412TC (FreeBSD 16-CURRENT n311215)](AMD_GX-412TC_4Cores/Intel_i210AT/txabdicate/results/fbsd16-n311215/README.md)
 
  - Packet filter (pf) tuning:
     - [Impact of states_hashsize table on pf performance on FreeBSD 12-head r332390 on Atom 8 core](Atom_C2758_8Cores/Chelsio_T540-CR/pf-states_hashsize/results/fbsd12-head.r332390/README.md)
