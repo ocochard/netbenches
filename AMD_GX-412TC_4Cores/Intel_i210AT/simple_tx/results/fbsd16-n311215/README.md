@@ -6,7 +6,7 @@ NIC?
 
 ## Hardware
 
-- PC Engines APU2 (DUT: `apu2-2`)
+- PC Engines APU2
 - CPU: AMD GX-412TC SOC, 4 cores @ ~1 GHz (K8-class)
 - NIC: 3x Intel i210AT (igb), traffic on igb1 (in) / igb2 (out)
 
@@ -16,7 +16,7 @@ NIC?
 - fastforwarding enabled (ICMP redirect disabled)
 - Ethernet flow control disabled on all igb ports
 
-## What `simple_tx` does
+## What `iflib.simple_tx` does
 
 `dev.igb.<n>.iflib.simple_tx` selects iflib's "simple tx ring" transmit
 path. Unlike `tx_abdicate`, this knob is a **read-only tunable**
@@ -52,11 +52,11 @@ throughput drops ~57% (IPv4) / ~59% (IPv6), a factor of ~2.3x slower.**
 The effect is highly significant and well outside the run-to-run noise
 band. On this APU2 / i210 the simple tx ring should stay disabled.
 
-### ministat, IPv4 (off vs on)
+### ministat, IPv4
 
 ```
-x simple_tx_off_default.inet4.pps
-+ simple_tx_on.inet4.pps
+x simple_tx=0 (default), inet4 packets-per-second forwarded
++ simple_tx=1, inet4 packets-per-second forwarded
 +--------------------------------------------------------------------------+
 |+                                                                         |
 |++                                                                      x |
@@ -72,11 +72,11 @@ Difference at 95.0% confidence
 	(Student's t, pooled s = 11212.9)
 ```
 
-### ministat, IPv6 (off vs on)
+### ministat, IPv6
 
 ```
-x simple_tx_off_default.inet6.pps
-+ simple_tx_on.inet6.pps
+x simple_tx=0 (default), inet6 packets-per-second forwarded
++ simple_tx=1, inet6 packets-per-second forwarded
 +--------------------------------------------------------------------------+
 | +                                                                      x |
 | +                                                                      x |
@@ -104,6 +104,10 @@ Profiles are stored under [`PMC/`](PMC/): the folded callgraphs
 - OFF: [`PMC/forwarding.simple_tx_off.svg`](PMC/forwarding.simple_tx_off.svg)
 - ON:  [`PMC/forwarding.simple_tx_on.svg`](PMC/forwarding.simple_tx_on.svg)
 
+nstat output had to reduce bitrate to get userland data:
+- [OFF (850Kpps)](bench.simple_tx_off_default.rate850k.during)
+- [ON (380Kpps)](bench.simple_tx_on.rate380k.during)
+
 ### Capture note
 
 The OFF profile was taken at the bench's 850 Kpps offered rate. At that
@@ -115,7 +119,7 @@ for the diagnosis is the *proportion* of cycles each function consumes,
 which is rate-independent here. Both captures were verified busy (OFF 10%
 idle, ON 3.5% idle) and `netstat -ndi` before/after each run showed
 igb1 Ipkts == igb2 Opkts with zero Ierrs/Idrop/Oerrs (no DUT loss); the
-snapshots are in `PMC/netstat.*`.
+output of those commands are in `PMC/netstat.*`.
 
 ### Finding
 

@@ -84,10 +84,85 @@ PMC=false
 STATS=false
 # Assume "yes" to the confirmation prompt (non-interactive / background runs)
 ASSUME_YES=false
-# Custom command, to be used during the bench
-# Like a tcpdump to measure impact of tcpdump running
-# env CUSTOM_CMD="tcpdump -pni igb1 -c 10 -w /tmp/dump.pcap host 8.8.8.8 " ../scripts/bench-lab.sh
-: ${CUSTOM_CMD:=""}
+# Lifecycle command hooks, all run on the DUT (${DUT_ADMIN}) only.
+# BEFORE_CMD : once, synchronously, DUT idle BEFORE traffic. -> <prefix>.before
+# DURING_CMD : once, concurrent with the blast. MUST self-terminate (it is reaped only
+#              after the blast; a command that never exits hangs the run) and force line
+#              buffering, since its stdout is a DUT file -- a block-buffered tool flushes
+#              nothing before it is reaped (use stdbuf -oL). A repeating sampler's trailing
+#              interval is not a count, so it never exits on its own: the trigger below
+#              runs DURING_CMD backgrounded and kills it after DURING_SAMPLE s.
+#              -> <prefix>.during
+#
+#              *** HARD LIMIT -- read before expecting a live per-second curve. ***
+#              A live in-blast sampler only produces per-second data when the DUT is NOT
+#              CPU-saturated by the blast. On a small DUT (e.g. the 4-core APU2) a
+#              line-rate blast pins every core in the kernel/interrupt forwarding path,
+#              and a USERLAND sampler process gets ZERO scheduler slices for the entire
+#              blast: it freezes at the first sample and only resumes when traffic stops,
+#              so .during shows one row, then a multi-second time gap, then one row whose
+#              delta equals the WHOLE blast (measured: 53 s frozen, one 80 M lump, at
+#              1.49 Mpps). This is physics, not a bug -- no counter, tool, buffering, or
+#              timing choice changes it (all were verified working). Below the DUT's
+#              saturation point the same sampler works perfectly: at a rate-limited
+#              200 kpps blast it emitted clean 1 s rows of a steady ~200 k pps delta.
+#              So: for saturating benches, use BEFORE_CMD/AFTER_CMD to read a counter when
+#              the DUT is idle and take the delta (exact total; avg pps = delta/duration).
+#              Reserve DURING_CMD for sub-saturation benches, or read its stall as the
+#              signal that the DUT is maxed. Note netstat/nstat's ifnet Ipkts counts at
+#              the ifnet layer (post-driver, so it excludes NIC-ring ingress drops); the
+#              per-NIC hardware MAC counter (e.g. dev.igb.<n>.mac_stats.good_pkts_recvd)
+#              counts every frame the NIC received = the offered load.
+#
+#              WHEN it runs: launched detached (nohup) on the DUT BEFORE the sender,
+#              because once the blast is hot the DUT sshd starves and a NEW ssh blocks on
+#              the banner exchange up to ConnectTimeout (=120s) -- a mid-blast launch lands
+#              the sample at end-of-blast. But the launch->blast gap is large and VARIABLE
+#              (sender ssh + pkt-gen netmap attach: measured 2s one run, 88s another), so a
+#              fixed "sleep DURING_DELAY" from launch cannot reliably hit the blast.
+#              Instead the detached chain SELF-TRIGGERS on traffic: it reads DURING_IF's
+#              input-packet counter, polls until it climbs (blast actually arrived), waits
+#              DURING_DELAY s of extra settle to clear the ramp, THEN runs DURING_CMD. This
+#              fires relative to the REAL blast start regardless of the startup gap. Set
+#              DURING_IF to the DUT interface carrying ingress (the sender-side NIC). If
+#              DURING_IF is empty the chain falls back to a blind "sleep DURING_DELAY"
+#              (unreliable; timer only).
+# AFTER_CMD  : once, synchronously, DUT idle AFTER the sender exits. -> <prefix>.after
+# Example: before/after counter delta (works at any rate) plus a live sampler that only
+# yields per-second data below saturation (see HARD LIMIT above):
+# env BEFORE_CMD="netstat -ndi" AFTER_CMD="netstat -ndi" \
+#     DURING_CMD="stdbuf -oL nstat -I igb1 1" DURING_IF="igb1" ../scripts/bench-lab.sh ...
+: ${BEFORE_CMD:=""}
+: ${DURING_CMD:=""}
+: ${AFTER_CMD:=""}
+# DUT interface whose ingress the DURING trigger watches to detect blast start. Empty
+# => blind-timer fallback (sleep DURING_DELAY from launch; unreliable, see above).
+: ${DURING_IF:=""}
+# After traffic is detected on DURING_IF (or, in fallback, after launch), wait this many
+# seconds of settle before sampling so the sample clears the netmap link ramp-up.
+: ${DURING_DELAY:="5"}
+# How many seconds the sampler itself runs before the chain kills it (a repeating sampler
+# never self-terminates). Also bounds the traffic-detect poll: if no traffic is seen
+# within DURING_MAXWAIT s the chain samples anyway, so a mis-set DURING_IF can't hang it.
+: ${DURING_SAMPLE:="10"}
+: ${DURING_MAXWAIT:="120"}
+# The self-triggering chain, run detached on the DUT (see DURING_CMD above). Reads the
+# Link# row Ipkts for DURING_IF via netstat -I -b (a single instant snapshot -- safe even
+# under load, unlike repeating netstat -w), polls until it rises, settles, samples, and
+# drops the .done marker the collect step waits on. { CMD ; } groups so the > redirect
+# captures every line of a multi-command DURING_CMD, not just the last.
+if [ -n "${DURING_IF}" ]; then
+	DURING_TRIGGER="ipkts() { netstat -I ${DURING_IF} -b | awk \"/<Link/{print \\\$5; exit}\"; }; \
+base=\$(ipkts); w=0; \
+while [ \$w -lt ${DURING_MAXWAIT} ]; do cur=\$(ipkts); [ \"\$cur\" -gt \$((base + 10000)) ] && break; w=\$((w+1)); sleep 1; done; \
+sleep ${DURING_DELAY}; \
+{ ${DURING_CMD} ; } > /data/bench_during.out 2>&1 & CMDPID=\$!; sleep ${DURING_SAMPLE}; kill \$CMDPID 2>/dev/null; \
+touch /data/bench_during.done"
+else
+	DURING_TRIGGER="sleep ${DURING_DELAY}; \
+{ ${DURING_CMD} ; } > /data/bench_during.out 2>&1 & CMDPID=\$!; sleep ${DURING_SAMPLE}; kill \$CMDPID 2>/dev/null; \
+touch /data/bench_during.done"
+fi
 
 # Case when starting 2 pkt-gen on the same generator, using 2 different NIC on the generator
 # (like with DDoS bencch, one pkt-gen generating legitimate trafic, and the other
@@ -233,6 +308,9 @@ bench_iter () {
 		(echo "IMAGE=\"${IMAGE_PREFIX}\""
 		echo "CFG=\"${CFG_PREFIX}\""
 		echo "PKTGEN=\"${PKTGEN_PREFIX}\""
+		[ -n "${BEFORE_CMD}" ] && echo "BEFORE_CMD=\"${BEFORE_CMD}\""
+		[ -n "${DURING_CMD}" ] && echo "DURING_CMD=\"${DURING_CMD}\" (self-triggered on ${DURING_IF:-traffic}, +${DURING_DELAY}s settle, ${DURING_SAMPLE}s sample)"
+		[ -n "${AFTER_CMD}" ] && echo "AFTER_CMD=\"${AFTER_CMD}\""
 		printf 'UNAME="%s"' "$(rcmd "${DUT_ADMIN}" "uname -a")"
 		) > "$1.info"
 	fi
@@ -274,17 +352,28 @@ bench () {
 		JOB_STATS=$!
 	fi
 
-	if [ -n "${CUSTOM_CMD}" ]; then
-		rcmd "${DUT_ADMIN}" "${CUSTOM_CMD}" &
-		JOB_CUSTOM_CMD=$!
+	# DURING_CMD: prepare its output store now, while the DUT is idle and sshd is
+	# responsive -- mount /data (persistent; NOT /tmp, a 32M tmpfs a long sampler
+	# fills) and clear any stale files. The sampler itself is launched later, right
+	# after the sender starts (see below), so its DURING_DELAY settle is measured
+	# from the real blast-start rather than from here -- which sits an entire
+	# BEFORE_CMD round-trip + the receiver's sleep 5 ahead of the sender, so a
+	# settle timed from here lands the sample in the netmap ramp or after the blast.
+	if [ -n "${DURING_CMD}" ]; then
+		rcmd "${DUT_ADMIN}" "mount | grep -q '/data' || mount /data" || die "Can't mount /data"
+		rcmd "${DUT_ADMIN}" "rm -f /data/bench_during.out /data/bench_during.done" || true
+	fi
+
+	# BEFORE_CMD: DUT idle, sshd responsive. Synchronous, capture to $1.before.
+	# rcmd returns nonzero on ssh failure; guard so set -e can't abort the run.
+	if [ -n "${BEFORE_CMD}" ]; then
+		echo "BEFORE_CMD on ${DUT_ADMIN}: ${BEFORE_CMD}" > "$1.before"
+		rcmd "${DUT_ADMIN}" "${BEFORE_CMD}" >> "$1.before" 2>&1 || echo "DEBUG: BEFORE_CMD failed on ${DUT_ADMIN}" >> "$1.before"
 	fi
 
 	# start receiving tool on RECEIVER
 	if [ -n "${RECEIVER_START_CMD}" ]; then
 		echo "CMD on ${RECEIVER_ADMIN}: ${RECEIVER_START_CMD}" > "$1.receiver"
-		if [ -n "${CUSTOM_CMD}" ]; then
-			echo "Custom command before/during the bench: ${CUSTOM_CMD}" >> "$1.receiver"
-		fi
 		rcmd "${RECEIVER_ADMIN}" "${RECEIVER_START_CMD}" >> "$1.receiver" 2>&1 &
 		#JOB_RECEIVER=$!
 		# Let the receiver attach its netmap ring and its link finish
@@ -292,6 +381,17 @@ bench () {
 		# netmap mode bounces the link, and on fast hosts the sender would
 		# otherwise blast the whole run into a down link => 0 pps received.
 		sleep 5
+	fi
+
+	# DURING_CMD: launch the detached, self-triggering sampler HERE, BEFORE the sender
+	# -- this is the one moment the DUT sshd is reachable (once the blast is hot a NEW
+	# ssh blocks on the banner exchange up to ConnectTimeout=120s). The launch ssh
+	# returns in <1s; the DURING_TRIGGER chain (built in the defaults block) then runs
+	# entirely on the DUT, watching DURING_IF for traffic and sampling once the blast
+	# actually arrives -- so the large, variable launch->blast startup gap does not
+	# matter. Nothing is held open across the starvation window.
+	if [ -n "${DURING_CMD}" ]; then
+		rcmd "${DUT_ADMIN}" "nohup sh -c '${DURING_TRIGGER}' >/dev/null 2>&1 &" || true
 	fi
 
 	# Alternate method with log file stored on RECEIVER (if tool is verbose)
@@ -324,6 +424,32 @@ bench () {
 
 	wait ${JOB_SENDER}
 
+	# Pull the DURING output. The command was launched detached at blast-start, so
+	# there is no local PID to wait on; instead wait for its .done marker on the DUT
+	# (sshd has recovered now the blast is over). Bounded poll: the command self-times,
+	# so it is normally already done -- the wait only covers a command that runs a bit
+	# past the blast. Waiting for .done guarantees the sampler has closed the file and
+	# released /data before we scp and umount (else: short read + "umount: Device busy").
+	if [ -n "${DURING_CMD}" ]; then
+		DURING_WAIT=0
+		while ! rcmd "${DUT_ADMIN}" "test -f /data/bench_during.done" 2>/dev/null; do
+			[ ${DURING_WAIT} -ge 30 ] && break
+			DURING_WAIT=$((DURING_WAIT + 2))
+			sleep 2
+		done
+		echo "DURING_CMD on ${DUT_ADMIN}: ${DURING_CMD}" > "$1.during"
+		scp "${DUT_ADMIN}:/data/bench_during.out" "$1.during.tmp" > /dev/null 2>&1 \
+			&& cat "$1.during.tmp" >> "$1.during" 2>/dev/null || echo "DEBUG: DURING_CMD produced no output on ${DUT_ADMIN}" >> "$1.during"
+		[ -f "$1.during.tmp" ] && rm "$1.during.tmp"
+		rcmd "${DUT_ADMIN}" "rm -f /data/bench_during.out /data/bench_during.done" || true
+		# umount only when nobody else needs /data; PMC/STATS umount at their own
+		# collect step (below), so leave it mounted for them to avoid the pre-existing
+		# double-umount race (XXX at the STATS collect).
+		if ! ${PMC} && ! ${STATS}; then
+			rcmd "${DUT_ADMIN}" "umount /data" || true
+		fi
+	fi
+
 	if [ -n "${RECEIVER_STOP_CMD}" ]; then
 		rcmd "${RECEIVER_ADMIN}" "${RECEIVER_STOP_CMD}" || echo "DEBUG: Can't kill pkt-gen on ${RECEIVER_ADMIN}"
 	fi
@@ -336,6 +462,12 @@ bench () {
 	fi
 #scp ${RECEIVER_ADMIN}:/tmp/bench.log.receiver $1.receiver
 	#kill ${JOB_RECEIVER}
+
+	# AFTER_CMD: DUT idle again, sshd responsive. Synchronous, capture to $1.after.
+	if [ -n "${AFTER_CMD}" ]; then
+		echo "AFTER_CMD on ${DUT_ADMIN}: ${AFTER_CMD}" > "$1.after"
+		rcmd "${DUT_ADMIN}" "${AFTER_CMD}" >> "$1.after" 2>&1 || echo "DEBUG: AFTER_CMD failed on ${DUT_ADMIN}" >> "$1.after"
+	fi
 
 	if ($PMC); then
 		wait ${JOB_PMC}
@@ -476,14 +608,24 @@ usage () {
  -f bench-lab-config:        Text file with lab bench parameters (mandatory)
  -i nanobsd-images-dir:      Directory where are stored nanobsd update images (optional)
  -c configuration-sets-dir:  Directory where are stored configuration sets (optional)
- -C custom command:          Custom command to be run on the DUT before/during bench (optional)
  -p pkgen-cfg-dir:           Directory where specific pkt-gen parameters are (optional)
  -n iteration:               Number of iteration to do for each bench (3 minimums, 5 by default)
  -d benchs-results-dir:      Directory Where to store benches results (/tmp/benchs by default)
  -r e@mail:                  Email to send report too at the end (default root@localhost)
  -P :                        PMC collection mode
  -S :                        STATS mode
- -y :                        Assume yes, skip the confirmation prompt (for background/non-interactive runs)"
+ -y :                        Assume yes, skip the confirmation prompt (for background/non-interactive runs)
+
+ Env hooks (all run on the DUT only):
+   BEFORE_CMD   once before traffic, DUT idle          (=> <prefix>.before)
+   DURING_CMD   detached, self-triggered on traffic    (=> <prefix>.during)
+                (live per-sec data only below the DUT's CPU-saturation point;
+                 at line rate the sampler starves -- use BEFORE/AFTER delta)
+   AFTER_CMD    once after sender exits, DUT idle       (=> <prefix>.after)
+   DURING_IF    DUT ingress iface the trigger watches (enables self-trigger)
+   DURING_DELAY settle seconds after traffic detected  (default 5)
+   DURING_SAMPLE seconds the sampler runs before kill  (default 10)
+   DURING_MAXWAIT max seconds to wait for traffic       (default 120)"
 		exit 1
 	fi
 }
@@ -573,7 +715,9 @@ printf ' - Multiples pkt-gen configuration to test: '
 [ -z "${PKTGEN_DIR}" ] && echo "no" || echo "yes"
 echo " - Number of iteration for each set: ${BENCH_ITER}"
 echo " - Results dir: ${RESULTS_DIR}"
-[ -n "${CUSTOM_CMD}" ] && echo " - Custom command: ${CUSTOM_CMD}"
+[ -n "${BEFORE_CMD}" ] && echo " - BEFORE_CMD (DUT, pre-traffic): ${BEFORE_CMD}"
+[ -n "${DURING_CMD}" ] && echo " - DURING_CMD (DUT, self-triggered on ${DURING_IF:-traffic}): ${DURING_CMD}"
+[ -n "${AFTER_CMD}" ] && echo " - AFTER_CMD (DUT, post-traffic): ${AFTER_CMD}"
 
 (${PMC}) && echo " - PMC mode: Will collect PMC data"
 echo ""
