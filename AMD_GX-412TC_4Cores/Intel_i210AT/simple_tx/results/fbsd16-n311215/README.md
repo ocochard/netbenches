@@ -91,3 +91,50 @@ Difference at 95.0% confidence
 	-58.9584% +/- 0.796958%
 	(Student's t, pooled s = 7552.5)
 ```
+
+## Why: CPU profiling (hwpmc / flamegraph)
+
+To explain the regression we profiled the DUT with `hwpmc` while it was
+forwarding IPv4 minimum-size frames (event `BU_CPU_CLK_UNHALTED`, the
+AMD GX-412TC cycle counter), and rendered the callgraphs as flamegraphs.
+
+Profiles are stored under [`PMC/`](PMC/): the folded callgraphs
+(`PMC/{off,on}/…​.pmc.graph`) and the two flamegraph SVGs.
+
+- OFF: [`PMC/forwarding.simple_tx_off.svg`](PMC/forwarding.simple_tx_off.svg)
+- ON:  [`PMC/forwarding.simple_tx_on.svg`](PMC/forwarding.simple_tx_on.svg)
+
+### Capture note
+
+The OFF profile was taken at the bench's 850 Kpps offered rate. At that
+rate with `simple_tx=1` the DUT CPU is 100% pinned and `sshd` starves, so
+the ON profile was instead captured at **300 Kpps offered** (just under
+the ON forwarding capacity) with `pmcstat` driven manually mid-blast. The
+two captures therefore have different absolute sample counts; what matters
+for the diagnosis is the *proportion* of cycles each function consumes,
+which is rate-independent here. Both captures were verified busy (OFF 10%
+idle, ON 3.5% idle) and `netstat -ndi` before/after each run showed
+igb1 Ipkts == igb2 Opkts with zero Ierrs/Idrop/Oerrs (no DUT loss); the
+snapshots are in `PMC/netstat.*`.
+
+### Finding
+
+The two profiles differ in one decisive place — lock contention in the
+transmit path:
+
+| path frame            | OFF (default)      | ON (`simple_tx=1`)     |
+|-----------------------|--------------------|------------------------|
+| TX entry              | `iflib_encap` (batched mp_ring) | `iflib_simple_transmit` |
+| cycles in `lock_delay`| ~0% (29 / 2.22M samples) | **46.8% (42,295 / 90,349 samples)** |
+
+With `simple_tx=1`, 97% of that `lock_delay` time is reached directly
+through `iflib_simple_transmit` on the RX-taskqueue forwarding path
+(`iflib_rxeof → … → ip_tryforward → ether_output → iflib_simple_transmit
+→ lock_delay`). The simple TX ring takes the txq mutex per transmit; on
+this 4-core APU2 the RX taskqueue and the TX side then spin contending on
+that lock, burning ~47% of the CPU in `lock_delay` instead of forwarding.
+
+The default path (`iflib_encap` via the lock-free `mp_ring`) shows
+essentially no `lock_delay` and spends its cycles in actual TX/RX work.
+This lock contention is the mechanism behind the ~57% throughput drop
+documented above.
