@@ -31,7 +31,7 @@ pf is the one firewall here where enabling state *increases* throughput
 (305k stateful vs 279k stateless on inet4). This is not a measurement
 artifact: both sets have a spread under 1.2%. It is also not a standing
 property of pf on this platform. The directly comparable predecessor
-`fbsd16-n311215` (same GENERIC no-RSS kernel, same config-sets) is *not*
+`fbsd16-n311215` (same GENERIC, same config-sets) is *not*
 inverted: 267505 stateful vs 275468 stateless. Across the archive the
 inversion appears in some runs (`fbsd16-n311066.option-RSS.net.isr`,
 `fbsd12-stable.r354440.BSDRP.1.96`) and not others (`fbsd16-n311215`,
@@ -43,8 +43,8 @@ The inversion in this run is that gain crossing over stateless, not a fixed
 pf characteristic. pf-stateful is the largest firewall-side improvement in
 the version delta below.
 
-Version delta against `fbsd16-n311215` (same GENERIC no-RSS kernel,
-net.isr defaults, 2000 flows, Gigabit line-rate offered load):
+Version delta against `fbsd16-n311215` (same GENERIC, 2000 flows, Gigabit
+line-rate offered load):
 
 | configuration  | n311215 inet4 | n313366 inet4 | delta  | n311215 inet6 | n313366 inet6 | delta  |
 |----------------|---------------|---------------|--------|---------------|---------------|--------|
@@ -137,7 +137,7 @@ Note on comparing with `fbsd16-n311066.option-RSS.net.isr`: that result set
 used a kernel built with `option RSS` plus net.isr.maxthreads=-1, so a
 difference against it mixes two variables (kernel option and netisr tuning)
 and is not a clean n311066-to-n313366 version delta. This run uses the GENERIC
-no-RSS kernel, verified with `sysctl -n kern.conftxt | grep -i 'options.*RSS'`
+, verified with `sysctl -n kern.conftxt | grep -i 'options.*RSS'`
 returning no match; with no `option RSS` the netisr hybrid-dispatch collapse
 does not apply and the default maxthreads=1 is safe (netstat -Q shows QDrops
 at 0).

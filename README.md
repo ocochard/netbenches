@@ -115,6 +115,8 @@ Specific benches:
     - [Impact of iflib simple_tx on forwarding performance with 4 cores AMD GX-412TC (FreeBSD 16-CURRENT n311215)](AMD_GX-412TC_4Cores/Intel_i210AT/simple_tx/results/fbsd16-n311215/README.md)
     - [Impact of D58513 (e1000 UDP RSS hash type) on UDP forwarding, with simple_tx, 4 cores AMD GX-412TC (FreeBSD 16-CURRENT n311215)](AMD_GX-412TC_4Cores/Intel_i210AT/simple_tx/results/fbsd16-n311215.D58513/README.md)
     - [Impact of D58513 (e1000 UDP RSS hash type) on UDP forwarding, with tx_abdicate, 4 cores AMD GX-412TC (FreeBSD 16-CURRENT n311215)](AMD_GX-412TC_4Cores/Intel_i210AT/txabdicate/results/fbsd16-n311215.D58513/README.md)
+    - [Impact of iflib simple_tx on forwarding performance with 4 cores AMD GX-412TC (FreeBSD 16-CURRENT n312956: +78% once D58513 landed)](AMD_GX-412TC_4Cores/Intel_i210AT/simple_tx/results/fbsd16-n312956/README.md)
+    - [Impact of D58901 (iflib bounded buf_ring for simple_tx) on UDP forwarding, 4 cores AMD GX-412TC (FreeBSD 16-CURRENT n312956: -11.7% regression)](AMD_GX-412TC_4Cores/Intel_i210AT/simple_tx/results/fbsd16-n312956.D58901/README.md)
 
  - Packet filter (pf) tuning:
     - [Impact of states_hashsize table on pf performance on FreeBSD 12-head r332390 on Atom 8 core](Atom_C2758_8Cores/Chelsio_T540-CR/pf-states_hashsize/results/fbsd12-head.r332390/README.md)
