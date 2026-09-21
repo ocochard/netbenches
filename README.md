@@ -37,6 +37,7 @@ Specific benches:
     - 4 cores Atom C2558
       - [Intel i350](Atom_C2558_4Cores/Intel_i350/firewalls/results/fbsd12-stable.r354440.BSDRP.1.96/README.md)
     - 4 cores AMD GX-412TC
+      - [Intel i210 (FreeBSD 16-CURRENT n313366 / BSDRP 2.3)](AMD_GX-412TC_4Cores/Intel_i210AT/firewalls/results/fbsd16-n313366.BSDRP.2.3/README.md)
       - [Intel i210 (FreeBSD 16-CURRENT n311215, no option RSS - direct dispatch)](AMD_GX-412TC_4Cores/Intel_i210AT/firewalls/results/fbsd16-n311215/README.md)
       - [Intel i210 (FreeBSD 16-CURRENT n311066, option RSS + net.isr tuning)](AMD_GX-412TC_4Cores/Intel_i210AT/firewalls/results/fbsd16-n311066.option-RSS.net.isr/README.md)
       - [Intel i210 (FreeBSD 13-c255632)](AMD_GX-412TC_4Cores/Intel_i210AT/firewalls/results/fbsd13-c255632/README.md)
