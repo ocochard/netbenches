@@ -33,7 +33,9 @@ Specific benches:
       - [10G Chelsio T540](Xeon_E5-2650_8Cores/Chelsio_T540-CR/firewalls/results/fbsd14-c276570-BSDRP1.991/README.md)
     - 8 cores Atom C2758
       - [10G Chelsio T540](Atom_C2758_8Cores/Chelsio_T540-CR/firewalls/results/fbsd14-c276570-BSDRP1.991/README.md)
-      - [10G Intel 82599](Atom_C2758_8Cores/Intel_82599/firewalls/results/fbsd14-c276570-BSDRP1.991/README.md)
+      - [10G Intel 82599 (FreeBSD 16-CURRENT n313366 / BSDRP 2.3)](Atom_C2758_8Cores/Intel_82599/firewalls/results/fbsd16-n313366.BSDRP.2.3/README.md)
+      - [10G Intel 82599 (FreeBSD 15-n302145)](Atom_C2758_8Cores/Intel_82599/firewalls/results/fbsd15-n302145/README.md)
+      - [10G Intel 82599 (FreeBSD 14-c276570)](Atom_C2758_8Cores/Intel_82599/firewalls/results/fbsd14-c276570-BSDRP1.991/README.md)
     - 4 cores Atom C2558
       - [Intel i350](Atom_C2558_4Cores/Intel_i350/firewalls/results/fbsd12-stable.r354440.BSDRP.1.96/README.md)
     - 4 cores AMD GX-412TC
@@ -107,6 +109,9 @@ Specific benches:
     - [Impact of Intel 82599EB Rx|Tx process limit on forwarding performance with 4 cores Xeon L5630](Xeon_L5630_4Cores/Intel_82599EB/Xx_process_limit/results/fbsd10.2/README.md)
     - [Impact of Intel 82599EB descriptors per queue on forwarding performance with 4 cores Xeon L5630](Xeon_L5630_4Cores/Intel_82599EB/ix.Xxd/results/fbsd10.2/README.md)
     - [Impact of AIM on Intel 82599EB](Xeon_L5630_4Cores/Intel_82599EB/Intel.aim/results/fbsd11-stable.r312663/README.md)
+ - Intel 82599 tuning:
+    - [Impact of iflib tx_abdicate on forwarding performance with 8 cores Atom C2758 (FreeBSD 16-CURRENT n313366 / BSDRP 2.3: +21.3%)](Atom_C2758_8Cores/Intel_82599/iflib.txabdicate/results/fbsd16-n313366.BSDRP.2.3/README.md)
+    - [Impact of iflib simple_tx on forwarding performance with 8 cores Atom C2758 (FreeBSD 16-CURRENT n313366 / BSDRP 2.3: +13.2%, still 7.1% below tx_abdicate)](Atom_C2758_8Cores/Intel_82599/iflib.simple_tx/results/fbsd16-n313366.BSDRP.2.3/README.md)
  - Intel i350 tuning:
     - [Impact of Intel i350 number of queues(1 queue per core) on forwarding performance with 4 cores Atom C2558](Atom_C2558_4Cores/Intel_i350/hw.igb.num_queues/results/fbsd11.1/README.md)
     - [Impact of AIM on Intel i350](Atom_C2558_4Cores/Intel_i350/hw.igb.enable_aim/results/fbsd11.1/README.md)

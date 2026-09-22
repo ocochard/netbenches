@@ -1,0 +1,1472 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" width="1200" height="342" onload="init(evt)" viewBox="0 0 1200 342" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<!-- Flame graph stack visualization. See https://github.com/brendangregg/FlameGraph for latest version, and http://www.brendangregg.com/flamegraphs.html for examples. -->
+<!-- NOTES:  -->
+<defs>
+	<linearGradient id="background" y1="0" y2="1" x1="0" x2="0" >
+		<stop stop-color="#eeeeee" offset="5%" />
+		<stop stop-color="#eeeeb0" offset="95%" />
+	</linearGradient>
+</defs>
+<style type="text/css">
+	text { font-family:Verdana; font-size:12px; fill:rgb(0,0,0); }
+	#search, #ignorecase { opacity:0.1; cursor:pointer; }
+	#search:hover, #search.show, #ignorecase:hover, #ignorecase.show { opacity:1; }
+	#subtitle { text-anchor:middle; font-color:rgb(160,160,160); }
+	#title { text-anchor:middle; font-size:17px}
+	#unzoom { cursor:pointer; }
+	#frames > *:hover { stroke:black; stroke-width:0.5; cursor:pointer; }
+	.hide { display:none; }
+	.parent { opacity:0.5; }
+</style>
+<script type="text/ecmascript">
+<![CDATA[
+	"use strict";
+	var details, searchbtn, unzoombtn, matchedtxt, svg, searching, currentSearchTerm, ignorecase, ignorecaseBtn;
+	function init(evt) {
+		details = document.getElementById("details").firstChild;
+		searchbtn = document.getElementById("search");
+		ignorecaseBtn = document.getElementById("ignorecase");
+		unzoombtn = document.getElementById("unzoom");
+		matchedtxt = document.getElementById("matched");
+		svg = document.getElementsByTagName("svg")[0];
+		searching = 0;
+		currentSearchTerm = null;
+
+		// use GET parameters to restore a flamegraphs state.
+		var params = get_params();
+		if (params.x && params.y)
+			zoom(find_group(document.querySelector('[x="' + params.x + '"][y="' + params.y + '"]')));
+                if (params.s) search(params.s);
+	}
+
+	// event listeners
+	window.addEventListener("click", function(e) {
+		var target = find_group(e.target);
+		if (target) {
+			if (target.nodeName == "a") {
+				if (e.ctrlKey === false) return;
+				e.preventDefault();
+			}
+			if (target.classList.contains("parent")) unzoom();
+			zoom(target);
+			if (!document.querySelector('.parent')) {
+				clearzoom();
+				return;
+			}
+
+			// set parameters for zoom state
+			var el = target.querySelector("rect");
+			if (el && el.attributes && el.attributes.y && el.attributes._orig_x) {
+				var params = get_params()
+				params.x = el.attributes._orig_x.value;
+				params.y = el.attributes.y.value;
+				history.replaceState(null, null, parse_params(params));
+			}
+		}
+		else if (e.target.id == "unzoom") clearzoom();
+		else if (e.target.id == "search") search_prompt();
+		else if (e.target.id == "ignorecase") toggle_ignorecase();
+	}, false)
+
+	// mouse-over for info
+	// show
+	window.addEventListener("mouseover", function(e) {
+		var target = find_group(e.target);
+		if (target) details.nodeValue = "Function: " + g_to_text(target);
+	}, false)
+
+	// clear
+	window.addEventListener("mouseout", function(e) {
+		var target = find_group(e.target);
+		if (target) details.nodeValue = ' ';
+	}, false)
+
+	// ctrl-F for search
+	// ctrl-I to toggle case-sensitive search
+	window.addEventListener("keydown",function (e) {
+		if (e.keyCode === 114 || (e.ctrlKey && e.keyCode === 70)) {
+			e.preventDefault();
+			search_prompt();
+		}
+		else if (e.ctrlKey && e.keyCode === 73) {
+			e.preventDefault();
+			toggle_ignorecase();
+		}
+	}, false)
+
+	// functions
+	function get_params() {
+		var params = {};
+		var paramsarr = window.location.search.substr(1).split('&');
+		for (var i = 0; i < paramsarr.length; ++i) {
+			var tmp = paramsarr[i].split("=");
+			if (!tmp[0] || !tmp[1]) continue;
+			params[tmp[0]]  = decodeURIComponent(tmp[1]);
+		}
+		return params;
+	}
+	function parse_params(params) {
+		var uri = "?";
+		for (var key in params) {
+			uri += key + '=' + encodeURIComponent(params[key]) + '&';
+		}
+		if (uri.slice(-1) == "&")
+			uri = uri.substring(0, uri.length - 1);
+		if (uri == '?')
+			uri = window.location.href.split('?')[0];
+		return uri;
+	}
+	function find_child(node, selector) {
+		var children = node.querySelectorAll(selector);
+		if (children.length) return children[0];
+	}
+	function find_group(node) {
+		var parent = node.parentElement;
+		if (!parent) return;
+		if (parent.id == "frames") return node;
+		return find_group(parent);
+	}
+	function orig_save(e, attr, val) {
+		if (e.attributes["_orig_" + attr] != undefined) return;
+		if (e.attributes[attr] == undefined) return;
+		if (val == undefined) val = e.attributes[attr].value;
+		e.setAttribute("_orig_" + attr, val);
+	}
+	function orig_load(e, attr) {
+		if (e.attributes["_orig_"+attr] == undefined) return;
+		e.attributes[attr].value = e.attributes["_orig_" + attr].value;
+		e.removeAttribute("_orig_"+attr);
+	}
+	function g_to_text(e) {
+		var text = find_child(e, "title").firstChild.nodeValue;
+		return (text)
+	}
+	function g_to_func(e) {
+		var func = g_to_text(e);
+		// if there's any manipulation we want to do to the function
+		// name before it's searched, do it here before returning.
+		return (func);
+	}
+	function update_text(e) {
+		var r = find_child(e, "rect");
+		var t = find_child(e, "text");
+		var w = parseFloat(r.attributes.width.value) -3;
+		var txt = find_child(e, "title").textContent.replace(/\([^(]*\)$/,"");
+		t.attributes.x.value = parseFloat(r.attributes.x.value) + 3;
+
+		// Smaller than this size won't fit anything
+		if (w < 2 * 12 * 0.59) {
+			t.textContent = "";
+			return;
+		}
+
+		t.textContent = txt;
+		// Fit in full text width
+		if (/^ *$/.test(txt) || t.getSubStringLength(0, txt.length) < w)
+			return;
+
+		for (var x = txt.length - 2; x > 0; x--) {
+			if (t.getSubStringLength(0, x + 2) <= w) {
+				t.textContent = txt.substring(0, x) + "..";
+				return;
+			}
+		}
+		t.textContent = "";
+	}
+
+	// zoom
+	function zoom_reset(e) {
+		if (e.attributes != undefined) {
+			orig_load(e, "x");
+			orig_load(e, "width");
+		}
+		if (e.childNodes == undefined) return;
+		for (var i = 0, c = e.childNodes; i < c.length; i++) {
+			zoom_reset(c[i]);
+		}
+	}
+	function zoom_child(e, x, ratio) {
+		if (e.attributes != undefined) {
+			if (e.attributes.x != undefined) {
+				orig_save(e, "x");
+				e.attributes.x.value = (parseFloat(e.attributes.x.value) - x - 10) * ratio + 10;
+				if (e.tagName == "text")
+					e.attributes.x.value = find_child(e.parentNode, "rect[x]").attributes.x.value + 3;
+			}
+			if (e.attributes.width != undefined) {
+				orig_save(e, "width");
+				e.attributes.width.value = parseFloat(e.attributes.width.value) * ratio;
+			}
+		}
+
+		if (e.childNodes == undefined) return;
+		for (var i = 0, c = e.childNodes; i < c.length; i++) {
+			zoom_child(c[i], x - 10, ratio);
+		}
+	}
+	function zoom_parent(e) {
+		if (e.attributes) {
+			if (e.attributes.x != undefined) {
+				orig_save(e, "x");
+				e.attributes.x.value = 10;
+			}
+			if (e.attributes.width != undefined) {
+				orig_save(e, "width");
+				e.attributes.width.value = parseInt(svg.width.baseVal.value) - (10 * 2);
+			}
+		}
+		if (e.childNodes == undefined) return;
+		for (var i = 0, c = e.childNodes; i < c.length; i++) {
+			zoom_parent(c[i]);
+		}
+	}
+	function zoom(node) {
+		var attr = find_child(node, "rect").attributes;
+		var width = parseFloat(attr.width.value);
+		var xmin = parseFloat(attr.x.value);
+		var xmax = parseFloat(xmin + width);
+		var ymin = parseFloat(attr.y.value);
+		var ratio = (svg.width.baseVal.value - 2 * 10) / width;
+
+		// XXX: Workaround for JavaScript float issues (fix me)
+		var fudge = 0.0001;
+
+		unzoombtn.classList.remove("hide");
+
+		var el = document.getElementById("frames").children;
+		for (var i = 0; i < el.length; i++) {
+			var e = el[i];
+			var a = find_child(e, "rect").attributes;
+			var ex = parseFloat(a.x.value);
+			var ew = parseFloat(a.width.value);
+			var upstack;
+			// Is it an ancestor
+			if (0 == 0) {
+				upstack = parseFloat(a.y.value) > ymin;
+			} else {
+				upstack = parseFloat(a.y.value) < ymin;
+			}
+			if (upstack) {
+				// Direct ancestor
+				if (ex <= xmin && (ex+ew+fudge) >= xmax) {
+					e.classList.add("parent");
+					zoom_parent(e);
+					update_text(e);
+				}
+				// not in current path
+				else
+					e.classList.add("hide");
+			}
+			// Children maybe
+			else {
+				// no common path
+				if (ex < xmin || ex + fudge >= xmax) {
+					e.classList.add("hide");
+				}
+				else {
+					zoom_child(e, xmin, ratio);
+					update_text(e);
+				}
+			}
+		}
+		search();
+	}
+	function unzoom() {
+		unzoombtn.classList.add("hide");
+		var el = document.getElementById("frames").children;
+		for(var i = 0; i < el.length; i++) {
+			el[i].classList.remove("parent");
+			el[i].classList.remove("hide");
+			zoom_reset(el[i]);
+			update_text(el[i]);
+		}
+		search();
+	}
+	function clearzoom() {
+		unzoom();
+
+		// remove zoom state
+		var params = get_params();
+		if (params.x) delete params.x;
+		if (params.y) delete params.y;
+		history.replaceState(null, null, parse_params(params));
+	}
+
+	// search
+	function toggle_ignorecase() {
+		ignorecase = !ignorecase;
+		if (ignorecase) {
+			ignorecaseBtn.classList.add("show");
+		} else {
+			ignorecaseBtn.classList.remove("show");
+		}
+		reset_search();
+		search();
+	}
+	function reset_search() {
+		var el = document.querySelectorAll("#frames rect");
+		for (var i = 0; i < el.length; i++) {
+			orig_load(el[i], "fill")
+		}
+		var params = get_params();
+		delete params.s;
+		history.replaceState(null, null, parse_params(params));
+	}
+	function search_prompt() {
+		if (!searching) {
+			var term = prompt("Enter a search term (regexp " +
+			    "allowed, eg: ^ext4_)"
+			    + (ignorecase ? ", ignoring case" : "")
+			    + "\nPress Ctrl-i to toggle case sensitivity", "");
+			if (term != null) search(term);
+		} else {
+			reset_search();
+			searching = 0;
+			currentSearchTerm = null;
+			searchbtn.classList.remove("show");
+			searchbtn.firstChild.nodeValue = "Search"
+			matchedtxt.classList.add("hide");
+			matchedtxt.firstChild.nodeValue = ""
+		}
+	}
+	function search(term) {
+		if (term) currentSearchTerm = term;
+
+		var re = new RegExp(currentSearchTerm, ignorecase ? 'i' : '');
+		var el = document.getElementById("frames").children;
+		var matches = new Object();
+		var maxwidth = 0;
+		for (var i = 0; i < el.length; i++) {
+			var e = el[i];
+			var func = g_to_func(e);
+			var rect = find_child(e, "rect");
+			if (func == null || rect == null)
+				continue;
+
+			// Save max width. Only works as we have a root frame
+			var w = parseFloat(rect.attributes.width.value);
+			if (w > maxwidth)
+				maxwidth = w;
+
+			if (func.match(re)) {
+				// highlight
+				var x = parseFloat(rect.attributes.x.value);
+				orig_save(rect, "fill");
+				rect.attributes.fill.value = "rgb(230,0,230)";
+
+				// remember matches
+				if (matches[x] == undefined) {
+					matches[x] = w;
+				} else {
+					if (w > matches[x]) {
+						// overwrite with parent
+						matches[x] = w;
+					}
+				}
+				searching = 1;
+			}
+		}
+		if (!searching)
+			return;
+		var params = get_params();
+		params.s = currentSearchTerm;
+		history.replaceState(null, null, parse_params(params));
+
+		searchbtn.classList.add("show");
+		searchbtn.firstChild.nodeValue = "Reset Search";
+
+		// calculate percent matched, excluding vertical overlap
+		var count = 0;
+		var lastx = -1;
+		var lastw = 0;
+		var keys = Array();
+		for (k in matches) {
+			if (matches.hasOwnProperty(k))
+				keys.push(k);
+		}
+		// sort the matched frames by their x location
+		// ascending, then width descending
+		keys.sort(function(a, b){
+			return a - b;
+		});
+		// Step through frames saving only the biggest bottom-up frames
+		// thanks to the sort order. This relies on the tree property
+		// where children are always smaller than their parents.
+		var fudge = 0.0001;	// JavaScript floating point
+		for (var k in keys) {
+			var x = parseFloat(keys[k]);
+			var w = matches[keys[k]];
+			if (x >= lastx + lastw - fudge) {
+				count += w;
+				lastx = x;
+				lastw = w;
+			}
+		}
+		// display matched percent
+		matchedtxt.classList.remove("hide");
+		var pct = 100 * count / maxwidth;
+		if (pct != 100) pct = pct.toFixed(1)
+		matchedtxt.firstChild.nodeValue = "Matched: " + pct + "%";
+	}
+]]>
+</script>
+<rect x="0.0" y="0" width="1200.0" height="342.0" fill="url(#background)"  />
+<text id="title" x="600.00" y="24" >forwarding - Atom C2758 - FreeBSD 16-CURRENT n313366</text>
+<text id="details" x="10.00" y="325" > </text>
+<text id="unzoom" x="10.00" y="24" class="hide">Reset Zoom</text>
+<text id="search" x="1090.00" y="24" >Search</text>
+<text id="ignorecase" x="1174.00" y="24" >ic</text>
+<text id="matched" x="1090.00" y="325" > </text>
+<g id="frames">
+<g >
+<title>fpu_activate_sw (19 cycles, 0.02%)</title><rect x="1106.1" y="213" width="0.2" height="15.0" fill="rgb(248,164,22)" rx="2" ry="2" />
+<text  x="1109.11" y="223.5" ></text>
+</g>
+<g >
+<title>getblkx (224 cycles, 0.20%)</title><rect x="1035.1" y="149" width="2.4" height="15.0" fill="rgb(250,225,28)" rx="2" ry="2" />
+<text  x="1038.12" y="159.5" ></text>
+</g>
+<g >
+<title>drain_ring_lockless (734 cycles, 0.65%)</title><rect x="1106.5" y="213" width="7.7" height="15.0" fill="rgb(248,192,27)" rx="2" ry="2" />
+<text  x="1109.48" y="223.5" ></text>
+</g>
+<g >
+<title>memmove_erms (298 cycles, 0.27%)</title><rect x="355.0" y="53" width="3.2" height="15.0" fill="rgb(240,214,40)" rx="2" ry="2" />
+<text  x="358.02" y="63.5" ></text>
+</g>
+<g >
+<title>memcmp (272 cycles, 0.24%)</title><rect x="528.4" y="149" width="2.9" height="15.0" fill="rgb(240,209,27)" rx="2" ry="2" />
+<text  x="531.44" y="159.5" ></text>
+</g>
+<g >
+<title>gtaskqueue_thread_loop (95,783 cycles, 85.44%)</title><rect x="26.7" y="261" width="1008.2" height="15.0" fill="rgb(235,66,37)" rx="2" ry="2" />
+<text  x="29.69" y="271.5" >gtaskqueue_thread_loop</text>
+</g>
+<g >
+<title>bus_dmamap_load_mbuf_sg (3,247 cycles, 2.90%)</title><rect x="911.0" y="165" width="34.1" height="15.0" fill="rgb(227,152,5)" rx="2" ry="2" />
+<text  x="913.97" y="175.5" >bu..</text>
+</g>
+<g >
+<title>lapic_handle_intr (22 cycles, 0.02%)</title><rect x="694.6" y="213" width="0.3" height="15.0" fill="rgb(208,2,42)" rx="2" ry="2" />
+<text  x="697.64" y="223.5" ></text>
+</g>
+<g >
+<title>ast_unsched_locked (13 cycles, 0.01%)</title><rect x="1178.9" y="213" width="0.1" height="15.0" fill="rgb(214,215,31)" rx="2" ry="2" />
+<text  x="1181.88" y="223.5" ></text>
+</g>
+<g >
+<title>mi_switch (47 cycles, 0.04%)</title><rect x="1021.7" y="229" width="0.5" height="15.0" fill="rgb(212,89,43)" rx="2" ry="2" />
+<text  x="1024.68" y="239.5" ></text>
+</g>
+<g >
+<title>fpu_activate_sw (89 cycles, 0.08%)</title><rect x="1090.4" y="213" width="0.9" height="15.0" fill="rgb(250,89,35)" rx="2" ry="2" />
+<text  x="1093.41" y="223.5" ></text>
+</g>
+<g >
+<title>memcpy_erms (889 cycles, 0.79%)</title><rect x="1037.5" y="149" width="9.3" height="15.0" fill="rgb(241,135,6)" rx="2" ry="2" />
+<text  x="1040.49" y="159.5" ></text>
+</g>
+<g >
+<title>callout_process (54 cycles, 0.05%)</title><rect x="1184.9" y="229" width="0.6" height="15.0" fill="rgb(213,67,51)" rx="2" ry="2" />
+<text  x="1187.94" y="239.5" ></text>
+</g>
+<g >
+<title>fib4_lookup (4,266 cycles, 3.81%)</title><rect x="478.0" y="69" width="44.9" height="15.0" fill="rgb(220,25,35)" rx="2" ry="2" />
+<text  x="480.99" y="79.5" >fib4..</text>
+</g>
+<g >
+<title>Xtimerint_pti (55 cycles, 0.05%)</title><rect x="24.1" y="277" width="0.6" height="15.0" fill="rgb(239,115,38)" rx="2" ry="2" />
+<text  x="27.14" y="287.5" ></text>
+</g>
+<g >
+<title>iflib_rxeof (93 cycles, 0.08%)</title><rect x="1114.6" y="229" width="1.0" height="15.0" fill="rgb(208,193,27)" rx="2" ry="2" />
+<text  x="1117.63" y="239.5" ></text>
+</g>
+<g >
+<title>hardclock (362 cycles, 0.32%)</title><rect x="1185.6" y="229" width="3.8" height="15.0" fill="rgb(239,198,12)" rx="2" ry="2" />
+<text  x="1188.60" y="239.5" ></text>
+</g>
+<g >
+<title>spinlock_exit (609 cycles, 0.54%)</title><rect x="1147.6" y="197" width="6.4" height="15.0" fill="rgb(226,106,27)" rx="2" ry="2" />
+<text  x="1150.59" y="207.5" ></text>
+</g>
+<g >
+<title>uiomove_step (889 cycles, 0.79%)</title><rect x="1037.5" y="165" width="9.3" height="15.0" fill="rgb(230,166,7)" rx="2" ry="2" />
+<text  x="1040.49" y="175.5" ></text>
+</g>
+<g >
+<title>mi_switch (51 cycles, 0.05%)</title><rect x="1105.8" y="245" width="0.5" height="15.0" fill="rgb(232,29,30)" rx="2" ry="2" />
+<text  x="1108.77" y="255.5" ></text>
+</g>
+<g >
+<title>statclock (29 cycles, 0.03%)</title><rect x="1189.6" y="229" width="0.3" height="15.0" fill="rgb(216,74,50)" rx="2" ry="2" />
+<text  x="1192.64" y="239.5" ></text>
+</g>
+<g >
+<title>_sleep (10 cycles, 0.01%)</title><rect x="26.6" y="245" width="0.1" height="15.0" fill="rgb(246,127,2)" rx="2" ry="2" />
+<text  x="29.59" y="255.5" ></text>
+</g>
+<g >
+<title>mi_switch (770 cycles, 0.69%)</title><rect x="1088.9" y="245" width="8.1" height="15.0" fill="rgb(220,220,51)" rx="2" ry="2" />
+<text  x="1091.87" y="255.5" ></text>
+</g>
+<g >
+<title>ifmp_ring_check_drainage (80 cycles, 0.07%)</title><rect x="1017.3" y="229" width="0.9" height="15.0" fill="rgb(216,183,9)" rx="2" ry="2" />
+<text  x="1020.34" y="239.5" ></text>
+</g>
+<g >
+<title>cpu_switch (38 cycles, 0.03%)</title><rect x="1105.9" y="229" width="0.4" height="15.0" fill="rgb(229,52,52)" rx="2" ry="2" />
+<text  x="1108.91" y="239.5" ></text>
+</g>
+<g >
+<title>msi_eoi_source (13 cycles, 0.01%)</title><rect x="1180.4" y="245" width="0.1" height="15.0" fill="rgb(224,70,9)" rx="2" ry="2" />
+<text  x="1183.41" y="255.5" ></text>
+</g>
+<g >
+<title>spinlock_exit (335 cycles, 0.30%)</title><rect x="1071.9" y="213" width="3.6" height="15.0" fill="rgb(223,162,25)" rx="2" ry="2" />
+<text  x="1074.93" y="223.5" ></text>
+</g>
+<g >
+<title>all (112,101 cycles, 100%)</title><rect x="10.0" y="293" width="1180.0" height="15.0" fill="rgb(206,155,3)" rx="2" ry="2" />
+<text  x="13.00" y="303.5" ></text>
+</g>
+<g >
+<title>ether_bpf_mtap_if (425 cycles, 0.38%)</title><rect x="824.3" y="181" width="4.5" height="15.0" fill="rgb(233,37,23)" rx="2" ry="2" />
+<text  x="827.31" y="191.5" ></text>
+</g>
+<g >
+<title>sleepq_signal (11 cycles, 0.01%)</title><rect x="1115.3" y="37" width="0.1" height="15.0" fill="rgb(208,139,6)" rx="2" ry="2" />
+<text  x="1118.32" y="47.5" ></text>
+</g>
+<g >
+<title>mb_ctor_mbuf (179 cycles, 0.16%)</title><rect x="582.9" y="165" width="1.9" height="15.0" fill="rgb(239,160,5)" rx="2" ry="2" />
+<text  x="585.89" y="175.5" ></text>
+</g>
+<g >
+<title>critical_exit_preempt (23 cycles, 0.02%)</title><rect x="1088.4" y="245" width="0.3" height="15.0" fill="rgb(242,180,37)" rx="2" ry="2" />
+<text  x="1091.43" y="255.5" ></text>
+</g>
+<g >
+<title>bufspace_daemon (10 cycles, 0.01%)</title><rect x="26.6" y="261" width="0.1" height="15.0" fill="rgb(210,131,30)" rx="2" ry="2" />
+<text  x="29.59" y="271.5" ></text>
+</g>
+<g >
+<title>spinlock_enter (838 cycles, 0.75%)</title><rect x="1063.1" y="213" width="8.8" height="15.0" fill="rgb(225,154,44)" rx="2" ry="2" />
+<text  x="1066.11" y="223.5" ></text>
+</g>
+<g >
+<title>intr_event_handle (5,453 cycles, 4.86%)</title><rect x="1123.1" y="261" width="57.4" height="15.0" fill="rgb(228,18,32)" rx="2" ry="2" />
+<text  x="1126.15" y="271.5" >intr_e..</text>
+</g>
+<g >
+<title>ifmp_ring_enqueue (3,073 cycles, 2.74%)</title><rect x="409.5" y="37" width="32.4" height="15.0" fill="rgb(224,219,36)" rx="2" ry="2" />
+<text  x="412.51" y="47.5" >if..</text>
+</g>
+<g >
+<title>acpi_cpu_idle (350 cycles, 0.31%)</title><rect x="1075.6" y="213" width="3.7" height="15.0" fill="rgb(211,151,13)" rx="2" ry="2" />
+<text  x="1078.64" y="223.5" ></text>
+</g>
+<g >
+<title>VOP_WRITE_APV (1,121 cycles, 1.00%)</title><rect x="1035.0" y="213" width="11.8" height="15.0" fill="rgb(218,146,43)" rx="2" ry="2" />
+<text  x="1038.04" y="223.5" ></text>
+</g>
+<g >
+<title>lapic_eoi (43 cycles, 0.04%)</title><rect x="1176.4" y="245" width="0.4" height="15.0" fill="rgb(252,195,34)" rx="2" ry="2" />
+<text  x="1179.38" y="255.5" ></text>
+</g>
+<g >
+<title>ixgbe_if_rx_queue_intr_enable (26 cycles, 0.02%)</title><rect x="1156.8" y="229" width="0.3" height="15.0" fill="rgb(244,25,49)" rx="2" ry="2" />
+<text  x="1159.80" y="239.5" ></text>
+</g>
+<g >
+<title>Xapic_isr1 (478 cycles, 0.43%)</title><rect x="10.0" y="277" width="5.1" height="15.0" fill="rgb(230,157,46)" rx="2" ry="2" />
+<text  x="13.02" y="287.5" ></text>
+</g>
+<g >
+<title>ffs_write (1,121 cycles, 1.00%)</title><rect x="1035.0" y="197" width="11.8" height="15.0" fill="rgb(218,42,0)" rx="2" ry="2" />
+<text  x="1038.04" y="207.5" ></text>
+</g>
+<g >
+<title>_epoch_enter_preempt (199 cycles, 0.18%)</title><rect x="27.1" y="245" width="2.1" height="15.0" fill="rgb(235,20,45)" rx="2" ry="2" />
+<text  x="30.09" y="255.5" ></text>
+</g>
+<g >
+<title>sleepq_switch (372 cycles, 0.33%)</title><rect x="1026.3" y="229" width="3.9" height="15.0" fill="rgb(246,148,22)" rx="2" ry="2" />
+<text  x="1029.26" y="239.5" ></text>
+</g>
+<g >
+<title>cache_alloc_retry (403 cycles, 0.36%)</title><rect x="580.5" y="181" width="4.3" height="15.0" fill="rgb(233,172,29)" rx="2" ry="2" />
+<text  x="583.53" y="191.5" ></text>
+</g>
+<g >
+<title>ixgbe_isc_rxd_flush (32 cycles, 0.03%)</title><rect x="584.8" y="181" width="0.3" height="15.0" fill="rgb(235,155,54)" rx="2" ry="2" />
+<text  x="587.77" y="191.5" ></text>
+</g>
+<g >
+<title>iflib_is_running (36 cycles, 0.03%)</title><rect x="1173.0" y="213" width="0.4" height="15.0" fill="rgb(212,143,40)" rx="2" ry="2" />
+<text  x="1176.01" y="223.5" ></text>
+</g>
+<g >
+<title>lapic_handle_intr (230 cycles, 0.21%)</title><rect x="1181.3" y="277" width="2.4" height="15.0" fill="rgb(233,129,29)" rx="2" ry="2" />
+<text  x="1184.31" y="287.5" ></text>
+</g>
+<g >
+<title>sched_pickcpu (41 cycles, 0.04%)</title><rect x="1135.8" y="197" width="0.4" height="15.0" fill="rgb(209,104,35)" rx="2" ry="2" />
+<text  x="1138.80" y="207.5" ></text>
+</g>
+<g >
+<title>uma_zfree_arg (1,585 cycles, 1.41%)</title><rect x="807.6" y="133" width="16.7" height="15.0" fill="rgb(243,194,40)" rx="2" ry="2" />
+<text  x="810.62" y="143.5" ></text>
+</g>
+<g >
+<title>pmap_kextract (140 cycles, 0.12%)</title><rect x="943.7" y="133" width="1.4" height="15.0" fill="rgb(222,139,53)" rx="2" ry="2" />
+<text  x="946.68" y="143.5" ></text>
+</g>
+<g >
+<title>sleepq_lock (308 cycles, 0.27%)</title><rect x="1023.0" y="229" width="3.3" height="15.0" fill="rgb(228,135,6)" rx="2" ry="2" />
+<text  x="1026.02" y="239.5" ></text>
+</g>
+<g >
+<title>tc_ticktock (27 cycles, 0.02%)</title><rect x="1189.1" y="213" width="0.3" height="15.0" fill="rgb(211,202,53)" rx="2" ry="2" />
+<text  x="1192.13" y="223.5" ></text>
+</g>
+<g >
+<title>in_localip_fib (1,133 cycles, 1.01%)</title><rect x="456.7" y="85" width="12.0" height="15.0" fill="rgb(232,227,54)" rx="2" ry="2" />
+<text  x="459.74" y="95.5" ></text>
+</g>
+<g >
+<title>lapic_et_start (84 cycles, 0.07%)</title><rect x="1080.3" y="213" width="0.8" height="15.0" fill="rgb(242,78,6)" rx="2" ry="2" />
+<text  x="1083.25" y="223.5" ></text>
+</g>
+<g >
+<title>ether_demux (93 cycles, 0.08%)</title><rect x="1114.6" y="165" width="1.0" height="15.0" fill="rgb(224,11,18)" rx="2" ry="2" />
+<text  x="1117.63" y="175.5" ></text>
+</g>
+<g >
+<title>iflib_if_transmit (93 cycles, 0.08%)</title><rect x="1114.6" y="69" width="1.0" height="15.0" fill="rgb(243,176,33)" rx="2" ry="2" />
+<text  x="1117.63" y="79.5" ></text>
+</g>
+<g >
+<title>_cv_wait (15 cycles, 0.01%)</title><rect x="1114.4" y="245" width="0.2" height="15.0" fill="rgb(230,128,8)" rx="2" ry="2" />
+<text  x="1117.43" y="255.5" ></text>
+</g>
+<g >
+<title>mi_switch (15 cycles, 0.01%)</title><rect x="1114.4" y="229" width="0.2" height="15.0" fill="rgb(205,226,25)" rx="2" ry="2" />
+<text  x="1117.43" y="239.5" ></text>
+</g>
+<g >
+<title>ixgbe_write_reg (218 cycles, 0.19%)</title><rect x="585.7" y="181" width="2.3" height="15.0" fill="rgb(231,62,22)" rx="2" ry="2" />
+<text  x="588.66" y="191.5" ></text>
+</g>
+<g >
+<title>m_freem (734 cycles, 0.65%)</title><rect x="1106.5" y="165" width="7.7" height="15.0" fill="rgb(225,5,1)" rx="2" ry="2" />
+<text  x="1109.48" y="175.5" ></text>
+</g>
+<g >
+<title>cpu_tick_calibration (11 cycles, 0.01%)</title><rect x="1058.2" y="197" width="0.1" height="15.0" fill="rgb(218,141,13)" rx="2" ry="2" />
+<text  x="1061.23" y="207.5" ></text>
+</g>
+<g >
+<title>sched_priority (60 cycles, 0.05%)</title><rect x="1136.2" y="197" width="0.7" height="15.0" fill="rgb(223,120,17)" rx="2" ry="2" />
+<text  x="1139.23" y="207.5" ></text>
+</g>
+<g >
+<title>sched_ule_choose (97 cycles, 0.09%)</title><rect x="1095.6" y="197" width="1.0" height="15.0" fill="rgb(208,212,38)" rx="2" ry="2" />
+<text  x="1098.56" y="207.5" ></text>
+</g>
+<g >
+<title>bounce_bus_dmamap_complete (164 cycles, 0.15%)</title><rect x="923.8" y="149" width="1.8" height="15.0" fill="rgb(226,219,18)" rx="2" ry="2" />
+<text  x="926.83" y="159.5" ></text>
+</g>
+<g >
+<title>spinlock_exit (298 cycles, 0.27%)</title><rect x="1026.9" y="213" width="3.1" height="15.0" fill="rgb(219,108,23)" rx="2" ry="2" />
+<text  x="1029.85" y="223.5" ></text>
+</g>
+<g >
+<title>pmclog_loop (1,122 cycles, 1.00%)</title><rect x="1035.0" y="261" width="11.9" height="15.0" fill="rgb(251,53,41)" rx="2" ry="2" />
+<text  x="1038.04" y="271.5" ></text>
+</g>
+<g >
+<title>netisr_dispatch (222 cycles, 0.20%)</title><rect x="531.3" y="149" width="2.3" height="15.0" fill="rgb(227,52,5)" rx="2" ry="2" />
+<text  x="534.30" y="159.5" ></text>
+</g>
+<g >
+<title>intr_event_handle (309 cycles, 0.28%)</title><rect x="1185.9" y="213" width="3.2" height="15.0" fill="rgb(237,35,10)" rx="2" ry="2" />
+<text  x="1188.87" y="223.5" ></text>
+</g>
+<g >
+<title>uma_zfree_arg (168 cycles, 0.15%)</title><rect x="581.1" y="149" width="1.7" height="15.0" fill="rgb(209,56,50)" rx="2" ry="2" />
+<text  x="584.07" y="159.5" ></text>
+</g>
+<g >
+<title>sleepq_release (72 cycles, 0.06%)</title><rect x="1033.9" y="245" width="0.7" height="15.0" fill="rgb(239,171,53)" rx="2" ry="2" />
+<text  x="1036.88" y="255.5" ></text>
+</g>
+<g >
+<title>choosethread (111 cycles, 0.10%)</title><rect x="1095.4" y="213" width="1.2" height="15.0" fill="rgb(230,80,18)" rx="2" ry="2" />
+<text  x="1098.41" y="223.5" ></text>
+</g>
+<g >
+<title>_thread_lock (37 cycles, 0.03%)</title><rect x="1030.3" y="213" width="0.4" height="15.0" fill="rgb(253,38,4)" rx="2" ry="2" />
+<text  x="1033.34" y="223.5" ></text>
+</g>
+<g >
+<title>et_start (10 cycles, 0.01%)</title><rect x="1080.1" y="213" width="0.2" height="15.0" fill="rgb(214,150,32)" rx="2" ry="2" />
+<text  x="1083.15" y="223.5" ></text>
+</g>
+<g >
+<title>iflib_get_softc (26 cycles, 0.02%)</title><rect x="1156.8" y="213" width="0.3" height="15.0" fill="rgb(207,8,26)" rx="2" ry="2" />
+<text  x="1159.80" y="223.5" ></text>
+</g>
+<g >
+<title>vn_write (1,122 cycles, 1.00%)</title><rect x="1035.0" y="229" width="11.9" height="15.0" fill="rgb(253,15,49)" rx="2" ry="2" />
+<text  x="1038.04" y="239.5" ></text>
+</g>
+<g >
+<title>sleepq_timeout (15 cycles, 0.01%)</title><rect x="1185.3" y="197" width="0.2" height="15.0" fill="rgb(232,17,35)" rx="2" ry="2" />
+<text  x="1188.35" y="207.5" ></text>
+</g>
+<g >
+<title>if_getnumadomain (1,688 cycles, 1.51%)</title><rect x="533.9" y="197" width="17.8" height="15.0" fill="rgb(207,192,39)" rx="2" ry="2" />
+<text  x="536.90" y="207.5" ></text>
+</g>
+<g >
+<title>if_getvnet (29 cycles, 0.03%)</title><rect x="551.7" y="197" width="0.3" height="15.0" fill="rgb(221,197,14)" rx="2" ry="2" />
+<text  x="554.67" y="207.5" ></text>
+</g>
+<g >
+<title>sleepq_release (34 cycles, 0.03%)</title><rect x="1018.2" y="229" width="0.3" height="15.0" fill="rgb(220,29,8)" rx="2" ry="2" />
+<text  x="1021.18" y="239.5" ></text>
+</g>
+<g >
+<title>sleepq_signal (21 cycles, 0.02%)</title><rect x="1176.1" y="229" width="0.2" height="15.0" fill="rgb(234,98,43)" rx="2" ry="2" />
+<text  x="1179.11" y="239.5" ></text>
+</g>
+<g >
+<title>cpu_switch (186 cycles, 0.17%)</title><rect x="1089.5" y="229" width="1.9" height="15.0" fill="rgb(209,13,27)" rx="2" ry="2" />
+<text  x="1092.47" y="239.5" ></text>
+</g>
+<g >
+<title>ether_demux (35,726 cycles, 31.87%)</title><rect x="146.8" y="149" width="376.1" height="15.0" fill="rgb(213,85,39)" rx="2" ry="2" />
+<text  x="149.83" y="159.5" >ether_demux</text>
+</g>
+<g >
+<title>ether_nh_input (39,369 cycles, 35.12%)</title><rect x="119.2" y="165" width="414.4" height="15.0" fill="rgb(251,136,29)" rx="2" ry="2" />
+<text  x="122.23" y="175.5" >ether_nh_input</text>
+</g>
+<g >
+<title>rxd_frag_to_sd (4,538 cycles, 4.05%)</title><rect x="642.6" y="197" width="47.8" height="15.0" fill="rgb(208,27,27)" rx="2" ry="2" />
+<text  x="645.64" y="207.5" >rxd_..</text>
+</g>
+<g >
+<title>drain_ring_lockless (29,965 cycles, 26.73%)</title><rect x="700.5" y="213" width="315.4" height="15.0" fill="rgb(211,23,51)" rx="2" ry="2" />
+<text  x="703.48" y="223.5" >drain_ring_lockless</text>
+</g>
+<g >
+<title>ixgbe_isc_txd_encap (3,321 cycles, 2.96%)</title><rect x="945.1" y="165" width="35.0" height="15.0" fill="rgb(233,49,18)" rx="2" ry="2" />
+<text  x="948.15" y="175.5" >ix..</text>
+</g>
+<g >
+<title>msleep_spin_sbt (1,234 cycles, 1.10%)</title><rect x="1020.8" y="245" width="13.0" height="15.0" fill="rgb(234,79,48)" rx="2" ry="2" />
+<text  x="1023.83" y="255.5" ></text>
+</g>
+<g >
+<title>grouptaskqueue_enqueue (1,641 cycles, 1.46%)</title><rect x="44.0" y="213" width="17.2" height="15.0" fill="rgb(233,114,35)" rx="2" ry="2" />
+<text  x="46.97" y="223.5" ></text>
+</g>
+<g >
+<title>cpu_activeclock (1,723 cycles, 1.54%)</title><rect x="1057.3" y="229" width="18.2" height="15.0" fill="rgb(250,83,48)" rx="2" ry="2" />
+<text  x="1060.32" y="239.5" ></text>
+</g>
+<g >
+<title>_task_fn_tx (30,468 cycles, 27.18%)</title><rect x="696.6" y="229" width="320.7" height="15.0" fill="rgb(242,81,27)" rx="2" ry="2" />
+<text  x="699.63" y="239.5" >_task_fn_tx</text>
+</g>
+<g >
+<title>sleepq_signal (81 cycles, 0.07%)</title><rect x="60.3" y="197" width="0.8" height="15.0" fill="rgb(205,61,18)" rx="2" ry="2" />
+<text  x="63.28" y="207.5" ></text>
+</g>
+<g >
+<title>ixgbe_isc_txd_flush (149 cycles, 0.13%)</title><rect x="1014.3" y="181" width="1.6" height="15.0" fill="rgb(213,187,47)" rx="2" ry="2" />
+<text  x="1017.33" y="191.5" ></text>
+</g>
+<g >
+<title>ether_output (93 cycles, 0.08%)</title><rect x="1114.6" y="101" width="1.0" height="15.0" fill="rgb(211,89,52)" rx="2" ry="2" />
+<text  x="1117.63" y="111.5" ></text>
+</g>
+<g >
+<title>Xtimerint (23 cycles, 0.02%)</title><rect x="23.9" y="277" width="0.2" height="15.0" fill="rgb(205,69,45)" rx="2" ry="2" />
+<text  x="26.89" y="287.5" ></text>
+</g>
+<g >
+<title>ixgbe_isc_rxd_refill (391 cycles, 0.35%)</title><rect x="628.6" y="197" width="4.1" height="15.0" fill="rgb(219,202,3)" rx="2" ry="2" />
+<text  x="631.61" y="207.5" ></text>
+</g>
+<g >
+<title>ixgbe_write_reg (214 cycles, 0.19%)</title><rect x="1173.4" y="213" width="2.2" height="15.0" fill="rgb(243,90,46)" rx="2" ry="2" />
+<text  x="1176.39" y="223.5" ></text>
+</g>
+<g >
+<title>wakeup_any (17 cycles, 0.02%)</title><rect x="1115.4" y="37" width="0.2" height="15.0" fill="rgb(225,14,44)" rx="2" ry="2" />
+<text  x="1118.43" y="47.5" ></text>
+</g>
+<g >
+<title>ether_output_frame (7,998 cycles, 7.13%)</title><rect x="358.2" y="69" width="84.1" height="15.0" fill="rgb(206,29,2)" rx="2" ry="2" />
+<text  x="361.15" y="79.5" >ether_out..</text>
+</g>
+<g >
+<title>choosethread (109 cycles, 0.10%)</title><rect x="1179.0" y="213" width="1.2" height="15.0" fill="rgb(245,186,4)" rx="2" ry="2" />
+<text  x="1182.02" y="223.5" ></text>
+</g>
+<g >
+<title>_epoch_exit_preempt (163 cycles, 0.15%)</title><rect x="29.2" y="245" width="1.7" height="15.0" fill="rgb(236,156,16)" rx="2" ry="2" />
+<text  x="32.19" y="255.5" ></text>
+</g>
+<g >
+<title>lapic_handle_timer (19 cycles, 0.02%)</title><rect x="1088.7" y="245" width="0.2" height="15.0" fill="rgb(236,80,30)" rx="2" ry="2" />
+<text  x="1091.67" y="255.5" ></text>
+</g>
+<g >
+<title>m_free (734 cycles, 0.65%)</title><rect x="1106.5" y="149" width="7.7" height="15.0" fill="rgb(226,39,2)" rx="2" ry="2" />
+<text  x="1109.48" y="159.5" ></text>
+</g>
+<g >
+<title>pmap_kextract (168 cycles, 0.15%)</title><rect x="822.5" y="117" width="1.8" height="15.0" fill="rgb(222,110,0)" rx="2" ry="2" />
+<text  x="825.54" y="127.5" ></text>
+</g>
+<g >
+<title>runq_first_thread_range (74 cycles, 0.07%)</title><rect x="1095.7" y="181" width="0.8" height="15.0" fill="rgb(243,67,50)" rx="2" ry="2" />
+<text  x="1098.75" y="191.5" ></text>
+</g>
+<g >
+<title>taskqueue_run_locked (762 cycles, 0.68%)</title><rect x="1106.4" y="245" width="8.0" height="15.0" fill="rgb(227,9,28)" rx="2" ry="2" />
+<text  x="1109.41" y="255.5" ></text>
+</g>
+<g >
+<title>handleevents (519 cycles, 0.46%)</title><rect x="1184.5" y="245" width="5.4" height="15.0" fill="rgb(208,100,34)" rx="2" ry="2" />
+<text  x="1187.48" y="255.5" ></text>
+</g>
+<g >
+<title>m_free (7,684 cycles, 6.85%)</title><rect x="743.4" y="149" width="80.9" height="15.0" fill="rgb(245,15,30)" rx="2" ry="2" />
+<text  x="746.43" y="159.5" >m_free</text>
+</g>
+<g >
+<title>cpu_switch (78 cycles, 0.07%)</title><rect x="1176.9" y="229" width="0.8" height="15.0" fill="rgb(210,47,44)" rx="2" ry="2" />
+<text  x="1179.92" y="239.5" ></text>
+</g>
+<g >
+<title>cpu_idleclock (167 cycles, 0.15%)</title><rect x="1079.4" y="229" width="1.7" height="15.0" fill="rgb(243,51,47)" rx="2" ry="2" />
+<text  x="1082.38" y="239.5" ></text>
+</g>
+<g >
+<title>gtaskqueue_run_locked (93 cycles, 0.08%)</title><rect x="1114.6" y="261" width="1.0" height="15.0" fill="rgb(233,207,51)" rx="2" ry="2" />
+<text  x="1117.63" y="271.5" ></text>
+</g>
+<g >
+<title>pmap_activate_sw (46 cycles, 0.04%)</title><rect x="1177.3" y="213" width="0.4" height="15.0" fill="rgb(228,118,34)" rx="2" ry="2" />
+<text  x="1180.25" y="223.5" ></text>
+</g>
+<g >
+<title>wakeup (28 cycles, 0.02%)</title><rect x="1034.6" y="245" width="0.3" height="15.0" fill="rgb(251,146,20)" rx="2" ry="2" />
+<text  x="1037.63" y="255.5" ></text>
+</g>
+<g >
+<title>fpu_activate_sw (15 cycles, 0.01%)</title><rect x="1114.4" y="197" width="0.2" height="15.0" fill="rgb(213,164,24)" rx="2" ry="2" />
+<text  x="1117.43" y="207.5" ></text>
+</g>
+<g >
+<title>rdtsc (14 cycles, 0.01%)</title><rect x="1177.7" y="229" width="0.2" height="15.0" fill="rgb(216,146,40)" rx="2" ry="2" />
+<text  x="1180.74" y="239.5" ></text>
+</g>
+<g >
+<title>ixgbe_isc_rxd_refill (52 cycles, 0.05%)</title><rect x="585.1" y="181" width="0.6" height="15.0" fill="rgb(246,125,52)" rx="2" ry="2" />
+<text  x="588.11" y="191.5" ></text>
+</g>
+<g >
+<title>grouptaskqueue_enqueue (2,065 cycles, 1.84%)</title><rect x="1134.7" y="229" width="21.8" height="15.0" fill="rgb(248,168,13)" rx="2" ry="2" />
+<text  x="1137.72" y="239.5" >g..</text>
+</g>
+<g >
+<title>tc_windup (21 cycles, 0.02%)</title><rect x="1189.2" y="197" width="0.2" height="15.0" fill="rgb(207,202,28)" rx="2" ry="2" />
+<text  x="1192.19" y="207.5" ></text>
+</g>
+<g >
+<title>m_freem (8,060 cycles, 7.19%)</title><rect x="739.5" y="165" width="84.8" height="15.0" fill="rgb(244,229,38)" rx="2" ry="2" />
+<text  x="742.47" y="175.5" >m_freem</text>
+</g>
+<g >
+<title>hardclock (138 cycles, 0.12%)</title><rect x="1058.4" y="197" width="1.4" height="15.0" fill="rgb(236,185,16)" rx="2" ry="2" />
+<text  x="1061.39" y="207.5" ></text>
+</g>
+<g >
+<title>mb_ctor_mbuf (171 cycles, 0.15%)</title><rect x="602.5" y="165" width="1.8" height="15.0" fill="rgb(238,155,49)" rx="2" ry="2" />
+<text  x="605.53" y="175.5" ></text>
+</g>
+<g >
+<title>handleevents (488 cycles, 0.44%)</title><rect x="1058.0" y="213" width="5.1" height="15.0" fill="rgb(251,210,48)" rx="2" ry="2" />
+<text  x="1060.97" y="223.5" ></text>
+</g>
+<g >
+<title>grouptaskqueue_enqueue (93 cycles, 0.08%)</title><rect x="1114.6" y="53" width="1.0" height="15.0" fill="rgb(253,137,13)" rx="2" ry="2" />
+<text  x="1117.63" y="63.5" ></text>
+</g>
+<g >
+<title>cpu_idle_acpi (373 cycles, 0.33%)</title><rect x="1075.5" y="229" width="3.9" height="15.0" fill="rgb(214,34,34)" rx="2" ry="2" />
+<text  x="1078.45" y="239.5" ></text>
+</g>
+<g >
+<title>sched_ule_add (1,964 cycles, 1.75%)</title><rect x="1134.7" y="213" width="20.7" height="15.0" fill="rgb(230,38,23)" rx="2" ry="2" />
+<text  x="1137.72" y="223.5" ></text>
+</g>
+<g >
+<title>lapic_handle_timer (594 cycles, 0.53%)</title><rect x="1183.7" y="277" width="6.3" height="15.0" fill="rgb(207,37,13)" rx="2" ry="2" />
+<text  x="1186.73" y="287.5" ></text>
+</g>
+<g >
+<title>critical_exit_preempt (28 cycles, 0.02%)</title><rect x="1127.2" y="245" width="0.3" height="15.0" fill="rgb(231,136,32)" rx="2" ry="2" />
+<text  x="1130.22" y="255.5" ></text>
+</g>
+<g >
+<title>netisr_dispatch_src (93 cycles, 0.08%)</title><rect x="1114.6" y="149" width="1.0" height="15.0" fill="rgb(243,4,32)" rx="2" ry="2" />
+<text  x="1117.63" y="159.5" ></text>
+</g>
+<g >
+<title>gtaskqueue_run_locked (94,044 cycles, 83.89%)</title><rect x="30.9" y="245" width="989.9" height="15.0" fill="rgb(236,22,17)" rx="2" ry="2" />
+<text  x="33.91" y="255.5" >gtaskqueue_run_locked</text>
+</g>
+<g >
+<title>ether_input (93 cycles, 0.08%)</title><rect x="1114.6" y="213" width="1.0" height="15.0" fill="rgb(229,180,23)" rx="2" ry="2" />
+<text  x="1117.63" y="223.5" ></text>
+</g>
+<g >
+<title>cpu_idle (3,113 cycles, 2.78%)</title><rect x="1048.5" y="245" width="32.8" height="15.0" fill="rgb(214,24,19)" rx="2" ry="2" />
+<text  x="1051.52" y="255.5" >cp..</text>
+</g>
+<g >
+<title>iflib_if_transmit (6,443 cycles, 5.75%)</title><rect x="374.5" y="53" width="67.8" height="15.0" fill="rgb(234,105,46)" rx="2" ry="2" />
+<text  x="377.52" y="63.5" >iflib_i..</text>
+</g>
+<g >
+<title>netisr_dispatch_src (39,369 cycles, 35.12%)</title><rect x="119.2" y="181" width="414.4" height="15.0" fill="rgb(209,137,0)" rx="2" ry="2" />
+<text  x="122.23" y="191.5" >netisr_dispatch_src</text>
+</g>
+<g >
+<title>sched_ule_choose (21 cycles, 0.02%)</title><rect x="1021.9" y="181" width="0.2" height="15.0" fill="rgb(243,153,48)" rx="2" ry="2" />
+<text  x="1024.90" y="191.5" ></text>
+</g>
+<g >
+<title>sched_ule_sswitch (401 cycles, 0.36%)</title><rect x="1092.8" y="229" width="4.2" height="15.0" fill="rgb(215,214,5)" rx="2" ry="2" />
+<text  x="1095.76" y="239.5" ></text>
+</g>
+<g >
+<title>netisr_dispatch_src (93 cycles, 0.08%)</title><rect x="1114.6" y="197" width="1.0" height="15.0" fill="rgb(210,45,47)" rx="2" ry="2" />
+<text  x="1117.63" y="207.5" ></text>
+</g>
+<g >
+<title>netmap_rx_irq (161 cycles, 0.14%)</title><rect x="694.9" y="213" width="1.7" height="15.0" fill="rgb(211,66,19)" rx="2" ry="2" />
+<text  x="697.87" y="223.5" ></text>
+</g>
+<g >
+<title>sched_ule_sleep (31 cycles, 0.03%)</title><rect x="1026.5" y="213" width="0.4" height="15.0" fill="rgb(221,45,36)" rx="2" ry="2" />
+<text  x="1029.53" y="223.5" ></text>
+</g>
+<g >
+<title>if_altq_is_enabled (129 cycles, 0.12%)</title><rect x="406.6" y="37" width="1.3" height="15.0" fill="rgb(252,223,44)" rx="2" ry="2" />
+<text  x="409.56" y="47.5" ></text>
+</g>
+<g >
+<title>binuptime (26 cycles, 0.02%)</title><rect x="1079.9" y="213" width="0.2" height="15.0" fill="rgb(222,169,8)" rx="2" ry="2" />
+<text  x="1082.87" y="223.5" ></text>
+</g>
+<g >
+<title>rsb_flush (23 cycles, 0.02%)</title><rect x="1180.2" y="213" width="0.2" height="15.0" fill="rgb(224,128,31)" rx="2" ry="2" />
+<text  x="1183.17" y="223.5" ></text>
+</g>
+<g >
+<title>if_getnetmapadapter (51 cycles, 0.05%)</title><rect x="696.0" y="197" width="0.6" height="15.0" fill="rgb(243,164,37)" rx="2" ry="2" />
+<text  x="699.03" y="207.5" ></text>
+</g>
+<g >
+<title>if_getcapenable (25 cycles, 0.02%)</title><rect x="533.6" y="197" width="0.3" height="15.0" fill="rgb(247,96,18)" rx="2" ry="2" />
+<text  x="536.64" y="207.5" ></text>
+</g>
+<g >
+<title>m_adj (527 cycles, 0.47%)</title><rect x="522.9" y="149" width="5.5" height="15.0" fill="rgb(227,147,13)" rx="2" ry="2" />
+<text  x="525.89" y="159.5" ></text>
+</g>
+<g >
+<title>msi_vector (71 cycles, 0.06%)</title><rect x="1180.6" y="261" width="0.7" height="15.0" fill="rgb(219,168,37)" rx="2" ry="2" />
+<text  x="1183.56" y="271.5" ></text>
+</g>
+<g >
+<title>_iflib_completed_tx_reclaim (8,529 cycles, 7.61%)</title><rect x="734.5" y="181" width="89.8" height="15.0" fill="rgb(228,97,30)" rx="2" ry="2" />
+<text  x="737.53" y="191.5" >_iflib_com..</text>
+</g>
+<g >
+<title>ixgbe_isc_rxd_pkt_get (2,301 cycles, 2.05%)</title><rect x="604.4" y="197" width="24.2" height="15.0" fill="rgb(240,26,43)" rx="2" ry="2" />
+<text  x="607.38" y="207.5" >i..</text>
+</g>
+<g >
+<title>sched_priority (13 cycles, 0.01%)</title><rect x="1185.1" y="181" width="0.2" height="15.0" fill="rgb(228,112,40)" rx="2" ry="2" />
+<text  x="1188.13" y="191.5" ></text>
+</g>
+<g >
+<title>cpu_search_highest (679 cycles, 0.61%)</title><rect x="1081.3" y="245" width="7.1" height="15.0" fill="rgb(219,46,21)" rx="2" ry="2" />
+<text  x="1084.29" y="255.5" ></text>
+</g>
+<g >
+<title>cpu_switch (15 cycles, 0.01%)</title><rect x="1114.4" y="213" width="0.2" height="15.0" fill="rgb(239,0,52)" rx="2" ry="2" />
+<text  x="1117.43" y="223.5" ></text>
+</g>
+<g >
+<title>runq_add (52 cycles, 0.05%)</title><rect x="1154.7" y="181" width="0.6" height="15.0" fill="rgb(206,19,29)" rx="2" ry="2" />
+<text  x="1157.73" y="191.5" ></text>
+</g>
+<g >
+<title>_thread_lock (14 cycles, 0.01%)</title><rect x="1185.4" y="181" width="0.1" height="15.0" fill="rgb(233,44,24)" rx="2" ry="2" />
+<text  x="1188.36" y="191.5" ></text>
+</g>
+<g >
+<title>ffs_balloc_ufs1 (229 cycles, 0.20%)</title><rect x="1035.1" y="181" width="2.4" height="15.0" fill="rgb(207,41,29)" rx="2" ry="2" />
+<text  x="1038.08" y="191.5" ></text>
+</g>
+<g >
+<title>netisr_dispatch_src (34,295 cycles, 30.59%)</title><rect x="161.9" y="133" width="361.0" height="15.0" fill="rgb(241,73,3)" rx="2" ry="2" />
+<text  x="164.89" y="143.5" >netisr_dispatch_src</text>
+</g>
+<g >
+<title>ip_input (93 cycles, 0.08%)</title><rect x="1114.6" y="133" width="1.0" height="15.0" fill="rgb(233,98,17)" rx="2" ry="2" />
+<text  x="1117.63" y="143.5" ></text>
+</g>
+<g >
+<title>_ck_epoch_delref (23 cycles, 0.02%)</title><rect x="39.6" y="229" width="0.2" height="15.0" fill="rgb(248,164,54)" rx="2" ry="2" />
+<text  x="42.57" y="239.5" ></text>
+</g>
+<g >
+<title>sched_ule_clock (16 cycles, 0.01%)</title><rect x="1189.8" y="213" width="0.1" height="15.0" fill="rgb(217,193,19)" rx="2" ry="2" />
+<text  x="1192.78" y="223.5" ></text>
+</g>
+<g >
+<title>if_getsoftc (151 cycles, 0.13%)</title><rect x="407.9" y="37" width="1.6" height="15.0" fill="rgb(250,39,3)" rx="2" ry="2" />
+<text  x="410.92" y="47.5" ></text>
+</g>
+<g >
+<title>wakeup (218 cycles, 0.19%)</title><rect x="1018.5" y="229" width="2.3" height="15.0" fill="rgb(253,39,14)" rx="2" ry="2" />
+<text  x="1021.54" y="239.5" ></text>
+</g>
+<g >
+<title>netisr_dispatch (64 cycles, 0.06%)</title><rect x="642.0" y="197" width="0.6" height="15.0" fill="rgb(239,66,44)" rx="2" ry="2" />
+<text  x="644.96" y="207.5" ></text>
+</g>
+<g >
+<title>vn_io_fault (1,122 cycles, 1.00%)</title><rect x="1035.0" y="245" width="11.9" height="15.0" fill="rgb(205,177,25)" rx="2" ry="2" />
+<text  x="1038.04" y="255.5" ></text>
+</g>
+<g >
+<title>setrunnable (15 cycles, 0.01%)</title><rect x="1155.4" y="213" width="0.1" height="15.0" fill="rgb(211,145,31)" rx="2" ry="2" />
+<text  x="1158.39" y="223.5" ></text>
+</g>
+<g >
+<title>gtaskqueue_thread_enqueue (27 cycles, 0.02%)</title><rect x="60.0" y="197" width="0.3" height="15.0" fill="rgb(222,66,8)" rx="2" ry="2" />
+<text  x="63.00" y="207.5" ></text>
+</g>
+<g >
+<title>binuptime (49 cycles, 0.04%)</title><rect x="1057.5" y="213" width="0.5" height="15.0" fill="rgb(232,115,8)" rx="2" ry="2" />
+<text  x="1060.45" y="223.5" ></text>
+</g>
+<g >
+<title>bounce_bus_dmamap_load_buffer (1,861 cycles, 1.66%)</title><rect x="925.6" y="149" width="19.5" height="15.0" fill="rgb(234,42,8)" rx="2" ry="2" />
+<text  x="928.56" y="159.5" ></text>
+</g>
+<g >
+<title>doreti (171 cycles, 0.15%)</title><rect x="24.8" y="277" width="1.8" height="15.0" fill="rgb(222,140,18)" rx="2" ry="2" />
+<text  x="27.79" y="287.5" ></text>
+</g>
+<g >
+<title>_ck_epoch_delref (14 cycles, 0.01%)</title><rect x="40.5" y="213" width="0.1" height="15.0" fill="rgb(230,204,21)" rx="2" ry="2" />
+<text  x="43.46" y="223.5" ></text>
+</g>
+<g >
+<title>memcpy_erms (1,368 cycles, 1.22%)</title><rect x="442.3" y="69" width="14.4" height="15.0" fill="rgb(236,165,22)" rx="2" ry="2" />
+<text  x="445.34" y="79.5" ></text>
+</g>
+<g >
+<title>softclock_call_cc (39 cycles, 0.03%)</title><rect x="1185.1" y="213" width="0.4" height="15.0" fill="rgb(238,195,41)" rx="2" ry="2" />
+<text  x="1188.09" y="223.5" ></text>
+</g>
+<g >
+<title>ixgbe_msix_que (476 cycles, 0.42%)</title><rect x="1170.6" y="229" width="5.0" height="15.0" fill="rgb(207,185,22)" rx="2" ry="2" />
+<text  x="1173.63" y="239.5" ></text>
+</g>
+<g >
+<title>if_input (12 cycles, 0.01%)</title><rect x="552.0" y="197" width="0.1" height="15.0" fill="rgb(245,1,6)" rx="2" ry="2" />
+<text  x="554.97" y="207.5" ></text>
+</g>
+<g >
+<title>intr_lookup_source (131 cycles, 0.12%)</title><rect x="1182.3" y="261" width="1.4" height="15.0" fill="rgb(245,122,17)" rx="2" ry="2" />
+<text  x="1185.35" y="271.5" ></text>
+</g>
+<g >
+<title>rsb_flush (121 cycles, 0.11%)</title><rect x="1091.5" y="229" width="1.3" height="15.0" fill="rgb(221,62,3)" rx="2" ry="2" />
+<text  x="1094.49" y="239.5" ></text>
+</g>
+<g >
+<title>mb_dtor_mbuf (127 cycles, 0.11%)</title><rect x="821.2" y="117" width="1.3" height="15.0" fill="rgb(215,144,47)" rx="2" ry="2" />
+<text  x="824.20" y="127.5" ></text>
+</g>
+<g >
+<title>ip_findroute (5,151 cycles, 4.59%)</title><rect x="468.7" y="85" width="54.2" height="15.0" fill="rgb(248,68,30)" rx="2" ry="2" />
+<text  x="471.67" y="95.5" >ip_fi..</text>
+</g>
+<g >
+<title>_task_fn_admin (762 cycles, 0.68%)</title><rect x="1106.4" y="229" width="8.0" height="15.0" fill="rgb(254,212,45)" rx="2" ry="2" />
+<text  x="1109.41" y="239.5" ></text>
+</g>
+<g >
+<title>ixgbe_if_update_admin_status (15 cycles, 0.01%)</title><rect x="1114.3" y="213" width="0.1" height="15.0" fill="rgb(210,18,9)" rx="2" ry="2" />
+<text  x="1117.27" y="223.5" ></text>
+</g>
+<g >
+<title>ip_tryforward (93 cycles, 0.08%)</title><rect x="1114.6" y="117" width="1.0" height="15.0" fill="rgb(252,16,19)" rx="2" ry="2" />
+<text  x="1117.63" y="127.5" ></text>
+</g>
+<g >
+<title>getblk (224 cycles, 0.20%)</title><rect x="1035.1" y="165" width="2.4" height="15.0" fill="rgb(211,109,31)" rx="2" ry="2" />
+<text  x="1038.12" y="175.5" ></text>
+</g>
+<g >
+<title>gtaskqueue_thread_loop (93 cycles, 0.08%)</title><rect x="1114.6" y="277" width="1.0" height="15.0" fill="rgb(236,52,33)" rx="2" ry="2" />
+<text  x="1117.63" y="287.5" ></text>
+</g>
+<g >
+<title>if_inc_counter (145 cycles, 0.13%)</title><rect x="828.8" y="181" width="1.5" height="15.0" fill="rgb(213,103,51)" rx="2" ry="2" />
+<text  x="831.78" y="191.5" ></text>
+</g>
+<g >
+<title>gtaskqueue_thread_enqueue (65 cycles, 0.06%)</title><rect x="1114.6" y="37" width="0.7" height="15.0" fill="rgb(220,79,19)" rx="2" ry="2" />
+<text  x="1117.63" y="47.5" ></text>
+</g>
+<g >
+<title>sched_ule_sswitch (240 cycles, 0.21%)</title><rect x="1177.9" y="229" width="2.5" height="15.0" fill="rgb(239,120,27)" rx="2" ry="2" />
+<text  x="1180.88" y="239.5" ></text>
+</g>
+<g >
+<title>loadtimer (22 cycles, 0.02%)</title><rect x="1189.4" y="229" width="0.2" height="15.0" fill="rgb(206,16,17)" rx="2" ry="2" />
+<text  x="1192.41" y="239.5" ></text>
+</g>
+<g >
+<title>sched_ule_sswitch (42 cycles, 0.04%)</title><rect x="1021.7" y="213" width="0.5" height="15.0" fill="rgb(238,149,15)" rx="2" ry="2" />
+<text  x="1024.73" y="223.5" ></text>
+</g>
+<g >
+<title>uma_zalloc_arg (1,556 cycles, 1.39%)</title><rect x="588.0" y="181" width="16.3" height="15.0" fill="rgb(249,170,36)" rx="2" ry="2" />
+<text  x="590.95" y="191.5" ></text>
+</g>
+<g >
+<title>wakeup_any (10 cycles, 0.01%)</title><rect x="61.1" y="197" width="0.1" height="15.0" fill="rgb(239,165,25)" rx="2" ry="2" />
+<text  x="64.14" y="207.5" ></text>
+</g>
+<g >
+<title>fork_exit (103,365 cycles, 92.21%)</title><rect x="26.6" y="277" width="1088.0" height="15.0" fill="rgb(217,223,17)" rx="2" ry="2" />
+<text  x="29.59" y="287.5" >fork_exit</text>
+</g>
+<g >
+<title>spinlock_enter (285 cycles, 0.25%)</title><rect x="1030.7" y="229" width="3.0" height="15.0" fill="rgb(252,175,31)" rx="2" ry="2" />
+<text  x="1033.73" y="239.5" ></text>
+</g>
+<g >
+<title>_task_fn_rx (93 cycles, 0.08%)</title><rect x="1114.6" y="245" width="1.0" height="15.0" fill="rgb(246,202,2)" rx="2" ry="2" />
+<text  x="1117.63" y="255.5" ></text>
+</g>
+<g >
+<title>runq_first_thread_range (45 cycles, 0.04%)</title><rect x="1179.5" y="181" width="0.5" height="15.0" fill="rgb(242,63,33)" rx="2" ry="2" />
+<text  x="1182.48" y="191.5" ></text>
+</g>
+<g >
+<title>ip_input (30,836 cycles, 27.51%)</title><rect x="198.3" y="117" width="324.6" height="15.0" fill="rgb(237,133,54)" rx="2" ry="2" />
+<text  x="201.30" y="127.5" >ip_input</text>
+</g>
+<g >
+<title>tcp_lro_flush_all (155 cycles, 0.14%)</title><rect x="690.4" y="197" width="1.6" height="15.0" fill="rgb(211,113,36)" rx="2" ry="2" />
+<text  x="693.40" y="207.5" ></text>
+</g>
+<g >
+<title>gtaskqueue_thread_enqueue (26 cycles, 0.02%)</title><rect x="61.2" y="213" width="0.3" height="15.0" fill="rgb(221,33,54)" rx="2" ry="2" />
+<text  x="64.24" y="223.5" ></text>
+</g>
+<g >
+<title>tscp_get_timecount_low (10 cycles, 0.01%)</title><rect x="1080.0" y="197" width="0.1" height="15.0" fill="rgb(233,208,4)" rx="2" ry="2" />
+<text  x="1083.04" y="207.5" ></text>
+</g>
+<g >
+<title>thread_lock_set (18 cycles, 0.02%)</title><rect x="1030.0" y="213" width="0.2" height="15.0" fill="rgb(221,142,50)" rx="2" ry="2" />
+<text  x="1032.99" y="223.5" ></text>
+</g>
+<g >
+<title>ether_output_frame (93 cycles, 0.08%)</title><rect x="1114.6" y="85" width="1.0" height="15.0" fill="rgb(248,219,23)" rx="2" ry="2" />
+<text  x="1117.63" y="95.5" ></text>
+</g>
+<g >
+<title>iflib_txd_db_check (2,143 cycles, 1.91%)</title><rect x="980.1" y="181" width="22.6" height="15.0" fill="rgb(250,125,36)" rx="2" ry="2" />
+<text  x="983.11" y="191.5" >i..</text>
+</g>
+<g >
+<title>bsearch4_lookup (2,943 cycles, 2.63%)</title><rect x="491.9" y="53" width="31.0" height="15.0" fill="rgb(226,13,53)" rx="2" ry="2" />
+<text  x="494.91" y="63.5" >bs..</text>
+</g>
+<g >
+<title>_iflib_completed_tx_reclaim (734 cycles, 0.65%)</title><rect x="1106.5" y="181" width="7.7" height="15.0" fill="rgb(213,214,37)" rx="2" ry="2" />
+<text  x="1109.48" y="191.5" ></text>
+</g>
+<g >
+<title>iflib_get_softc (10 cycles, 0.01%)</title><rect x="694.5" y="197" width="0.1" height="15.0" fill="rgb(225,32,41)" rx="2" ry="2" />
+<text  x="697.53" y="207.5" ></text>
+</g>
+<g >
+<title>sched_ule_wakeup (44 cycles, 0.04%)</title><rect x="1175.6" y="229" width="0.5" height="15.0" fill="rgb(230,194,0)" rx="2" ry="2" />
+<text  x="1178.64" y="239.5" ></text>
+</g>
+<g >
+<title>gtaskqueue_thread_enqueue (23 cycles, 0.02%)</title><rect x="406.3" y="37" width="0.3" height="15.0" fill="rgb(223,173,20)" rx="2" ry="2" />
+<text  x="409.32" y="47.5" ></text>
+</g>
+<g >
+<title>Xapic_isr1_pti (840 cycles, 0.75%)</title><rect x="15.1" y="277" width="8.8" height="15.0" fill="rgb(241,217,54)" rx="2" ry="2" />
+<text  x="18.05" y="287.5" ></text>
+</g>
+<g >
+<title>runq_remove (20 cycles, 0.02%)</title><rect x="1180.0" y="181" width="0.2" height="15.0" fill="rgb(214,185,1)" rx="2" ry="2" />
+<text  x="1182.96" y="191.5" ></text>
+</g>
+<g >
+<title>getnewbuf (223 cycles, 0.20%)</title><rect x="1035.1" y="133" width="2.4" height="15.0" fill="rgb(212,78,47)" rx="2" ry="2" />
+<text  x="1038.13" y="143.5" ></text>
+</g>
+<g >
+<title>spinlock_exit (835 cycles, 0.74%)</title><rect x="1097.0" y="245" width="8.8" height="15.0" fill="rgb(214,186,4)" rx="2" ry="2" />
+<text  x="1099.98" y="255.5" ></text>
+</g>
+<g >
+<title>spinlock_enter (1,004 cycles, 0.90%)</title><rect x="1137.0" y="197" width="10.6" height="15.0" fill="rgb(243,189,10)" rx="2" ry="2" />
+<text  x="1140.02" y="207.5" ></text>
+</g>
+<g >
+<title>iflib_rxeof (59,891 cycles, 53.43%)</title><rect x="61.6" y="213" width="630.4" height="15.0" fill="rgb(235,95,22)" rx="2" ry="2" />
+<text  x="64.61" y="223.5" >iflib_rxeof</text>
+</g>
+<g >
+<title>iflib_txq_drain (29,525 cycles, 26.34%)</title><rect x="705.1" y="197" width="310.8" height="15.0" fill="rgb(234,159,45)" rx="2" ry="2" />
+<text  x="708.11" y="207.5" >iflib_txq_drain</text>
+</g>
+<g >
+<title>sched_ule_add (15 cycles, 0.01%)</title><rect x="1185.1" y="197" width="0.2" height="15.0" fill="rgb(246,15,49)" rx="2" ry="2" />
+<text  x="1188.11" y="207.5" ></text>
+</g>
+<g >
+<title>ether_output (15,770 cycles, 14.07%)</title><rect x="290.7" y="85" width="166.0" height="15.0" fill="rgb(229,10,41)" rx="2" ry="2" />
+<text  x="293.74" y="95.5" >ether_output</text>
+</g>
+<g >
+<title>uma_zalloc_arg (223 cycles, 0.20%)</title><rect x="1035.1" y="117" width="2.4" height="15.0" fill="rgb(224,149,22)" rx="2" ry="2" />
+<text  x="1038.13" y="127.5" ></text>
+</g>
+<g >
+<title>iflib_txq_drain (734 cycles, 0.65%)</title><rect x="1106.5" y="197" width="7.7" height="15.0" fill="rgb(243,84,4)" rx="2" ry="2" />
+<text  x="1109.48" y="207.5" ></text>
+</g>
+<g >
+<title>taskqueue_thread_loop (762 cycles, 0.68%)</title><rect x="1106.4" y="261" width="8.0" height="15.0" fill="rgb(252,91,27)" rx="2" ry="2" />
+<text  x="1109.41" y="271.5" ></text>
+</g>
+<g >
+<title>intr_execute_handlers (6,241 cycles, 5.57%)</title><rect x="1115.6" y="277" width="65.7" height="15.0" fill="rgb(213,69,54)" rx="2" ry="2" />
+<text  x="1118.61" y="287.5" >intr_ex..</text>
+</g>
+<g >
+<title>timercb (564 cycles, 0.50%)</title><rect x="1184.0" y="261" width="6.0" height="15.0" fill="rgb(232,55,35)" rx="2" ry="2" />
+<text  x="1187.04" y="271.5" ></text>
+</g>
+<g >
+<title>spinlock_exit (296 cycles, 0.26%)</title><rect x="1060.0" y="197" width="3.1" height="15.0" fill="rgb(236,130,39)" rx="2" ry="2" />
+<text  x="1062.99" y="207.5" ></text>
+</g>
+<g >
+<title>m_pkthdr_init (848 cycles, 0.76%)</title><rect x="633.0" y="197" width="9.0" height="15.0" fill="rgb(229,112,12)" rx="2" ry="2" />
+<text  x="636.04" y="207.5" ></text>
+</g>
+<g >
+<title>_task_fn_rx (62,322 cycles, 55.59%)</title><rect x="40.6" y="229" width="656.0" height="15.0" fill="rgb(219,223,52)" rx="2" ry="2" />
+<text  x="43.61" y="239.5" >_task_fn_rx</text>
+</g>
+<g >
+<title>ifmp_ring_check_drainage (113 cycles, 0.10%)</title><rect x="1016.1" y="213" width="1.2" height="15.0" fill="rgb(251,6,52)" rx="2" ry="2" />
+<text  x="1019.15" y="223.5" ></text>
+</g>
+<g >
+<title>_epoch_exit_preempt (33 cycles, 0.03%)</title><rect x="40.3" y="229" width="0.3" height="15.0" fill="rgb(212,92,20)" rx="2" ry="2" />
+<text  x="43.26" y="239.5" ></text>
+</g>
+<g >
+<title>gtaskqueue_thread_enqueue (33 cycles, 0.03%)</title><rect x="1156.5" y="229" width="0.3" height="15.0" fill="rgb(229,122,21)" rx="2" ry="2" />
+<text  x="1159.45" y="239.5" ></text>
+</g>
+<g >
+<title>sleepq_add (81 cycles, 0.07%)</title><rect x="1022.2" y="229" width="0.8" height="15.0" fill="rgb(241,169,5)" rx="2" ry="2" />
+<text  x="1025.17" y="239.5" ></text>
+</g>
+<g >
+<title>softclock_call_cc (10 cycles, 0.01%)</title><rect x="1106.3" y="245" width="0.1" height="15.0" fill="rgb(228,229,11)" rx="2" ry="2" />
+<text  x="1109.31" y="255.5" ></text>
+</g>
+<g >
+<title>ixgbe_if_rx_queue_intr_enable (247 cycles, 0.22%)</title><rect x="692.0" y="213" width="2.6" height="15.0" fill="rgb(240,150,48)" rx="2" ry="2" />
+<text  x="695.04" y="223.5" ></text>
+</g>
+<g >
+<title>rsb_flush (35 cycles, 0.03%)</title><rect x="1096.6" y="213" width="0.3" height="15.0" fill="rgb(231,53,3)" rx="2" ry="2" />
+<text  x="1099.58" y="223.5" ></text>
+</g>
+<g >
+<title>sleepq_signal (39 cycles, 0.03%)</title><rect x="441.9" y="37" width="0.4" height="15.0" fill="rgb(215,205,42)" rx="2" ry="2" />
+<text  x="444.86" y="47.5" ></text>
+</g>
+<g >
+<title>choosethread (29 cycles, 0.03%)</title><rect x="1021.8" y="197" width="0.3" height="15.0" fill="rgb(239,204,32)" rx="2" ry="2" />
+<text  x="1024.81" y="207.5" ></text>
+</g>
+<g >
+<title>sleepq_remove_thread (40 cycles, 0.04%)</title><rect x="1155.9" y="197" width="0.4" height="15.0" fill="rgb(252,136,24)" rx="2" ry="2" />
+<text  x="1158.90" y="207.5" ></text>
+</g>
+<g >
+<title>intr_event_handle (99 cycles, 0.09%)</title><rect x="1058.7" y="181" width="1.1" height="15.0" fill="rgb(222,51,15)" rx="2" ry="2" />
+<text  x="1061.74" y="191.5" ></text>
+</g>
+<g >
+<title>tdq_add (121 cycles, 0.11%)</title><rect x="1154.0" y="197" width="1.3" height="15.0" fill="rgb(237,134,53)" rx="2" ry="2" />
+<text  x="1157.00" y="207.5" ></text>
+</g>
+<g >
+<title>sched_ule_runnable (14 cycles, 0.01%)</title><rect x="1081.1" y="229" width="0.2" height="15.0" fill="rgb(245,36,0)" rx="2" ry="2" />
+<text  x="1084.14" y="239.5" ></text>
+</g>
+<g >
+<title>sched_ule_choose (107 cycles, 0.10%)</title><rect x="1179.0" y="197" width="1.2" height="15.0" fill="rgb(211,184,48)" rx="2" ry="2" />
+<text  x="1182.04" y="207.5" ></text>
+</g>
+<g >
+<title>mi_switch (340 cycles, 0.30%)</title><rect x="1176.8" y="245" width="3.6" height="15.0" fill="rgb(242,200,9)" rx="2" ry="2" />
+<text  x="1179.83" y="255.5" ></text>
+</g>
+<g >
+<title>in_lltable_lookup (1,160 cycles, 1.03%)</title><rect x="342.8" y="53" width="12.2" height="15.0" fill="rgb(209,211,17)" rx="2" ry="2" />
+<text  x="345.81" y="63.5" ></text>
+</g>
+<g >
+<title>ixgbe_isc_txd_credits_update (1,108 cycles, 0.99%)</title><rect x="1002.7" y="181" width="11.6" height="15.0" fill="rgb(249,71,25)" rx="2" ry="2" />
+<text  x="1005.66" y="191.5" ></text>
+</g>
+<g >
+<title>ixgbe_isc_rxd_available (1,288 cycles, 1.15%)</title><rect x="1157.1" y="229" width="13.5" height="15.0" fill="rgb(207,205,0)" rx="2" ry="2" />
+<text  x="1160.07" y="239.5" ></text>
+</g>
+<g >
+<title>_thread_lock (18 cycles, 0.02%)</title><rect x="1022.8" y="213" width="0.2" height="15.0" fill="rgb(245,30,46)" rx="2" ry="2" />
+<text  x="1025.82" y="223.5" ></text>
+</g>
+<g >
+<title>sched_ule_user_prio (15 cycles, 0.01%)</title><rect x="1136.9" y="197" width="0.1" height="15.0" fill="rgb(208,168,20)" rx="2" ry="2" />
+<text  x="1139.86" y="207.5" ></text>
+</g>
+<g >
+<title>iflib_encap (14,231 cycles, 12.69%)</title><rect x="830.3" y="181" width="149.8" height="15.0" fill="rgb(215,160,8)" rx="2" ry="2" />
+<text  x="833.31" y="191.5" >iflib_encap</text>
+</g>
+<g >
+<title>_ck_epoch_addref (43 cycles, 0.04%)</title><rect x="39.8" y="213" width="0.5" height="15.0" fill="rgb(236,117,17)" rx="2" ry="2" />
+<text  x="42.81" y="223.5" ></text>
+</g>
+<g >
+<title>iflib_fl_refill (4,962 cycles, 4.43%)</title><rect x="552.1" y="197" width="52.2" height="15.0" fill="rgb(232,208,54)" rx="2" ry="2" />
+<text  x="555.10" y="207.5" >iflib..</text>
+</g>
+<g >
+<title>ether_input (40,623 cycles, 36.24%)</title><rect x="106.0" y="197" width="427.6" height="15.0" fill="rgb(245,124,41)" rx="2" ry="2" />
+<text  x="109.03" y="207.5" >ether_input</text>
+</g>
+<g >
+<title>sleepq_broadcast (181 cycles, 0.16%)</title><rect x="1018.9" y="213" width="1.9" height="15.0" fill="rgb(236,171,6)" rx="2" ry="2" />
+<text  x="1021.93" y="223.5" ></text>
+</g>
+<g >
+<title>iflib_fast_intr_rxtx (4,642 cycles, 4.14%)</title><rect x="1127.5" y="245" width="48.9" height="15.0" fill="rgb(236,172,28)" rx="2" ry="2" />
+<text  x="1130.52" y="255.5" >ifli..</text>
+</g>
+<g >
+<title>ixgbe_isc_txd_flush (30 cycles, 0.03%)</title><rect x="1002.3" y="165" width="0.4" height="15.0" fill="rgb(210,126,7)" rx="2" ry="2" />
+<text  x="1005.35" y="175.5" ></text>
+</g>
+<g >
+<title>ether_nh_input (93 cycles, 0.08%)</title><rect x="1114.6" y="181" width="1.0" height="15.0" fill="rgb(222,63,1)" rx="2" ry="2" />
+<text  x="1117.63" y="191.5" ></text>
+</g>
+<g >
+<title>acpi_cpu_idle_mwait (244 cycles, 0.22%)</title><rect x="1076.3" y="197" width="2.6" height="15.0" fill="rgb(242,111,16)" rx="2" ry="2" />
+<text  x="1079.33" y="207.5" ></text>
+</g>
+<g >
+<title>cache_alloc (196 cycles, 0.17%)</title><rect x="580.8" y="165" width="2.1" height="15.0" fill="rgb(247,10,22)" rx="2" ry="2" />
+<text  x="583.83" y="175.5" ></text>
+</g>
+<g >
+<title>usb_process (19 cycles, 0.02%)</title><rect x="1114.4" y="261" width="0.2" height="15.0" fill="rgb(246,3,46)" rx="2" ry="2" />
+<text  x="1117.43" y="271.5" ></text>
+</g>
+<g >
+<title>sched_ule_idletd (5,589 cycles, 4.99%)</title><rect x="1046.9" y="261" width="58.9" height="15.0" fill="rgb(249,41,28)" rx="2" ry="2" />
+<text  x="1049.94" y="271.5" >sched_..</text>
+</g>
+<g >
+<title>sleepq_resume_thread (76 cycles, 0.07%)</title><rect x="1155.5" y="213" width="0.8" height="15.0" fill="rgb(208,120,1)" rx="2" ry="2" />
+<text  x="1158.55" y="223.5" ></text>
+</g>
+<g >
+<title>arpresolve (3,095 cycles, 2.76%)</title><rect x="325.6" y="69" width="32.6" height="15.0" fill="rgb(249,138,46)" rx="2" ry="2" />
+<text  x="328.58" y="79.5" >ar..</text>
+</g>
+<g >
+<title>sleepq_wait (52 cycles, 0.05%)</title><rect x="1030.2" y="229" width="0.5" height="15.0" fill="rgb(213,227,48)" rx="2" ry="2" />
+<text  x="1033.18" y="239.5" ></text>
+</g>
+<g >
+<title>uiomove_fromphys (889 cycles, 0.79%)</title><rect x="1037.5" y="181" width="9.3" height="15.0" fill="rgb(212,177,13)" rx="2" ry="2" />
+<text  x="1040.49" y="191.5" ></text>
+</g>
+<g >
+<title>_epoch_enter_preempt (43 cycles, 0.04%)</title><rect x="39.8" y="229" width="0.5" height="15.0" fill="rgb(234,3,22)" rx="2" ry="2" />
+<text  x="42.81" y="239.5" ></text>
+</g>
+<g >
+<title>lapic_handle_intr (30 cycles, 0.03%)</title><rect x="632.7" y="197" width="0.3" height="15.0" fill="rgb(205,103,33)" rx="2" ry="2" />
+<text  x="635.72" y="207.5" ></text>
+</g>
+<g >
+<title>ip_tryforward (27,681 cycles, 24.69%)</title><rect x="231.5" y="101" width="291.4" height="15.0" fill="rgb(247,132,21)" rx="2" ry="2" />
+<text  x="234.51" y="111.5" >ip_tryforward</text>
+</g>
+<g >
+<title>if_getcapenable (24 cycles, 0.02%)</title><rect x="1015.9" y="213" width="0.2" height="15.0" fill="rgb(210,175,5)" rx="2" ry="2" />
+<text  x="1018.90" y="223.5" ></text>
+</g>
+<g >
+<title>softclock_thread (61 cycles, 0.05%)</title><rect x="1105.8" y="261" width="0.6" height="15.0" fill="rgb(228,13,12)" rx="2" ry="2" />
+<text  x="1108.77" y="271.5" ></text>
+</g>
+<g >
+<title>rdtsc (32 cycles, 0.03%)</title><rect x="1079.0" y="197" width="0.3" height="15.0" fill="rgb(253,124,53)" rx="2" ry="2" />
+<text  x="1081.99" y="207.5" ></text>
+</g>
+</g>
+</svg>
