@@ -9,7 +9,6 @@ Lab:
   - 2 static routes
   - Traffic load at 14.88 Mpps (10-Gigabit line rate, 60 B frames)
   - tx_abdicate enabled, 1024 tx/rx descriptors, flow control disabled
-  - net.isr.maxthreads=1 (default)
   - 5 iterations per data point, reboot between each
 
 # Results
