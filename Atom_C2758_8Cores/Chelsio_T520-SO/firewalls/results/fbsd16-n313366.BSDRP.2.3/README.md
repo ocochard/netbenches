@@ -40,9 +40,11 @@ from plain forwarding.
 **pf-stateful is 22.9% faster than pf-stateless on inet4 and 31.0% faster
 on inet6.** This is the largest such inversion in this archive, and it is
 not noise: all four pf data points have spreads between 0.4% and 2.0%. The
-mechanism is the one the hwpmc profiles on the Intel 82599 machine showed
-directly — the `no state` ruleset is evaluated in full for every packet,
-while a stateful match short-circuits on the state table.
+usual explanation is that the `no state` ruleset is evaluated in full for
+every packet while a stateful match short-circuits on the state table, which
+is what the hwpmc profiles on the Intel 82599 machine showed. The profiles
+taken on *this* machine do not reproduce that pattern — see the rate-matched
+pf comparison in the profiling section below.
 
 That makes three platforms on this FreeBSD revision showing the same
 inversion: the APU2 (+16.6%), the Atom with Intel 82599 (+16.6%), and this
@@ -106,3 +108,81 @@ four iterations clustered within 3% plus one outlier 15% low, in both address
 families. The firewall-bound configurations, where the CPU is the clear
 bottleneck, are tight. Treat the `forwarding` and `ipfw-*` medians as less
 precise than the pf and ipf ones.
+
+## CPU profiling (hwpmc / flamegraph)
+
+Profiled each configuration with `hwpmc` while forwarding IPv4 60 B frames
+(event `cpu_clk_unhalted.core_p`), rendered as flamegraphs under
+[`PMC/`](PMC/) together with the folded call graphs and the offered rates
+([`PMC/capture-rates.txt`](PMC/capture-rates.txt)).
+
+| configuration  | offered   | non-idle samples | idle | cycles in firewall | top frame         | flamegraph |
+|----------------|-----------|------------------|------|--------------------|-------------------|------------|
+| forwarding     | 2220 Kpps | 105938           | 0.8% | 0.0%               | `service_iq_fl`   | [svg](PMC/forwarding.svg) |
+| ipf-stateful   | 250 Kpps  | 97185            | 0.2% | 52.6%              | `ipf_matchsrcdst` | [svg](PMC/ipf-stateful.svg) |
+| ipf-stateless  | 430 Kpps  | 101775           | 0.2% | 32.5%              | `lock_delay`      | [svg](PMC/ipf-stateless.svg) |
+| ipfw-stateful  | 1270 Kpps | 106374           | 0.4% | 16.8%              | `ipfw_chk`        | [svg](PMC/ipfw-stateful.svg) |
+| ipfw-stateless | 1610 Kpps | 112373           | 0.6% | 17.8%              | `ipfw_chk`        | [svg](PMC/ipfw-stateless.svg) |
+| pf-stateful    | 680 Kpps  | 107984           | 0.3% | 35.6%              | `pf_find_state`   | [svg](PMC/pf-stateful.svg) |
+| pf-stateless   | 550 Kpps  | 105451           | 0.2% | 34.8%              | `pf_test`         | [svg](PMC/pf-stateless.svg) |
+
+"cycles in firewall" is the share of non-idle samples whose stack passes
+through `pfil_*`, `ipf_*`/`fr_check`, `ipfw_chk`/`ipfw_check_packet` or the
+`pf_*` entry points. The `forwarding` set measuring exactly 0.0% is the
+control: no firewall is loaded, so no such frame can appear. Its top frames
+are the cxgbe path (`service_iq_fl`, `eth_tx`, `ip_tryforward`,
+`mp_ring_enqueue`) rather than the iflib/ixgbe frames seen on the Intel
+82599 machine.
+
+Each configuration was offered roughly 40% of its own median from the table
+above, so **the firewall shares are not comparable between rows**: per-packet
+firewall work is a larger fraction of a lighter total load. ipf-stateful's
+52.6% at 250 Kpps does not mean ipf is three times more expensive than ipfw
+at 16.8% / 1270 Kpps.
+
+### The pf pair, measured at a matched rate
+
+The throughput result above shows pf-stateful 22.9% faster than pf-stateless.
+On the Intel 82599 machine the profiles explained the equivalent inversion
+directly: pf-stateless spent more non-idle cycles in `pf_test` than
+pf-stateful did. **That does not reproduce here.**
+
+Because the two sets ran at different rates (680 and 550 Kpps), pf-stateless
+was re-captured at pf-stateful's 680 Kpps to remove the confound
+([svg](PMC/pf-stateless-rate-matched.svg)):
+
+| configuration | offered  | non-idle samples | cycles in pf | top frame       |
+|---------------|----------|------------------|--------------|-----------------|
+| pf-stateful   | 680 Kpps | 107984           | 35.6%        | `pf_find_state` |
+| pf-stateless  | 680 Kpps | 138555           | 34.6%        | `pf_test`       |
+
+At an identical offered rate pf-stateless spends marginally *less* of its
+non-idle time inside pf, not more. The 1-point difference is too small to
+carry an explanation on its own.
+
+The informative figure is the sample count: at the same offered rate
+pf-stateless accumulates **28% more non-idle samples** than pf-stateful
+(138555 against 107984). It is burning more CPU in total while spending
+about the same proportion of it inside pf, so on this platform the cost that
+makes pf-stateless slower sits outside `pf_test` rather than within it. The
+top frames do still differ in the expected direction — a stateful match
+short-circuits on the state table (`pf_find_state`) while the `no state`
+ruleset is walked per packet (`pf_test`) — but the cycle shares here do not
+demonstrate that mechanism the way the 82599 profiles did.
+
+### Capture quality
+
+A full-rate capture is not usable: at 14.88 Mpps the 8 cores are pinned,
+userland `pmcstat` starves and hwpmc overflows. All profiles were taken
+sub-saturation with `pkt-gen -R`, `pmcstat` driven mid-blast once the rate
+was steady, and receiver pps checked against offered pps for every capture.
+
+Six of the seven show no DUT loss (receiver within ~230 packets of sender).
+The exception is **ipf-stateful**, where the receiver trailed the sender by
+0.8% (248158 against 250221) — that capture is marginally saturated and its
+52.6% should be treated as the least reliable number in the table.
+
+Idle time is very low throughout (0.2% to 0.8%), as it was on the Intel
+82599 machine, so even at 40% of median this hardware has little headroom
+left. There were no hwpmc discard warnings and the forwarding path is on top
+of every profile, so the cycle proportions are sound.
