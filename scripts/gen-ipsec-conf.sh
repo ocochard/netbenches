@@ -25,5 +25,18 @@ find aes-gcm-256/ -type f -name ipsec.conf -exec sed -i "" 's/rijndael-cbc "1234
 find aes-gcm-256/ -type f -name ipsec.conf -exec sed -i "" 's/ -A hmac-sha1 "12345678901234567890"//g' {} +
 [ -d null ] && rm -rf null
 cp -r aes-cbc-128-hmac-sha1 null
-find null/ -type f -name ipsec.conf -exec sed -i "" 's/rijndael-cbc "1234567890123456"/null ""/g' {} +
+#Replace rijndael-cbc by the null cipher, keeping a non-empty key.
+#Since FreeBSD 15 (sys/netipsec/key.c commit 04207850a9b9) setkey refuses a
+#zero-length encryption key: the check allowing it for SADB_EALG_NULL is
+#immediately followed by one rejecting sadb_key_bits == 0 with no exemption.
+#The key is ignored by the null transform, so it does not change what is
+#measured. Beware: setkey -f exits 0 even when a line fails, so a wrong key
+#here yields wrong numbers instead of an error.
+find null/ -type f -name ipsec.conf -exec sed -i "" 's/rijndael-cbc "1234567890123456"/null "1234567890123456"/g' {} +
 find null/ -type f -name ipsec.conf -exec sed -i "" 's/ -A hmac-sha1 "12345678901234567890"//g' {} +
+#Same warning in the generated files, they are read on their own
+find null/ -type f -name ipsec.conf -exec sed -i "" '2a\
+# null cipher needs a non-empty key since FreeBSD 15 (commit 04207850a9b9\
+# rejects sadb_key_bits == 0 with no SADB_EALG_NULL exemption).\
+# The key is ignored by the null transform.
+' {} +

@@ -61,7 +61,11 @@ for INFO in ${INFO_LIST}; do
 	# PKTGEN=""
 	# UNAME="FreeBSD SM 10.3-RELEASE-p2 F..."
 
-	MINISTAT_FILE=`echo ${INFO} | sed "s/.info//" | sed "s/bench.//"`
+	# Escape the dots and anchor on the last path component: an unescaped
+	# "s/bench.//" matches any 6 characters, so a results directory named
+	# /tmp/benchs.ipsec is itself rewritten to /tmp/.ipsec and every output
+	# file then fails to be created.
+	MINISTAT_FILE=`echo ${INFO} | sed "s/\.info$//" | sed "s|/bench\.|/|"`
 
 	# Now need to generate ministat input file for each different REPORT
 	#   if report is: /tmp/benchs/bench.1.1.info

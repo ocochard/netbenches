@@ -136,6 +136,7 @@ Specific benches:
     - [Impact of number of flows with maximum ipfw hash table on FreeBSD 11.1-yandex](Atom_C2558_4Cores/Intel_i350/ipfw-sessions/results/fbsd11.1-yandex/README.md)
 
  - IPsec performance:
+    - [4 cores AMD GX-412TC (PC Engines APU2), FreeBSD 16-CURRENT n313366, IPv4 and IPv6: AES-CBC 3.6x faster than 13-head](AMD_GX-412TC_4Cores/Intel_i210AT/ipsec/results/fbsd16-n313366.BSDRP.2.3/README.md)
     - [4 cores AMD GX-412TC (PC Engines APU2C4)](AMD_GX-412TC_4Cores/Intel_i210AT/ipsec/results/fbsd13-r365873.vti/README.md)
     - [4 cores Atom C2558 (Netgate RCC-VE 4860)](Atom_C2558_4Cores/Intel_i350/ipsec/results/fbsd13-r365873.vti/README.md)
     - [8 cores Atom C2758 & Chelsio T540](Atom_C2758_8Cores-Chelsio_T540-CR/ipsec/results/fbsd13-r365873.vti/README.md)
