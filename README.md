@@ -137,6 +137,7 @@ Specific benches:
 
  - IPsec performance:
     - [4 cores AMD GX-412TC (PC Engines APU2), FreeBSD 16-CURRENT n313366, IPv4 and IPv6: AES-CBC 3.6x faster than 13-head](AMD_GX-412TC_4Cores/Intel_i210AT/ipsec/results/fbsd16-n313366.BSDRP.2.3/README.md)
+    - [4 cores AMD GX-412TC (PC Engines APU2), FreeBSD 16-CURRENT n313366, VTI (route-based): no IPv6 packet-rate penalty, unlike policy-based](AMD_GX-412TC_4Cores/Intel_i210AT/ipsec/results/fbsd16-n313366.BSDRP.2.3.vti/README.md)
     - [4 cores AMD GX-412TC (PC Engines APU2C4)](AMD_GX-412TC_4Cores/Intel_i210AT/ipsec/results/fbsd13-r365873.vti/README.md)
     - [4 cores Atom C2558 (Netgate RCC-VE 4860)](Atom_C2558_4Cores/Intel_i350/ipsec/results/fbsd13-r365873.vti/README.md)
     - [8 cores Atom C2758 & Chelsio T540](Atom_C2758_8Cores-Chelsio_T540-CR/ipsec/results/fbsd13-r365873.vti/README.md)
@@ -154,8 +155,9 @@ Specific benches:
     - [(old)2 cores AMD G-T40E (PC Engines APU1D)](AMD_G-T40E_2Cores-RTL8111E/openvpn/results/fbsd11.0/README.md)
     - [Impact of OpenVPN fast-io (PC Engines APU2C4)](AMD_GX-412TC_4Cores/Intel_i210AT/openvpn/results/fbsd13-r365328-fastio/README.md)
 
-  - Wireguard kernel vs userland:
-    - [PC Engines APU2C4 (4 cores AMD GX-412TC @ 1GHz) and 4 Intel i210AT Gigabit NIC](AMD_GX-412TC_4Cores/Intel_i210AT/wireguard/results/fbsd13-r364937.D26137/README.md)
+  - Wireguard:
+    - [PC Engines APU2 (4 cores AMD GX-412TC @ 1GHz) and Intel i210AT, in-kernel if_wg, IPv4 and IPv6, FreeBSD 16-CURRENT n313366](AMD_GX-412TC_4Cores/Intel_i210AT/wireguard/results/fbsd16-n313366.BSDRP.2.3/README.md)
+    - [(kernel vs userland) PC Engines APU2C4 (4 cores AMD GX-412TC @ 1GHz) and 4 Intel i210AT Gigabit NIC](AMD_GX-412TC_4Cores/Intel_i210AT/wireguard/results/fbsd13-r364937.D26137/README.md)
     - [Netgate RCC-VE 4860 (4 cores Intel Atom C2558 @ 2.40GHz) and quad port Intel i350](Atom_C2558_4Cores/Intel_i350/wireguard/results/fbsd13-r364937.D26137/README.md)
     - [8 cores Atom C2758 & Chelsio T540](Atom_C2758_8Cores-Chelsio_T540-CR/wireguard/results/fbsd13-r365415/README.md)
 
@@ -165,7 +167,7 @@ Specific benches:
 Synthesis:
   - ![firewalls impact on forwarding performance with differents 10Gb/s hardware](synthesis/10G/hardware.png)
   - ![firewalls impact on forwarding performance with differents 40Gb/s hardware](synthesis/40G/hardware.png)
-  - ![OpenVPN vs WireGuard kernel|userland vs IPsec on APU2 with freebsd 13-head](synthesis/VPNs-APU2.png)
+  - ![Interface-based VPNs (WireGuard if_wg, OpenVPN DCO, IPsec VTI) on APU2 with FreeBSD 16-CURRENT n313366](synthesis/VPNs-APU2.png)
   - ![OpenVPN vs WireGuard kernel|userland vs IPsec on 8 cores Atom C2758 with freebsd 13-head](synthesis/VPNs-Atom_C2758.png)
   - ![ipsec performance on freebsd 11.0 with differents hardware](synthesis/ipsec.png)
   - ![OpenVPN 2.40 performance on FreeBSD 11.0 with differents hardware](synthesis/openvpn.png)

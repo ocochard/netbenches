@@ -7,7 +7,7 @@ set yrange [0:*]
 
 # output
 set terminal png truecolor size 1920,1080 font "Gill Sans,22"
-set output 'VPNs-APU2.png'
+set output 'graph.png'
 #set terminal svg size 1024,768 font "Gill Sans,12" rounded dashed
 #set output 'graph.svg'
 
@@ -49,21 +49,20 @@ set style fill solid 1.0 border -1
 set style histogram errorbars gap 2 lw 2
 set boxwidth 0.9 relative
 # Replace long value by M (million), K (kilo) on ytics
-#set ytics format '%.0s%c'
-set mytics 2
+set ytics format '%.0s%c'
 
 # Only integer value for xtics
-#set xtics 1
-set xtics rotate by -35 offset -2,-0.5
-set xtics font ", 16"
+set xtics 1
+set xtics rotate by -18 offset 0,-0.7
+set xtics font ", 17"
 
-set title noenhanced "Interface-based (kernel datapath) VPN throughput, FreeBSD 16-CURRENT n313366 (BSDRP 2.3)\nPC Engines APU2 (4 cores AMD GX-412T and Gigabit Intel i210AT), IPv4"
-set xlabel noenhanced "if_wg(4), if_ovpn(4) and if_ipsec(4), IPv4.\naes-cbc-128 uses hmac-sha1, aes-cbc-256 uses hmac-sha2-256.\niflib.tx_abdicate=1, 5000 clear flows to encrypt, 500 Bytes UDP payload\nMethodology for Benchmarking IPsec Gateways:\nhttp://www.mecs-press.org/ijcnis/ijcnis-v4-n9/IJCNIS-V4-N9-1.pdf" offset 0,-0.5,0
+set title noenhanced "Impact of cyphers on IPsec VTI (route-based) gateway throughput (IPv4 and IPv6)\nPC Engines APU2 (4 cores AMD GX-412T and Gigabit Intel i210AT)"
+set xlabel "FreeBSD 16-CURRENT n313366 (BSDRP 2.3), 500 Bytes UDP payload (542B frame in IPv4, 562B in IPv6)\nMethodology for Benchmarking IPsec Gateways:\nhttp://www.mecs-press.org/ijcnis/ijcnis-v4-n9/IJCNIS-V4-N9-1.pdf"
 set ylabel "Equilibrium Ethernet throughput in Mb/s\n minimum,median,maximum values of 5 benches"
 
 # Put the label inside the graph
 set key on inside top right
 
 # Ploting!
-plot "VPNs-APU2.data" using 2:3:4:xticlabels(1) with histogram notitle ls 2,\
- ''using 0:( $2 + 20 ):2 with labels notitle
+plot "inet4.data" using 2:3:4:xticlabels(1) with histogram title "IPv4" ls 2, \
+     "inet6.data" using 2:3:4 with histogram title "IPv6" ls 3
