@@ -84,25 +84,6 @@ the data as measured. The other four sets show nothing comparable, and the two
 most stable ones (aes-gcm-256 and null, 1 Mb/s spread over 5 iterations) rule
 out general lab noise as the explanation.
 
-## Lab
-
-Generator and receiver: sm1. DUT: apu2-3. OpenVPN server endpoint: sm2.
-See `../../bench-lab-3nodes.config` for the topology and `../../lab/` for the
-generator configuration.
-
-Two details of this bench are worth knowing before reproducing it:
-
-- The route to 198.19.0.0/16 is pushed by the OpenVPN server through the
-  tunnel, so the DUT must not have a static one. A leftover static route sends
-  the traffic straight out igb2 and the bench silently measures plain
-  forwarding instead of the tunnel.
-- `IS_DUT_ONLINE_CMD` must only ping directly connected addresses.
-  `reboot_host()` loops on that command run on the DUT, so a ping that crosses
-  the tunnel makes the reboot wait depend on the tunnel re-establishing and the
-  run dies on a false "not reachable" timeout. The tunnel is checked separately
-  by `BEFORE_CMD`, once per bench, and its output is kept in `RAW/*.before`.
-  All 40 benches of this result set recorded a working tunnel.
-
 ## Raw data
 
 `RAW/` holds the per-iteration equilibrium output, `bench.userland.*` and
