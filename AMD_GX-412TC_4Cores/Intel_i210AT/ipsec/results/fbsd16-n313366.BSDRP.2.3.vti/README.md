@@ -133,49 +133,6 @@ AES-GCM costs much more per packet than the one IPsec drives through
 [OpenVPN DCO](../../../openvpn/results/fbsd16-n313366.BSDRP.2.3/README.md),
 [policy-based IPsec](../fbsd16-n313366.BSDRP.2.3/README.md).)
 
-## The configuration sets are new, the old vti tree does not run here
-
-`configs.vti/` in this directory produced the FreeBSD 13 `.vti` result sets and
-addresses a lab that no longer exists: management on 192.168.1.5, hostnames
-`apu2` and `IBM3`, generator at 198.18.0.201, peer on `igb3`, and MAC addresses
-from those machines. Running it unchanged against the current three-node lab
-would not have measured this bench.
-
-`configs.vti.n313366/` is therefore derived from the policy-based
-`configs/` tree of this image, which already carries the current addressing,
-with the VTI parts added:
-
-- `cloned_interfaces="ipsec0"` and `create_args_ipsec0="reqid 100"` (200 on the
-  peer), `ifconfig_ipsec0` carrying the 198.18.2.0/24 and 2001:2:0:2::/64
-  overlay and the tunnel endpoints
-- the far-side route pointed at the overlay address (198.18.2.203 from the DUT)
-  instead of the physical next hop
-- `ipsec.conf` reduced to four `add` lines per cypher, each bound to the local
-  reqid with `-u`, and no `spdadd` at all
-
-Each end binds its own outbound and inbound SAs to its own interface reqid
-(100 on the DUT, 200 on the peer); reqid is a local binding between the
-interface and the SA, not a value negotiated on the wire. This follows the
-convention of the old `configs.vti/` tree that produced the FreeBSD 13 results.
-
-## AES-GCM key lengths include a 4 byte salt
-
-The first run of this bench died at the aes-gcm-256 configuration set with
-
-```
-ERROR: No packet received, check your configurations
-```
-
-because the key given to `setkey` was 40 bytes. An AES-GCM key in `ipsec.conf`
-is the cypher key **plus a 4 byte salt**: 20 bytes for aes-gcm-128 and 36 for
-aes-gcm-256, which is what the policy-based tree of this image uses. With a
-wrong length the SA is not installed and nothing crosses the tunnel.
-
-`setkey -f` exits 0 even when an individual line fails, so this does not show
-up as an error at boot: it shows up as a bench that measures nothing. The
-harness stopping on "No packet received" is what caught it, rather than a
-0 Mb/s value being recorded as a result.
-
 ## Raw data
 
 `RAW/` holds the per-iteration equilibrium output, `bench.inet4.*` and

@@ -58,18 +58,6 @@ For reference, on this DUT AES-NI is in the kernel (not a module),
 `kern.crypto.allow_soft` is 0 and no cryptosoft provider is attached, so the
 SAs can only be served by aesni(4).
 
-## UDP checksums over IPv6
-
-UDP checksums are mandatory over IPv6, so a packet generator computing a
-single checksum for a whole address range would show up here as discarded
-packets. Checked on the DUT and on the reference endpoint while the bench was
-running: `netstat -s -p ip6` reports no bad, discarded or truncated packet,
-`netstat -s -p udp` reports 0 bad checksum and 0 missing checksum, and the
-reference endpoint forwarded exactly the number of packets it decrypted.
-The current pkt-gen computes a correct checksum per packet over the whole
-source/destination range, and the IPv6 values above are the ordinary IPv6
-overhead, not silent packet loss.
-
 ## Raw data
 
 `RAW/` holds the per-iteration equilibrium output, `bench.inet4.*` and
