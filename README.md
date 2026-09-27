@@ -158,8 +158,9 @@ Specific benches:
   - Wireguard:
     - [PC Engines APU2 (4 cores AMD GX-412TC @ 1GHz) and Intel i210AT, in-kernel if_wg, IPv4 and IPv6, FreeBSD 16-CURRENT n313366](AMD_GX-412TC_4Cores/Intel_i210AT/wireguard/results/fbsd16-n313366.BSDRP.2.3/README.md)
     - [(kernel vs userland) PC Engines APU2C4 (4 cores AMD GX-412TC @ 1GHz) and 4 Intel i210AT Gigabit NIC](AMD_GX-412TC_4Cores/Intel_i210AT/wireguard/results/fbsd13-r364937.D26137/README.md)
+    - [SuperMicro 5018A-FTN4 (8 cores Atom C2758) and 10G Chelsio T540-CR, in-kernel if_wg, IPv4 and IPv6, FreeBSD 16-CURRENT n313366](Atom_C2758_8Cores/Chelsio_T540-CR/wireguard/results/fbsd16-n313366.BSDRP.2.3/README.md)
     - [Netgate RCC-VE 4860 (4 cores Intel Atom C2558 @ 2.40GHz) and quad port Intel i350](Atom_C2558_4Cores/Intel_i350/wireguard/results/fbsd13-r364937.D26137/README.md)
-    - [8 cores Atom C2758 & Chelsio T540](Atom_C2758_8Cores-Chelsio_T540-CR/wireguard/results/fbsd13-r365415/README.md)
+    - [8 cores Atom C2758 & Chelsio T540](Atom_C2758_8Cores/Chelsio_T540-CR/wireguard/results/fbsd13-r365415/README.md)
 
   - Tinc performance:
     - [4 cores AMD GX-412TC (PC Engines APU2C4)](AMD_GX-412TC_4Cores/Intel_i210AT/tinc/results/fbsd13-r365873/README.md)
