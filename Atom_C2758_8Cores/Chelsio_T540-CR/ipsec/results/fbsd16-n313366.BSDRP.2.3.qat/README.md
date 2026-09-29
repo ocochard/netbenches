@@ -79,8 +79,8 @@ aes-cbc-256-hmac-sha2-256   334 x5      520-521  348 x5           506
 ```
 
 Zero spread is itself the finding. On AES-NI these cyphers differ by 1.7x in
-IPv4 (908 to 1526) and 1.7x in IPv6 (982 to 1682), and aes-gcm is bimodal
-across boots, varying 1476 to 1650. Once QAT is enabled the cypher stops
+IPv4 (908 to 1526) and 1.7x in IPv6 (982 to 1682), and IPv4 aes-gcm spreads
+1476 to 1650 between iterations. Once QAT is enabled the cypher stops
 mattering: AES-GCM and AES-CBC+HMAC, different algorithm classes with
 different work per packet, become indistinguishable, and so do the two
 address families once converted to packets.
