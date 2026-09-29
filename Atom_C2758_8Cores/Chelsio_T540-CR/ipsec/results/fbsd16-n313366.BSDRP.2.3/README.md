@@ -98,37 +98,77 @@ work every time and the search stopped in a different place.
 
 **So for the AES-CBC cyphers, read `gnuplot.data.max`.** For AES-GCM do not:
 its max series is contaminated the other way. `inet4.aes-gcm-128` shows a
-1999 Mb/s maximum, which is simply a 2000 Mb/s offer the DUT forwarded in
-full, an offer ceiling and not a knee. The plotted `graph.png` uses the
-reported series throughout for consistency with earlier sets.
+1999 Mb/s maximum, taken at a 2000 Mb/s offer, and that sample is not a
+sustained rate: the NIC counters for that iteration read `rx_frames`
+107034036 against `tx_frames` 105729622, so the DUT dropped 1.3M of 107M
+frames (1.2%) while producing it. It was already saturated and losing; the
+median simply landed before the queues filled. An offer ceiling, not a knee.
+The plotted `graph.png` uses the reported series throughout for consistency
+with earlier sets.
 
-## AES-GCM is bimodal in IPv4 and must not be differenced across sets
+## IPv4 AES-GCM spreads 8% and must not be differenced across sets
 
-In IPv4 the AES-GCM cyphers land in one of two stable states per boot, about
-8% apart, tracking whatever the DUT delivered at the 2000 Mb/s probe:
+In IPv4 the AES-GCM cyphers spread about 8% between iterations. The spread
+tracks whatever the DUT delivered at the 2000 Mb/s probe:
 
 ```
-iter   equilibrium   rate at the 2000 Mb/s offer
-  1           1646                          1648
-  2           1650                          1999
-  3           1519                          1532
-  4           1526                          1516
-  5           1476                          1519
+iter   equilibrium   rate at the 2000 Mb/s offer   walk after that probe
+  1           1646                          1648   descends from 1750
+  2           1650                          1999   climbs to 2500
+  3           1519                          1532   descends from 1750
+  4           1526                          1516   descends
+  5           1476                          1519   descends
 ```
 
-The median over 5 iterations reports which mode won the majority, not a
-property of the DUT: the 5k set landed 3-of-5 high (median 1650), this set
-3-of-5 low (1526). **That 8% is not a flow-count effect and IPv4 AES-GCM
-medians must not be differenced between result sets.**
+**This is not two stable states of the DUT.** Read in iteration order the
+values are two high then three low, monotonic, with no return to the high
+group: one transition, not two modes sampled at random. Five iterations cannot
+distinguish two modes from a single step, and the ordering argues against
+modes. An earlier revision of this file called it bimodal and proposed
+per-boot RSS or crypto-thread placement as the cause; the counters below rule
+that out.
 
-The crypto backend is identical on every boot (`dev.aesni.0` +
-`dev.cryptosoft.0`, no QAT) in all five `.before` captures, so that is not the
-cause. The untested candidate is per-boot crypto-thread or RSS queue
-placement, which would need `dev.cxl.*.rx_queues` or `cpuset -g` added to
-`BEFORE_CMD`.
+**The cause is that the knee sits between two rungs of the offer ladder.**
+`equilibrium` climbs by a constant `LINK_RATE/4` while the trend is
+increasing, so `-l 2000` fixes the offers at 1000, 1500, 2000, 2500. True
+aes-gcm-128 capacity is about 1650 Mb/s, which falls between the 1500 and 2000
+rungs, so that third offer straddles the knee. Whatever that single probe
+returns then decides the entire deterministic bisection that follows, and the
+final figure is that one sample propagated. That is why the results look like
+states.
 
-IPv6 AES-GCM shows no such split (1650-1718 across five runs), consistent with
-the section below.
+The other cyphers are the control, and they place the effect on the ladder
+rather than on AES-GCM:
+
+```
+cypher                  capacity   position on the ladder        spread
+inet4.null                 ~2036   above 2000, always reads 1999   1.5%
+inet4.aes-cbc-128-sha1      ~908   clear of the 1000 rung          2.2%
+inet6.aes-gcm-128          ~1678   straddles, but path-pinned        2%
+```
+
+IPv4 AES-GCM is the only cypher here whose knee sits just under a rung with
+nothing else binding to hold it steady. IPv6 AES-GCM straddles the same rung
+but the forwarding path saturates at about 1670 Mb/s and pins the knee to the
+same place on every boot, which is why it shows no split (1650-1718 across
+five runs). See the section below.
+
+**Consequence for analysis, unchanged.** The median over 5 iterations reports
+which side of the rung the majority of probes fell on, not a property of the
+DUT: the 5k set landed 3-of-5 high (median 1650), this set 3-of-5 low (1526).
+**That 8% is not a flow-count effect and IPv4 AES-GCM medians must not be
+differenced between result sets.**
+
+Ruled out as causes: the crypto backend is identical on every boot
+(`dev.aesni.0` + `dev.cryptosoft.0`, no QAT) in all five `.before` captures,
+and field 2 of `kern.crypto.stats` is zero on every iteration, so there is no
+dispatch backpressure.
+
+No flag suppresses this. `TOLERANCE` (default 0.01) is the acceptance band
+around the offer, not a repeat count: the search takes one sample per offer,
+latches `PEAK` on the first trend reversal and only halves `STEP` after that,
+so a single unlucky probe is structurally decisive. Averaging repeated probes
+per rung would require patching `equilibrium` itself.
 
 ## In IPv6 the forwarding path, not the cypher, is the limit
 
@@ -152,7 +192,7 @@ walks 1000, 1500, 2000, 2500 and the IPv4 null cypher correctly reports 2036
 Mb/s under it.
 
 Raising `-l` so the first offer always starts above the knee, which would
-suppress the AES-GCM bimodality by making the search always descend, was
+narrow the AES-GCM spread by making the search always descend, was
 considered and rejected for this sweep. Clearing null's 2073 Mb/s needs
 `-l >= 4150`, which forces the initial step to >= 1037 Mb/s, above the entire
 capacity of aes-cbc-256. One observed IPv4 aes-cbc-256 trace already measured
@@ -161,6 +201,14 @@ first offer a result that low would fall below the step and trigger
 equilibrium's "forwarding rate too low" clamp, seeding the whole search from a
 collapsed value. A per-cypher `-l` would work, but it changes the methodology
 and breaks comparability with every set measured at 2000.
+
+*Lowering* `-l` is the better lever for the AES-GCM spread specifically, and
+was not considered at the time. `-l 1600` puts the rungs at 800, 1200, 1600
+and 2000, so the ~1650 knee is approached from 1600 below instead of 2000
+above and the straddle narrows from 500 to 400 Mb/s. It would clip null, whose
+capacity is above 2000, so it cannot be applied to the whole sweep either. The
+same comparability objection applies: any future run that changes `-l` cannot
+be differenced against this set.
 
 ## Raw data
 
