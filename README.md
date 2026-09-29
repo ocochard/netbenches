@@ -138,6 +138,8 @@ Specific benches:
  - IPsec performance:
     - [4 cores AMD GX-412TC (PC Engines APU2), FreeBSD 16-CURRENT n313366, IPv4 and IPv6: AES-CBC 3.6x faster than 13-head](AMD_GX-412TC_4Cores/Intel_i210AT/ipsec/results/fbsd16-n313366.BSDRP.2.3/README.md)
     - [4 cores AMD GX-412TC (PC Engines APU2), FreeBSD 16-CURRENT n313366, VTI (route-based): no IPv6 packet-rate penalty, unlike policy-based](AMD_GX-412TC_4Cores/Intel_i210AT/ipsec/results/fbsd16-n313366.BSDRP.2.3.vti/README.md)
+    - [SuperMicro 5018A-FTN4 (8 cores Atom C2758) and 10G Chelsio T540-CR, FreeBSD 16-CURRENT n313366, VTI (route-based), IPv4 and IPv6 at matched 2000 flows: AES-GCM free in IPv6, where the forwarding path saturates first](Atom_C2758_8Cores/Chelsio_T540-CR/ipsec/results/fbsd16-n313366.BSDRP.2.3/README.md)
+    - [SuperMicro 5018A-FTN4 (8 cores Atom C2758) and 10G Chelsio T540-CR, FreeBSD 16-CURRENT n313366, VTI (route-based), IPv4 and IPv6: enabling Intel QuickAssist (QAT) costs 63 to 79% of the throughput, the single acceleration engine is slower than AES-NI and caps both families at the same packet rate](Atom_C2758_8Cores/Chelsio_T540-CR/ipsec/results/fbsd16-n313366.BSDRP.2.3.qat/README.md)
     - [4 cores AMD GX-412TC (PC Engines APU2C4)](AMD_GX-412TC_4Cores/Intel_i210AT/ipsec/results/fbsd13-r365873.vti/README.md)
     - [4 cores Atom C2558 (Netgate RCC-VE 4860)](Atom_C2558_4Cores/Intel_i350/ipsec/results/fbsd13-r365873.vti/README.md)
     - [8 cores Atom C2758 & Chelsio T540](Atom_C2758_8Cores-Chelsio_T540-CR/ipsec/results/fbsd13-r365873.vti/README.md)

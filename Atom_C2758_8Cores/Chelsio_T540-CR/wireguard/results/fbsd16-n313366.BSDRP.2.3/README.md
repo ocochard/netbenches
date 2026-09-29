@@ -31,6 +31,23 @@ more bytes. In packets per second the two are 208.7 kpps and 210.6 kpps, a
 address family is used, which matches what the APU2 bench found on entirely
 different hardware.
 
+**Caveat on the flow count.** The `equilibrium` of this run hardcoded a
+different number of flows per address family: 71 x 70 = 4970 in IPv4 against
+20 x 100 = 2000 in IPv6. Flow count drives the RSS queue spread on the DUT,
+so the two arms were not identical tests. The conclusion above is the one that
+survives that difference rather than one produced by it: the packet rates
+agree to 0.9% despite a 2.5x difference in flows. Read it as "flow count in
+this range does not move `if_wg(4)` packet rate either", not as a clean
+matched comparison. `equilibrium` now defaults to 2000 flows in both families.
+
+That reading has since been confirmed directly on this same DUT. The IPsec
+VTI bench was re-run at a matched 2000 flows in both families and compared
+against its own ~4970-flow IPv4 arm: the unimodal cyphers moved by 1.3%
+(null 2062 to 2036, aes-cbc-128 920 to 908). See
+[`../../../ipsec/results/fbsd16-n313366.BSDRP.2.3/`](../../../ipsec/results/fbsd16-n313366.BSDRP.2.3/README.md).
+So this set was not re-run: the flow mismatch is real but demonstrably does
+not move the packet rate on this hardware at these rates.
+
 ## Comparison with the previous result set
 
 ```
