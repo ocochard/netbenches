@@ -1,4 +1,4 @@
-Impact of cyphers on IPsec VTI (route-based) performance (IPv4 and IPv6)
+Impact of cyphers on IPsec VTI (route-based) performance
   - SuperMicro SuperServer 5018A-FTN4 (8 cores Atom C2758 at 2.4GHz), DUT = sm1
   - Quad port Chelsio 10-Gigabit T540-CR
   - FreeBSD 16-CURRENT n313366 (BSDRP 2.3)
@@ -6,15 +6,33 @@ Impact of cyphers on IPsec VTI (route-based) performance (IPv4 and IPv6)
     `kern.crypto.allow_soft=0`
   - **VTI (route-based)**: `if_ipsec(4)` interface, reqid 100 on the DUT and
     200 on the peer, SAs bound to it with `-u`, no SPD entry
-  - 4 SAs per cypher (2 IPv4, 2 IPv6), tunnel mode
-  - **2000 flows of clear UDP packets in BOTH address families**
+  - **The ESP tunnel is IPv4 in both arms.** See the correction below: the
+    column labelled IPv6 carries IPv6 *inner* packets through that same IPv4
+    tunnel, so it is not an IPv6 IPsec measurement.
+  - 2000 flows of clear UDP packets
   - LRO disabled on both DUT interfaces
   - 500Bytes UDP load => 542B Ethernet frame in IPv4, 562B in IPv6
+
+> **Correction (2026-09-29).** This set was published with a cross-family
+> comparison that its own raw data does not support. Both arms encapsulated
+> into a single IPv4 ESP tunnel; the IPv6 SAs were installed but never
+> matched a packet. The sections that drew IPv6 conclusions are struck
+> through below and replaced with what the data actually shows. The IPv4
+> column is unaffected and stands as measured.
+>
+> **Replaced (2026-09-30) by
+> [`fbsd16-n313366.BSDRP.2.3.vti-dualtunnel`](../fbsd16-n313366.BSDRP.2.3.vti-dualtunnel/README.md)**,
+> which runs two `if_ipsec(4)` interfaces so each address family gets its own
+> outer endpoint pair, and re-measures both arms in one sitting. Use that set
+> for any IPv6 figure and for any cross-family comparison. Note its finding:
+> the IPv6-faster-per-packet anomaly **survives** the fix, so the single-tunnel
+> defect was never its explanation.
 
 ![Impact of cyphers on IPsec VTI throughput on SuperServer 5018A-FTN4](graph.png)
 
 ```
-cypher                       IPv4   IPv6
+                             IPv4   "IPv6"
+cypher                     tunnel   inner-only
 null                         2036   1655
 aes-gcm-128                  1526   1678
 aes-gcm-256                  1482   1682
@@ -22,15 +40,24 @@ aes-cbc-128-hmac-sha1         908   1126
 aes-cbc-256-hmac-sha2-256     934    982
 ```
 
-Values are Mb/s, median of 5 benches.
+Values are Mb/s, median of 5 benches. **The second column is not IPv6 IPsec.**
+Both columns ran the same IPv4 ESP tunnel; the second differs only in that the
+packets *inside* the tunnel were IPv6. Read it as "IPv6 payload over an IPv4
+tunnel", and do not compare it against an IPv6 IPsec figure from elsewhere.
 
 ## Why this set exists
 
 It replaces an earlier set that was withdrawn as a cross-family comparison:
 its IPv4 arm generated ~4970 flows against the IPv6 arm's 2000, so no
-IPv4-to-IPv6 ratio in it was flow-matched. Here both families run 2000 flows.
+IPv4-to-IPv6 ratio in it was flow-matched. Here both arms run 2000 flows.
 That set's own withdrawal note is kept as [`WITHDRAWN-5kflows-v4.md`](WITHDRAWN-5kflows-v4.md);
 its measurements are superseded by the ones here and were not retained.
+
+**Matching the flow counts did not rescue the cross-family comparison.** The
+ratios in this set are unusable for a different and larger reason, found on
+2026-09-29 and documented below: both arms ran an IPv4 tunnel. The withdrawn
+set shares that defect, so neither set has ever measured IPv6 IPsec. What this
+set does deliver is a sound IPv4 result at a known flow count.
 
 **The flow count turned out not to matter on this DUT.** Re-measuring IPv4 at
 2000 flows instead of ~4970 moved the unimodal cyphers by about 1%:
@@ -46,33 +73,94 @@ was confined to the ratios. The IPv6 arm is unchanged between the two sets (it
 already ran 2000 flows) and measures the same: null 1661 then 1655, cbc-128
 1119 then 1126.
 
-## The IPv6 result is not a simple penalty
+## Withdrawn: the cross-family comparison
 
-Converting to packets per second removes the frame-size difference (542B in
-IPv4 against 562B in IPv6):
+This section previously reported that IPv6 was *faster per packet* than IPv4
+once crypto was enabled, called it unexplained, and noted that hwpmc showed no
+shift in where cycles went. **The finding was an artifact of the lab
+configuration and is withdrawn.**
+
+`if_ipsec(4)` carries **one outer tunnel endpoint pair per interface**. Both
+the DUT and the peer built a single `ipsec0` with an IPv4 outer:
+
+```
+cloned_interfaces="ipsec0"
+create_args_ipsec0="reqid 100"
+ifconfig_ipsec0="inet 198.18.2.4/24 198.18.2.2 tunnel 198.18.1.4 198.18.1.2"
+ifconfig_ipsec0_ipv6="inet6 2001:2:0:2::4 prefixlen 64"
+```
+
+The `tunnel` keyword names an IPv4 pair. `ifconfig_ipsec0_ipv6` adds an
+*inner* address for the payload, not a second outer, which is what made the
+configuration look dual-stack. It is not: every packet of both arms was
+encapsulated into the IPv4 SA at reqid 100.
+
+The `.after` captures prove it on all 25 iterations of the IPv6 arm. One
+representative iteration:
+
+```
+198.18.1.4 198.18.1.2      spi=4097  allocated: 52360927  current: 32254326904(bytes)
+2001:2:0:1::4 2001:2:0:1::2 spi=4103  allocated: 0         current: 0(bytes)
+```
+
+The two IPv6 SAs were installed by `setkey` and matched nothing. Confirmed
+live on the peer, which reports `tunnel inet 198.18.1.2 --> 198.18.1.4` and
+zero allocations on both of its IPv6 SAs.
+
+The generator was correct: it ran `equilibrium -6`, so the *inner* packets
+really were IPv6. Only the tunnel was not.
+
+**So the two arms share an identical tunnel, ESP path, SA lookup and outer
+header, and differ only in the inner packet.** That removes the puzzle:
 
 ```
 cypher                      v4 kpps  v6 kpps  v6/v4
-null                          452.8    355.5   0.78
-aes-gcm-128                   339.4    360.4   1.06
-aes-gcm-256                   329.6    361.3   1.10
-aes-cbc-128-hmac-sha1         202.0    241.8   1.20
-aes-cbc-256-hmac-sha2-256     207.7    210.9   1.02
+null                          469.6    368.1   0.78
+aes-gcm-128                   351.9    373.2   1.06
+aes-gcm-256                   341.8    374.1   1.09
+aes-cbc-128-hmac-sha1         209.4    250.4   1.20
+aes-cbc-256-hmac-sha2-256     215.4    218.4   1.01
 ```
 
-IPv6 is 22% slower per packet with no crypto, and level or *faster* with it.
-A fixed per-packet IPv6 overhead cannot produce that: such a cost would shrink
-towards parity as crypto came to dominate, never cross it.
+  - **null, 0.78**: no crypto, so per-packet cost is dominated by inner
+    forwarding, where IPv6 is genuinely more expensive. IPv6 loses, as
+    expected.
+  - **the crypto rows, 1.01 to 1.20**: ESP cost scales with payload bytes.
+    The IPv6 inner packet is 20B larger, so at equal Mb/s it carries fewer
+    packets and the fixed per-packet tunnel cost amortises over more bytes.
+    Fewer, larger packets through the same tunnel is cheaper per packet.
 
-This reproduces the same pattern the withdrawn set showed, now at matched flow
-counts, so it was never a flow-count artifact. It remains **unexplained**. The
-hwpmc callgraphs carried over from that set (`PMC/`) show the IPv4 and IPv6
-null profiles differing by under half a point in every bucket, so whatever
-causes it is not visible as a shift in where cycles go.
+A fixed per-packet IPv6 overhead could not cross 1.0, which is why the
+original framing looked paradoxical. There was no IPv6 tunnel overhead to
+pay, because there was no IPv6 tunnel.
 
-The aes-cbc-256 ratio of 1.02 here against 1.10 in the withdrawn set should
-not be read as a change: that cypher's reported values are the least reliable
-in the set, for the reason below.
+The hwpmc callgraphs in `PMC/` matched to under half a point because they
+profile the **null** cypher, where the two arms genuinely do near-identical
+work. The crossover only appears with crypto, and that arm was never profiled.
+
+The same defect is present in the sibling QAT set and in the APU2 VTI set
+(`../../../../AMD_GX-412TC_4Cores/Intel_i210AT/ipsec/results/fbsd16-n313366.BSDRP.2.3.vti/`).
+On the APU2 the signature is unmistakable: four of five cyphers read a v6/v4
+packet-rate ratio of exactly 0.99, i.e. the same packet rate in both arms,
+with the whole Mb/s difference being the 20 header bytes. That is what one
+shared tunnel looks like once crypto dominates enough to mask the inner-path
+difference.
+
+## Withdrawn: "in IPv6 the forwarding path is the limit"
+
+This section previously read null 1655, aes-gcm-128 1678 and aes-gcm-256 1682
+as three very different cyphers landing within 27 Mb/s, and concluded that an
+IPv6 forwarding path saturating near 1670 Mb/s bound before the cypher did.
+
+**There is no IPv6 forwarding-path ceiling in this data**, because the tunnel
+was IPv4. The clustering is real and still needs an explanation, but it is a
+property of IPv6-inner-over-IPv4-tunnel on this DUT, not of IPv6 forwarding,
+and this set cannot separate the two. The claim is withdrawn rather than
+reinterpreted.
+
+What survives unchanged: AES-CBC sits well below that cluster (1126 and 982)
+and orders correctly by cost, so whatever binds at ~1670 is not a ceiling
+that hides all cypher differences.
 
 ## The reported equilibrium understates the weak cyphers
 
@@ -144,14 +232,16 @@ rather than on AES-GCM:
 cypher                  capacity   position on the ladder        spread
 inet4.null                 ~2036   above 2000, always reads 1999   1.5%
 inet4.aes-cbc-128-sha1      ~908   clear of the 1000 rung          2.2%
-inet6.aes-gcm-128          ~1678   straddles, but path-pinned        2%
+inet6.aes-gcm-128          ~1678   straddles, but pinned             2%
 ```
 
 IPv4 AES-GCM is the only cypher here whose knee sits just under a rung with
-nothing else binding to hold it steady. IPv6 AES-GCM straddles the same rung
-but the forwarding path saturates at about 1670 Mb/s and pins the knee to the
-same place on every boot, which is why it shows no split (1650-1718 across
-five runs). See the section below.
+nothing else binding to hold it steady. The IPv6-inner arm straddles the same
+rung but something pins its knee near 1670 Mb/s on every boot, which is why it
+shows no split (1650-1718 across five runs). That pinning was previously
+attributed to an IPv6 forwarding-path ceiling; since the tunnel was IPv4 in
+both arms, the cause is now open. It does not affect the IPv4 conclusion
+here.
 
 **Consequence for analysis, unchanged.** The median over 5 iterations reports
 which side of the rung the majority of probes fell on, not a property of the
@@ -169,19 +259,6 @@ around the offer, not a repeat count: the search takes one sample per offer,
 latches `PEAK` on the first trend reversal and only halves `STEP` after that,
 so a single unlucky probe is structurally decisive. Averaging repeated probes
 per rung would require patching `equilibrium` itself.
-
-## In IPv6 the forwarding path, not the cypher, is the limit
-
-null, aes-gcm-128 and aes-gcm-256 measure 1655, 1678 and 1682 Mb/s: a 27 Mb/s
-spread across three very different cyphers, which is inside the run-to-run
-noise of any one of them. AES-GCM is effectively free here; the IPv6
-forwarding path saturates first.
-
-That ceiling is real and not an artifact of the generator. At the 1000 and
-1500 Mb/s offers the generator delivered 999 and 1499 Mb/s with no shortfall
-in every null iteration, and the knee appears only above ~1650. It is also not
-a ceiling that hides all cypher differences, because AES-CBC sits well below
-it (1126 and 982 Mb/s) and orders correctly by cost.
 
 ## Method note on -l
 
