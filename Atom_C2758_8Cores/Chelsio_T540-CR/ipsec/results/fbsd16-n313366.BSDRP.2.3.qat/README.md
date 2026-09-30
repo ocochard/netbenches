@@ -1,4 +1,4 @@
-Intel QuickAssist (QAT) versus AES-NI on IPsec VTI (IPv4 and IPv6)
+Intel QuickAssist (QAT) versus AES-NI on IPsec VTI
   - SuperMicro SuperServer 5018A-FTN4 (8 cores Atom C2758 at 2.4GHz), DUT = sm1
   - Quad port Chelsio 10-Gigabit T540-CR
   - FreeBSD 16-CURRENT n313366 (BSDRP 2.3)
@@ -8,8 +8,18 @@ Intel QuickAssist (QAT) versus AES-NI on IPsec VTI (IPv4 and IPv6)
     `none0` and `aesni0` serves every session
   - `kern.crypto.allow_soft=0` in both arms, so there is no softcrypto fallback
   - **VTI (route-based)**: `if_ipsec(4)`, reqid 100 on the DUT, 200 on the peer
-  - 2000 flows of clear UDP packets, IPv4 and IPv6
+  - **The ESP tunnel is IPv4 in both arms.** See the correction below: the
+    arm labelled IPv6 carries IPv6 *inner* packets through that same IPv4
+    tunnel, so it is not an IPv6 IPsec measurement.
+  - 2000 flows of clear UDP packets
   - 500Bytes UDP load => 542B Ethernet frame in IPv4, 562B in IPv6
+
+> **Correction (2026-09-29).** The address-family comparison in this file
+> rests on a lab misconfiguration: both arms encapsulated into one IPv4 ESP
+> tunnel and the IPv6 SAs never matched a packet. The QAT-versus-AES-NI
+> conclusion is unaffected, and the "same packet rate in both families"
+> observation still holds, but its reasoning changes. See
+> "What the family columns really compare" below.
 
 ![Intel QuickAssist versus AES-NI on IPsec VTI throughput, SuperServer 5018A-FTN4](graph.png)
 
@@ -37,10 +47,9 @@ measured at the same 2000 flows with the same frame sizes.
 There is no `null` set in this bench: with no cypher there is nothing for a
 crypto accelerator to do, so the comparison would be meaningless.
 
-## The same packet rate in both families
+## What the family columns really compare
 
-IPv6 reads 4% higher than IPv4 in Mb/s, but that is the frame size, not extra
-work done. Converting to packets tells the real story:
+The two columns read 4% apart in Mb/s, and converting to packets shows why:
 
 ```
 family   frame   QAT Mb/s   packet rate
@@ -48,21 +57,42 @@ IPv4      542B        334      77.0 kpps
 IPv6      562B        348      77.4 kpps
 ```
 
-Half a percent apart. The DUT pushes **the same number of packets per second
-regardless of address family**, and the Mb/s difference is only the 20 extra
-bytes of IPv6 header riding along with each one. (The same holds if the
-20 bytes of preamble and inter-frame gap are counted: 74.3 against 74.7 kpps.)
+Half a percent apart. The DUT pushes the same number of packets per second in
+both arms, and the Mb/s difference is only the 20 extra bytes of IPv6 header
+riding along with each one. (The same holds if the 20 bytes of preamble and
+inter-frame gap are counted: 74.3 against 74.7 kpps.)
 
-That is what a per-request limit looks like. The QAT ring is dispatched once
-per packet, so its capacity is counted in requests, and the size or address
-family of the packet each request carries does not change how many fit.
+**That is a weaker statement than it first appears, because the two arms are
+not two address families.** Both encapsulated into a single IPv4 ESP tunnel:
+`if_ipsec(4)` carries one outer endpoint pair per interface, and the config
+sets it to IPv4:
 
-**This erases the IPv6 finding from the AES-NI set.** There, IPv6 was the
-*faster* family with crypto (1678 against 1526 for aes-gcm-128) because the
-forwarding path saturated at about 1670 Mb/s and bound before the cypher did.
-Under QAT the accelerator binds first at roughly 77 kpps, which is far below
-both the cypher limit and that forwarding-path limit, so neither is ever
-reached and the difference between the families disappears.
+```
+ifconfig_ipsec0="inet 198.18.2.4/24 198.18.2.2 tunnel 198.18.1.4 198.18.1.2"
+ifconfig_ipsec0_ipv6="inet6 2001:2:0:2::4 prefixlen 64"
+```
+
+The `_ipv6` line is an *inner* address, not a second outer. The `.after`
+captures confirm it on all 20 iterations of the IPv6 arm: the IPv4 SA
+accumulates ~18.7M packets per iteration while both IPv6 SAs read
+`allocated: 0`.
+
+So the comparison is IPv4-inner against IPv6-inner over **the same tunnel**,
+and the equal packet rate is a much smaller claim: the inner packet does not
+change the number of ESP requests, and QAT's limit is counted in requests.
+
+The QAT-versus-AES-NI result is unaffected. Both arms of that comparison ran
+the same tunnel in the same way, so the 63-79% loss stands as measured.
+
+**What is withdrawn is the erasure claim.** This section previously argued
+that QAT "erases the IPv6 finding" from the AES-NI set, where IPv6 appeared to
+be the faster family with crypto. That AES-NI finding has itself been
+withdrawn for the same configuration reason, so there is nothing here to
+erase: neither set measured IPv6 IPsec. See
+[`../fbsd16-n313366.BSDRP.2.3/README.md`](../fbsd16-n313366.BSDRP.2.3/README.md).
+
+The per-request character of the QAT limit is still well supported, by the
+ring-full counters below rather than by any cross-family argument.
 
 ## Every cypher lands on the same number
 
@@ -79,11 +109,11 @@ aes-cbc-256-hmac-sha2-256   334 x5      520-521  348 x5           506
 ```
 
 Zero spread is itself the finding. On AES-NI these cyphers differ by 1.7x in
-IPv4 (908 to 1526) and 1.7x in IPv6 (982 to 1682), and IPv4 aes-gcm spreads
-1476 to 1650 between iterations. Once QAT is enabled the cypher stops
-mattering: AES-GCM and AES-CBC+HMAC, different algorithm classes with
-different work per packet, become indistinguishable, and so do the two
-address families once converted to packets.
+the IPv4 arm (908 to 1526) and 1.7x in the IPv6-inner arm (982 to 1682), and
+IPv4 aes-gcm spreads 1476 to 1650 between iterations. Once QAT is enabled the
+cypher stops mattering: AES-GCM and AES-CBC+HMAC, different algorithm classes
+with different work per packet, become indistinguishable, and so do the two
+arms once converted to packets.
 
 The single 347 in IPv6 aes-gcm-256 is the only non-zero spread anywhere in
 this campaign: one iteration, 1 Mb/s, against a 348 in the other four. That is
@@ -111,9 +141,10 @@ Each row is one representative iteration; the failure share is stable across
 all forty, spanning 19.3% to 19.6% in IPv6 (4503479 to 4569095 failures).
 
 About one request in five finds the QAT ring full and cannot be queued, and
-that share is the same in both families, as a per-request limit predicts. The
-AES-NI control, measured in the same session on the same DUT, dispatched 3.2x
-more operations with zero failures.
+that share is the same in both arms, as a per-request limit predicts. (Both
+arms share one IPv4 tunnel, so this is a statement about inner packet size,
+not about address families.) The AES-NI control, measured in the same session
+on the same DUT, dispatched 3.2x more operations with zero failures.
 
 The hardware reason is in dmesg on every boot:
 
@@ -154,7 +185,7 @@ The gap between that peak and the equilibrium is the ring overflowing under
 sustained load: short bursts clear, sustained offers do not.
 
 Unlike the equilibrium, the peak does *not* convert to the same packet rate in
-both families: 520 Mb/s at 542B is 119.9 kpps, 507 Mb/s at 562B is 112.8 kpps,
+both arms: 520 Mb/s at 542B is 119.9 kpps, 507 Mb/s at 562B is 112.8 kpps,
 6% apart. The peak is a single transient sample taken before the ring fills,
 so it is a much noisier quantity than the sustained equilibrium and not worth
 reading closely.
