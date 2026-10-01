@@ -138,13 +138,14 @@ The hwpmc callgraphs in `PMC/` matched to under half a point because they
 profile the **null** cypher, where the two arms genuinely do near-identical
 work. The crossover only appears with crypto, and that arm was never profiled.
 
-The same defect is present in the sibling QAT set and in the APU2 VTI set
-(`../../../../AMD_GX-412TC_4Cores/Intel_i210AT/ipsec/results/fbsd16-n313366.BSDRP.2.3.vti/`).
-On the APU2 the signature is unmistakable: four of five cyphers read a v6/v4
-packet-rate ratio of exactly 0.99, i.e. the same packet rate in both arms,
-with the whole Mb/s difference being the 20 header bytes. That is what one
-shared tunnel looks like once crypto dominates enough to mask the inner-path
-difference.
+The same defect is present in the sibling QAT set.
+
+The [APU2 VTI set](../../../../../AMD_GX-412TC_4Cores/Intel_i210AT/ipsec/results/fbsd16-n313366.BSDRP.2.3/README.md)
+tunnels each family over its own address family and measures IPv6 at a v6/v4
+packet-rate ratio of 0.91 to 0.97, i.e. slower than IPv4 on every cypher. That
+is the **opposite** sign to this machine's dual-tunnel set, which has IPv6
+forwarding 6 to 14% *more* packets per second than IPv4 whenever crypto is on.
+The two platforms disagree and the APU2 numbers do not explain the Atom result.
 
 ## Withdrawn: "in IPv6 the forwarding path is the limit"
 

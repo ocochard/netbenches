@@ -56,8 +56,8 @@ set xtics 1
 set xtics rotate by -18 offset 0,-0.7
 set xtics font ", 17"
 
-set title noenhanced "Impact of cyphers on IPSec gateway throughput (IPv4 and IPv6)\nPC Engines APU2 (4 cores AMD GX-412T and Gigabit Intel i210AT)"
-set xlabel "FreeBSD 16-CURRENT n313366 (BSDRP 2.3), 500 Bytes UDP payload (542B frame in IPv4, 562B in IPv6)\nMethodology for Benchmarking IPsec Gateways:\nhttp://www.mecs-press.org/ijcnis/ijcnis-v4-n9/IJCNIS-V4-N9-1.pdf"
+set title noenhanced "Impact of cyphers on IPsec VTI (route-based) gateway throughput (IPv4 and IPv6)\nPC Engines APU2 (4 cores AMD GX-412T and Gigabit Intel i210AT)"
+set xlabel "FreeBSD 16-CURRENT n313366 (BSDRP 2.3), 500 Bytes UDP payload (542B frame in IPv4, 562B in IPv6)\nipsec0 carries the IPv4 outer tunnel, ipsec1 the IPv6 one: each family is tunnelled over its own address family\nMethodology for Benchmarking IPsec Gateways:\nhttp://www.mecs-press.org/ijcnis/ijcnis-v4-n9/IJCNIS-V4-N9-1.pdf"
 set ylabel "Equilibrium Ethernet throughput in Mb/s\n minimum,median,maximum values of 5 benches"
 
 # Put the label inside the graph

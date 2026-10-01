@@ -49,7 +49,7 @@ WireGuard chacha20-poly1305     95.2      95.0   1.00
 ```
 
 (IPsec figures computed from
-[../../../ipsec/results/fbsd16-n313366.BSDRP.2.3/](../../../ipsec/results/fbsd16-n313366.BSDRP.2.3/README.md).)
+[../../../ipsec/results/fbsd16-n313366.BSDRP.2.3.policy-based/](../../../ipsec/results/fbsd16-n313366.BSDRP.2.3.policy-based/README.md).)
 
 This is a measured difference, not an explained one. A plausible reading is
 that ChaCha20-Poly1305 on a 1 GHz core without any crypto offload is dominated
@@ -160,7 +160,7 @@ no ChaCha acceleration, that distinction matters: the AES-GCM entries use a
 hardware-accelerated cypher and the WireGuard entry does not, which is a
 property of the comparison and not a defect in it.
 
-([IPsec VTI](../../../ipsec/results/fbsd16-n313366.BSDRP.2.3.vti/README.md),
+([IPsec VTI](../../../ipsec/results/fbsd16-n313366.BSDRP.2.3/README.md),
 [OpenVPN DCO](../../../openvpn/results/fbsd16-n313366.BSDRP.2.3/README.md).)
 
 ## Raw data
